@@ -4,83 +4,83 @@
 export const HISTORY = [
   {
     title: "🎈 O Dia da Criança — 1 de Junho",
-    text: "O Dia Internacional da Criança celebra-se a 1 de junho em Portugal e em muitos países do mundo. Esta data foi decidida em 1949 pela Federação Internacional das Mulheres Democráticas, numa conferência em Moscovo, e celebrada pela primeira vez em 1950. O objetivo era chamar a atenção do mundo para os direitos e o bem-estar das crianças. Em Portugal, o dia é celebrado com festas, prendas e atividades especiais nas escolas."
+    text: "O Dia Internacional da Criança celebra-se a 1 de junho em Portugal e em muitos países do mundo. A data foi decidida em 1949 e celebrada pela primeira vez em 1950, para chamar a atenção do mundo para os direitos das crianças. Em Portugal, comemora-se com festas e atividades especiais nas escolas."
   },
   {
     title: "📜 A Declaração dos Direitos da Criança — 1959",
-    text: "Em 1959, as Nações Unidas aprovaram a Declaração dos Direitos da Criança, com 10 princípios fundamentais. Esta declaração reconhecia que todas as crianças têm direito à proteção, à educação, a um nome e a uma nacionalidade. Foi o primeiro documento das Nações Unidas dedicado exclusivamente aos direitos das crianças — um passo enorme na história da humanidade!"
+    text: "Em 1959, as Nações Unidas aprovaram a Declaração dos Direitos da Criança, com 10 princípios fundamentais. Reconhecia que todas as crianças têm direito à proteção, à educação, a um nome e a uma nacionalidade — um passo enorme na história da humanidade!"
   },
   {
     title: "🌍 A Convenção dos Direitos da Criança — 1989",
-    text: "A 20 de novembro de 1989, as Nações Unidas aprovaram a Convenção sobre os Direitos da Criança. É o tratado de direitos humanos mais ratificado da história — quase todos os países do mundo o assinaram! Portugal ratificou-o em 1990. A convenção tem 54 artigos e estabelece que todas as crianças têm direito à sobrevivência, ao desenvolvimento, à proteção e à participação."
+    text: "A 20 de novembro de 1989, as Nações Unidas aprovaram a Convenção sobre os Direitos da Criança — o tratado de direitos humanos mais ratificado da história! Tem 54 artigos e garante a todas as crianças o direito à sobrevivência, ao desenvolvimento, à proteção e à participação."
   },
   {
     title: "⚽ O Direito ao Brincar",
-    text: "O artigo 31.º da Convenção dos Direitos da Criança garante o direito ao descanso, ao lazer, ao brincar e às atividades recreativas. Brincar não é só divertimento — é essencial para o desenvolvimento do cérebro, da criatividade e das competências sociais das crianças. Estudos mostram que as crianças que brincam livremente são mais criativas, mais resilientes e têm melhor saúde mental."
+    text: "O artigo 31.º da Convenção garante o direito ao descanso, ao lazer e ao brincar. Brincar não é só divertimento — é essencial para o desenvolvimento do cérebro, da criatividade e das competências sociais das crianças!"
   },
   {
     title: "📚 O Direito à Educação",
-    text: "O artigo 28.º da Convenção garante o direito de todas as crianças à educação. Em Portugal, o ensino é obrigatório e gratuito até aos 18 anos. No mundo, ainda há 244 milhões de crianças fora da escola — muitas por causa da pobreza, de conflitos armados ou de discriminação. A UNICEF trabalha todos os dias para garantir que todas as crianças do mundo possam estudar."
+    text: "O artigo 28.º da Convenção garante o direito de todas as crianças à educação. Em Portugal, o ensino é obrigatório e gratuito até aos 18 anos. No mundo, ainda há mais de 270 milhões de crianças fora da escola, e a UNICEF trabalha todos os dias para mudar isso."
   },
   {
     title: "💊 O Direito à Saúde",
-    text: "O artigo 24.º da Convenção garante o direito de todas as crianças ao mais alto nível de saúde possível. Em Portugal, todas as crianças têm acesso ao Serviço Nacional de Saúde, ao Plano Nacional de Vacinação e ao médico de família. No mundo, morrem ainda por ano milhões de crianças de doenças que se podem prevenir. A UNICEF distribui vacinas, alimentos terapêuticos e água potável em todo o mundo."
+    text: "O artigo 24.º da Convenção garante o direito de todas as crianças ao mais alto nível de saúde possível. Em Portugal, todas têm acesso ao Serviço Nacional de Saúde e ao Plano Nacional de Vacinação. No mundo, a UNICEF distribui vacinas e água potável para salvar vidas."
   },
   {
     title: "🛡️ O Direito à Proteção",
-    text: "Os artigos 19.º e 37.º da Convenção protegem as crianças contra todas as formas de violência, abuso e exploração. Nenhuma criança deve ser maltratada, trabalhar em condições perigosas ou ser privada da sua liberdade. Em Portugal, a CPCJ (Comissão de Proteção de Crianças e Jovens) trabalha para proteger as crianças em risco. Se uma criança estiver em perigo, pode ligar para a linha SOS Criança: 116 111."
+    text: "Os artigos 19.º e 37.º da Convenção protegem as crianças contra violência, abuso e exploração. Em Portugal, a CPCJ trabalha para proteger crianças em risco. Se uma criança estiver em perigo, pode ligar para a linha SOS Criança: 116 111."
   },
   {
     title: "🗣️ O Direito a Ser Ouvido",
-    text: "O artigo 12.º da Convenção garante às crianças o direito de expressar a sua opinião em todas as decisões que as afetam. As crianças têm o direito de ser ouvidas nas escolas, nas famílias e pelos governos! Em Portugal, existem parlamentos jovens e conselhos municipais de jovens onde as crianças e adolescentes podem participar ativamente na vida democrática do país."
+    text: "O artigo 12.º da Convenção garante às crianças o direito de expressar a sua opinião em todas as decisões que as afetam — nas escolas, nas famílias e pelos governos! Em Portugal, existem parlamentos jovens onde podem participar ativamente."
   },
   {
     title: "🌱 O Futuro das Crianças — Os ODS",
-    text: "Em 2015, as Nações Unidas aprovaram os 17 Objetivos de Desenvolvimento Sustentável (ODS), a cumprir até 2030. Vários deles estão diretamente ligados ao bem-estar das crianças: erradicar a pobreza (ODS 1), acabar com a fome (ODS 2), garantir saúde (ODS 3), educação de qualidade (ODS 4) e reduzir as desigualdades (ODS 10). As crianças de hoje são os agentes de mudança do futuro!"
+    text: "Em 2015, as Nações Unidas aprovaram os 17 Objetivos de Desenvolvimento Sustentável (ODS), a cumprir até 2030. Incluem erradicar a pobreza, garantir saúde e educação de qualidade para todos. As crianças de hoje são os agentes de mudança do futuro!"
   },
   {
     title: "🌟 A UNICEF — A Guardiã dos Direitos",
-    text: "A UNICEF (Fundo das Nações Unidas para a Infância) foi criada em 1946, após a Segunda Guerra Mundial, para ajudar as crianças afetadas pelo conflito. Hoje trabalha em mais de 190 países e territórios. Em Portugal, o Comité Português da UNICEF sensibiliza para os direitos das crianças e angaria fundos para programas em todo o mundo. Cada criança conta — e cada direito importa!"
+    text: "A UNICEF foi criada em 1946, após a Segunda Guerra Mundial, para ajudar as crianças afetadas pelo conflito. Hoje trabalha em mais de 190 países. Em Portugal, o Comité Português da UNICEF angaria fundos para programas em todo o mundo!"
   },
   {
     title: "🪪 O Direito à Identidade",
-    text: "O artigo 7.º da Convenção garante que toda a criança tem direito a ser registada logo após o nascimento e a ter um nome e uma nacionalidade. Sem registo, uma criança não existe legalmente — não pode aceder à escola, à saúde ou a um passaporte. A UNICEF estima que 237 milhões de crianças no mundo não têm registo de nascimento. O teu nome é o primeiro direito que recebes!"
+    text: "O artigo 7.º da Convenção garante que toda a criança tem direito a ser registada logo após o nascimento, com um nome e uma nacionalidade. A UNICEF estima que 150 milhões de crianças com menos de 5 anos ainda não têm registo de nascimento. O teu nome é o primeiro direito que recebes!"
   },
   {
     title: "👨‍👩‍👧 O Direito à Família",
-    text: "O artigo 9.º da Convenção garante que a criança não deve ser separada dos seus pais, exceto para a sua própria proteção. O artigo 10.º garante a reunificação familiar quando pais e filhos vivem em países diferentes. A família é o primeiro lugar onde a criança aprende amor, segurança e valores. Quando a família não pode cuidar da criança, o Estado tem obrigação de garantir cuidados alternativos adequados."
+    text: "O artigo 9.º da Convenção garante que a criança não deve ser separada dos seus pais, exceto para a sua própria proteção. A família é o primeiro lugar onde a criança aprende amor, segurança e valores."
   },
   {
     title: "✈️ O Direito das Crianças Refugiadas",
-    text: "Mais de 43 milhões de crianças estão deslocadas no mundo, fugindo de guerras, violência e perseguição. O artigo 22.º da Convenção garante que as crianças refugiadas têm exatamente os mesmos direitos que todas as outras. A UNICEF e o ACNUR trabalham em conjunto para proteger estas crianças, garantindo-lhes acesso à educação, à saúde e a um lugar seguro. Ser refugiado não apaga os teus direitos!"
+    text: "Mais de 43 milhões de crianças estão deslocadas no mundo, fugindo de guerras e violência. O artigo 22.º da Convenção garante que as crianças refugiadas têm exatamente os mesmos direitos que todas as outras. Ser refugiado não apaga os teus direitos!"
   },
   {
     title: "🚫 O Direito a Não Trabalhar em Condições Perigosas",
-    text: "O artigo 32.º da Convenção proíbe o trabalho infantil que prejudique a saúde, a segurança ou a educação da criança. Ainda há cerca de 160 milhões de crianças em situação de trabalho infantil no mundo — muitas em condições perigosas, como minas, fábricas ou campos agrícolas. Em Portugal, a idade mínima para trabalhar é 16 anos. As crianças têm direito a ser crianças!"
+    text: "O artigo 32.º da Convenção proíbe o trabalho infantil que prejudique a saúde, a segurança ou a educação da criança. Cerca de 138 milhões de crianças ainda estão em trabalho infantil no mundo, mas este número tem vindo a descer. As crianças têm direito a ser crianças!"
   },
   {
     title: "🗣️ O Direito à Liberdade de Expressão",
-    text: "O artigo 13.º da Convenção garante que as crianças têm o direito de procurar, receber e partilhar informação e ideias — através de palavras, arte, escrita ou qualquer outro meio. Este direito inclui a liberdade de pensar de forma diferente e de partilhar essas ideias. É a base da criatividade, do pensamento crítico e da participação democrática. A tua voz importa!"
+    text: "O artigo 13.º da Convenção garante que as crianças têm o direito de procurar, receber e partilhar informação e ideias — através de palavras, arte ou escrita. A tua voz importa!"
   },
   {
     title: "🔒 O Direito à Privacidade",
-    text: "O artigo 16.º da Convenção protege a vida privada, a família, o domicílio e a correspondência das crianças. Na era digital, este direito é mais importante do que nunca: as tuas mensagens, fotos e dados pessoais merecem proteção. Em Portugal, o RGPD dá proteção especial aos dados de crianças menores de 13 anos. Cuida da tua privacidade online — e pede ajuda a um adulto se algo te preocupar!"
+    text: "O artigo 16.º da Convenção protege a vida privada, a família e a correspondência das crianças. Em Portugal, o RGPD dá proteção especial aos dados de menores de 13 anos. Cuida da tua privacidade online — e pede ajuda a um adulto se algo te preocupar!"
   },
   {
     title: "🌍 O Direito à Cultura e à Língua",
-    text: "O artigo 30.º da Convenção garante que as crianças de minorias étnicas, religiosas ou linguísticas têm o direito de viver segundo a sua cultura, praticar a sua religião e usar a sua língua. No mundo existem cerca de 7 000 línguas vivas — cada uma é um tesouro único da humanidade! Em Portugal, o Mirandês é a única língua regional reconhecida oficialmente. A diversidade cultural enriquece a todos!"
+    text: "O artigo 30.º da Convenção garante que as crianças de minorias têm o direito de viver segundo a sua cultura e usar a sua língua. No mundo existem cerca de 7 000 línguas vivas — cada uma é um tesouro único da humanidade!"
   },
   {
     title: "♿ O Direito à Inclusão",
-    text: "O artigo 23.º da Convenção garante que as crianças com deficiência têm direito a uma vida plena e digna, com acesso à educação, à saúde e à participação social. A educação inclusiva — em que todas as crianças aprendem juntas — é um direito e um benefício para todos. As tecnologias de apoio, como software de leitura de ecrã e comunicadores, ajudam as crianças com deficiência a participar plenamente. Cada criança tem o seu talento único!"
+    text: "O artigo 23.º da Convenção garante que as crianças com deficiência têm direito a uma vida plena e digna, com acesso à educação e à participação social. A educação inclusiva — em que todas as crianças aprendem juntas — é um direito de todos!"
   },
   {
     title: "🌱 O Direito a um Ambiente Saudável",
-    text: "As crianças têm direito a crescer num ambiente limpo e saudável. As alterações climáticas ameaçam este direito: mais de mil milhões de crianças vivem em zonas de risco climático extremo. Os ODS 13 (Ação Climática), 14 (Vida Marinha) e 15 (Vida Terrestre) protegem o futuro das crianças. A voz das crianças pode mudar o mundo — cada pequena ação conta. Separa o lixo, poupa água, planta uma semente. O planeta precisa de ti!"
+    text: "As crianças têm direito a crescer num ambiente limpo e saudável. As alterações climáticas ameaçam este direito: mais de mil milhões de crianças vivem em zonas de risco climático extremo. Separa o lixo, poupa água — o planeta precisa de ti!"
   },
   {
     title: "💻 Os Direitos Digitais das Crianças",
-    text: "Em 2021, as Nações Unidas confirmaram que todos os direitos da Convenção se aplicam também ao mundo online. Isto inclui o direito à privacidade, à proteção contra o ciberbullying, à educação digital e à expressão livre. A idade mínima para a maioria das redes sociais é 13 anos. Em Portugal, a Linha Internet Segura (1800 21 22 23) apoia crianças com problemas online. Sê um cidadão digital responsável!"
+    text: "Em 2021, as Nações Unidas confirmaram que todos os direitos da Convenção se aplicam também ao mundo online — incluindo privacidade e proteção contra o ciberbullying. Em Portugal, a Linha Internet Segura (1800 21 22 23) apoia crianças com problemas online."
   }
 ];
 
@@ -164,7 +164,7 @@ export const QUIZ_BY_THEME = {
   educacao: [
     { q:"Qual é o artigo da Convenção que garante o direito à educação?", a:[{t:"Artigo 28.º",ok:true},{t:"Artigo 31.º",ok:false},{t:"Artigo 19.º",ok:false}], exp:"O artigo 28.º da Convenção garante o direito de todas as crianças à educação. O ensino primário deve ser obrigatório e gratuito, e os países devem promover o acesso ao ensino secundário e superior." },
     { q:"Até que idade é o ensino obrigatório em Portugal?", a:[{t:"Até aos 18 anos",ok:true},{t:"Até aos 15 anos",ok:false},{t:"Até aos 12 anos",ok:false}], exp:"Em Portugal, desde 2009, a escolaridade obrigatória foi alargada para 12 anos, o que significa que todas as crianças são obrigadas a estudar até completarem o ensino secundário ou 18 anos." },
-    { q:"Quantas crianças ainda estão fora da escola em todo o mundo?", a:[{t:"244 milhões de crianças",ok:true},{t:"10 milhões de crianças",ok:false},{t:"50 milhões de crianças",ok:false}], exp:"Segundo dados da UNICEF, 244 milhões de crianças em idade escolar não frequentam a escola. As principais causas são a pobreza, os conflitos armados, a discriminação e a distância das escolas." },
+    { q:"Quantas crianças ainda estão fora da escola em todo o mundo?", a:[{t:"Mais de 270 milhões de crianças",ok:true},{t:"10 milhões de crianças",ok:false},{t:"50 milhões de crianças",ok:false}], exp:"Segundo dados da UNICEF, mais de 270 milhões de crianças em idade escolar não frequentam a escola. As principais causas são a pobreza, os conflitos armados, a discriminação e a distância das escolas." },
     { q:"O que faz a UNICEF em relação ao direito à educação?", a:[{t:"Trabalha para garantir que todas as crianças do mundo possam estudar",ok:true},{t:"Constrói escolas apenas na Europa",ok:false},{t:"Distribui apenas livros escolares",ok:false}], exp:"A UNICEF trabalha em todo o mundo para garantir acesso à educação, especialmente em zonas de conflito e países em desenvolvimento. Financia escolas, forma professores e apoia programas de inclusão." },
     { q:"O que garante o artigo 29.º da Convenção em relação à educação?", a:[{t:"Que a educação deve desenvolver a personalidade, talentos e respeito pelos outros",ok:true},{t:"Que a educação deve focar-se apenas em matemática e línguas",ok:false},{t:"Que o Estado pode escolher o que as crianças aprendem sem ouvir os pais",ok:false}], exp:"O artigo 29.º vai além do acesso à escola: define os objetivos da educação. A educação deve desenvolver a personalidade da criança, os seus talentos, capacidades mentais e físicas, e preparar a criança para uma vida responsável numa sociedade livre, com respeito pelos direitos humanos." },
     { q:"O que é o ensino inclusivo e como se relaciona com os direitos das crianças?", a:[{t:"É um sistema em que todas as crianças aprendem juntas, independentemente das suas capacidades",ok:true},{t:"É ensino à distância através da internet",ok:false},{t:"É um sistema de escolas privadas acessíveis a todos",ok:false}], exp:"A educação inclusiva, apoiada pelo artigo 23.º (crianças com deficiência) e pelo artigo 28.º (educação para todos), assegura que nenhuma criança é excluída da escola por causa de deficiência, origem étnica, género ou pobreza. Portugal tem avançado significativamente neste modelo desde 2018." }
@@ -210,9 +210,9 @@ export const QUIZ_BY_THEME = {
   ],
   identidade: [
     { q:"Qual é o artigo da Convenção que garante o direito a um nome e a uma nacionalidade?", a:[{t:"Artigo 7.º",ok:true},{t:"Artigo 12.º",ok:false},{t:"Artigo 24.º",ok:false}], exp:"O artigo 7.º estipula que toda a criança tem direito a ser registada logo após o nascimento, a ter um nome e a adquirir uma nacionalidade. O registo de nascimento é o primeiro passo para garantir todos os outros direitos." },
-    { q:"O que é o registo de nascimento e por que é importante?", a:[{t:"É o documento que prova a existência legal da criança e garante os seus direitos",ok:true},{t:"É apenas uma formalidade sem consequências práticas",ok:false},{t:"Só é obrigatório nos países ricos",ok:false}], exp:"Sem registo de nascimento, uma criança não existe legalmente. Não pode ir à escola, aceder a cuidados de saúde ou ter passaporte. A UNICEF estima que 237 milhões de crianças no mundo não estão registadas." },
+    { q:"O que é o registo de nascimento e por que é importante?", a:[{t:"É o documento que prova a existência legal da criança e garante os seus direitos",ok:true},{t:"É apenas uma formalidade sem consequências práticas",ok:false},{t:"Só é obrigatório nos países ricos",ok:false}], exp:"Sem registo de nascimento, uma criança não existe legalmente. Não pode ir à escola, aceder a cuidados de saúde ou ter passaporte. A UNICEF estima que 150 milhões de crianças com menos de 5 anos ainda não estão registadas." },
     { q:"Qual artigo protege a identidade da criança (nome, nacionalidade e relações familiares)?", a:[{t:"Artigo 8.º",ok:true},{t:"Artigo 3.º",ok:false},{t:"Artigo 19.º",ok:false}], exp:"O artigo 8.º obriga os Estados a respeitar e preservar a identidade da criança — o seu nome, nacionalidade e vínculos familiares — e a ajudá-la a recuperar esses elementos se forem ilegalmente retirados." },
-    { q:"Quantas crianças no mundo nascem sem registo?", a:[{t:"Cerca de 237 milhões",ok:true},{t:"Menos de 1 milhão",ok:false},{t:"Cerca de 50 milhões",ok:false}], exp:"Segundo a UNICEF, cerca de 237 milhões de crianças menores de 5 anos não têm registo de nascimento, sobretudo na África Subsariana e na Ásia do Sul. Sem registo, ficam invisíveis para o Estado e sem acesso aos seus direitos." },
+    { q:"Quantas crianças no mundo nascem sem registo?", a:[{t:"Cerca de 150 milhões",ok:true},{t:"Menos de 1 milhão",ok:false},{t:"Cerca de 50 milhões",ok:false}], exp:"Segundo a UNICEF, cerca de 150 milhões de crianças menores de 5 anos não têm registo de nascimento, sobretudo na África Subsariana e na Ásia do Sul. Sem registo, ficam invisíveis para o Estado e sem acesso aos seus direitos." },
     { q:"O que é uma criança apátrida?", a:[{t:"Uma criança sem nacionalidade reconhecida por nenhum Estado",ok:true},{t:"Uma criança que perdeu os pais",ok:false},{t:"Uma criança que vive em mais do que um país",ok:false}], exp:"A apatridia ocorre quando uma criança não é reconhecida como nacional por nenhum país. Há cerca de 4 milhões de apátridas no mundo. Sem nacionalidade, ficam excluídas de direitos básicos. A Convenção de 1954 sobre o Estatuto dos Apátridas e o artigo 7.º da CDC protegem estas crianças." },
     { q:"Porque é que algumas crianças não recebem registo de nascimento logo após nascer?", a:[{t:"Por pobreza, distância dos serviços, conflitos armados ou discriminação",ok:true},{t:"Porque os pais preferem esperar até a criança falar",ok:false},{t:"Porque a ONU proibiu o registo em certos países",ok:false}], exp:"As principais barreiras ao registo de nascimento são: distância de serviços de registo civil, pobreza (pagamento de taxas), discriminação de grupos minoritários, e conflitos que destroem infraestruturas administrativas. A UNICEF apoia programas de registo em zonas de crise." }
   ],
@@ -234,10 +234,10 @@ export const QUIZ_BY_THEME = {
   ],
   trabalho: [
     { q:"Qual é o artigo da Convenção que proíbe o trabalho infantil perigoso?", a:[{t:"Artigo 32.º",ok:true},{t:"Artigo 28.º",ok:false},{t:"Artigo 19.º",ok:false}], exp:"O artigo 32.º protege as crianças contra a exploração económica e contra qualquer trabalho perigoso, que prejudique a sua saúde ou interfira com a sua educação. Os Estados devem fixar idades mínimas de trabalho." },
-    { q:"Quantas crianças trabalham em condições de exploração no mundo?", a:[{t:"Cerca de 160 milhões",ok:true},{t:"Menos de 10 milhões",ok:false},{t:"Cerca de 500 milhões",ok:false}], exp:"Segundo a OIT (Organização Internacional do Trabalho), cerca de 160 milhões de crianças estão em situação de trabalho infantil — quase metade em formas perigosas. A maioria está na África Subsariana e na Ásia." },
+    { q:"Quantas crianças trabalham em condições de exploração no mundo?", a:[{t:"Cerca de 138 milhões",ok:true},{t:"Menos de 10 milhões",ok:false},{t:"Cerca de 500 milhões",ok:false}], exp:"Segundo a OIT (Organização Internacional do Trabalho), cerca de 138 milhões de crianças estão em situação de trabalho infantil, quase metade em formas perigosas. Este número tem vindo a descer nos últimos anos." },
     { q:"Qual é a idade mínima geral para trabalhar em Portugal?", a:[{t:"16 anos",ok:true},{t:"14 anos",ok:false},{t:"18 anos",ok:false}], exp:"Em Portugal, a idade mínima geral para trabalhar é 16 anos. Menores de 16 anos só podem trabalhar em situações muito específicas (como participar em espetáculos culturais) e com autorização dos pais e autoridades." },
     { q:"O que distingue o trabalho infantil perigoso de uma pequena ajuda em casa?", a:[{t:"O trabalho perigoso prejudica a saúde, a educação e o desenvolvimento da criança",ok:true},{t:"Qualquer trabalho feito por uma criança é automaticamente exploração",ok:false},{t:"Só é ilegal se a criança não receber salário",ok:false}], exp:"A OIT distingue entre trabalho aceitável (pequenas tarefas que não prejudicam o desenvolvimento) e trabalho infantil (que priva a criança da infância, interfere com a escola ou é perigoso para a saúde). O contexto e o impacto são decisivos." },
-    { q:"Em que setores é mais comum o trabalho infantil no mundo?", a:[{t:"Agricultura, minas, construção e trabalho doméstico",ok:true},{t:"Apenas nas fábricas têxteis da Ásia",ok:false},{t:"Só em países sem leis laborais",ok:false}], exp:"A maioria do trabalho infantil ocorre na agricultura (72%), seguida de minas, pedreiras, construção e trabalho doméstico em casas de terceiros. Estas atividades são perigosas para a saúde física e mental das crianças." },
+    { q:"Em que setores é mais comum o trabalho infantil no mundo?", a:[{t:"Agricultura, minas, construção e trabalho doméstico",ok:true},{t:"Apenas nas fábricas têxteis da Ásia",ok:false},{t:"Só em países sem leis laborais",ok:false}], exp:"A maioria do trabalho infantil ocorre na agricultura (61%), seguida de serviços, como trabalho doméstico, e da indústria, incluindo minas e construção. Estas atividades são perigosas para a saúde física e mental das crianças." },
     { q:"Qual organização internacional lidera o combate ao trabalho infantil a nível global?", a:[{t:"OIT — Organização Internacional do Trabalho",ok:true},{t:"INTERPOL",ok:false},{t:"Banco Mundial",ok:false}], exp:"A OIT lidera o programa IPEC (Programa Internacional para a Eliminação do Trabalho Infantil) e define normas internacionais, como a Convenção n.º 182, que proíbe as piores formas de trabalho infantil e foi ratificada por todos os membros da OIT." }
   ],
   expressao: [
