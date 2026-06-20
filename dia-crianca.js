@@ -12,7 +12,8 @@
 import { HISTORY, QUIZ_TIPS, QUIZ_ARTICLE, QUIZ_BY_THEME } from "./data-quiz.js";
 import { THEMES, LEVELS } from "./data-levels.js";
 import { MAP_REGIONS, ARTEFACTS, ARTEFACT_SETS, SET_REACTIONS, ACHIEVEMENTS_DEFS } from "./data-progression.js";
-import { PRAISE, PAUSE_TIPS, LEVEL_ENTRY_PHRASES, DYNAMIC_MSGS_CORRECT, DYNAMIC_MSGS_WRONG } from "./data-flavor.js";
+import { PRAISE, PAUSE_TIPS, LEVEL_ENTRY_PHRASES, DYNAMIC_MSGS_CORRECT, DYNAMIC_MSGS_WRONG,
+         VB_LEVEL_INTRO, VB_HIT, VB_QUIZ_CORRECT, VB_QUIZ_WRONG, VB_STAR_POWER, VB_PERFECT_LEVEL } from "./data-flavor.js";
 
 window.addEventListener("DOMContentLoaded", () => {
 
@@ -43,6 +44,35 @@ window.addEventListener("DOMContentLoaded", () => {
   const bonusStars = document.createElement("div"); bonusStars.id = "bonusStars"; document.body.appendChild(bonusStars);
 
   let playerName = "";
+
+  // ===== Balão de fala do VanBerto's =====
+  // Tipos: "intro" | "hit" | "good" | "wrong" | "star" | "perfect"
+  // duration: ms antes de desaparecer (default 3400)
+  let _vbTimer = null;
+  function vbSay(text, type = "intro", duration = 3400) {
+    if (document.body.classList.contains("hc-mode")) return; // off no alto contraste
+    const el      = document.getElementById("vbSpeech");
+    const textEl  = document.getElementById("vbSpeechText");
+    if (!el || !textEl) return;
+
+    // Cancelar timer anterior se ainda estiver a correr
+    if (_vbTimer) { clearTimeout(_vbTimer); _vbTimer = null; }
+
+    // Atualizar conteúdo e estilo
+    textEl.textContent = text;
+    el.className = `vb-${type}`; // remove vb-show e aplica a classe de cor
+    // Forçar reflow para reiniciar a animação
+    void el.offsetWidth;
+    el.classList.add("vb-show");
+
+    _vbTimer = setTimeout(() => {
+      el.classList.remove("vb-show");
+      _vbTimer = null;
+    }, duration);
+  }
+  function vbSayRandom(arr, type, duration) {
+    vbSay(arr[Math.floor(Math.random() * arr.length)], type, duration);
+  }
 
   // ===== Áudio =====
   let audioCtx = null, muted = false;
@@ -498,71 +528,43 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // =====================================================
   // ===== HUD DE ORBES — faixa de artefactos no jogo =====
-  // 20 orbes em DOM com emoji do artefacto (em vez de círculos Phaser).
+  // 20 orbes pequenos no canto inferior, em Phaser.
   // =====================================================
-  let _artOrbsEl = null; // div DOM do HUD
+  let artOrbsGfx = null; // graphics object Phaser
 
   function createArtOrbs(scene) {
-    // Remover div anterior se existir
-    if (_artOrbsEl) { _artOrbsEl.remove(); _artOrbsEl = null; }
-
-    const strip = document.createElement("div");
-    strip.id = "artOrbsHUD";
-    strip.style.cssText = `
-      position:fixed;
-      bottom:6px;
-      left:50%;
-      transform:translateX(-50%);
-      display:flex;
-      gap:3px;
-      align-items:center;
-      z-index:110;
-      pointer-events:none;
-    `;
-    document.body.appendChild(strip);
-    _artOrbsEl = strip;
+    if (artOrbsGfx) { try { artOrbsGfx.destroy(); } catch {} }
+    artOrbsGfx = scene.add.graphics().setScrollFactor(0).setDepth(105);
     updateArtOrbs();
   }
 
   function updateArtOrbs() {
-    if (!_artOrbsEl) return;
-    _artOrbsEl.innerHTML = "";
+    if (!artOrbsGfx || !artOrbsGfx.active) return;
+    artOrbsGfx.clear();
+    const total  = ARTEFACTS.length; // 20
+    const orbR   = 7;
+    const gap    = 3;
+    const totalW = total * (orbR * 2 + gap) - gap;
+    const startX = (960 - totalW) / 2;
+    const y      = 540 - 14;
+
     ARTEFACTS.forEach((art, i) => {
+      const cx  = startX + i * (orbR * 2 + gap) + orbR;
       const got = !!collectedArtefacts[i];
-      const orb = document.createElement("div");
-      orb.title = art.name; // tooltip ao passar o rato
       if (got) {
-        // Cor do tema do nível correspondente (skyBot = cor do céu, grassTop = borda)
-        const themeIdx = LEVELS[i]?.theme ?? 0;
-        const theme    = THEMES[themeIdx] ?? THEMES[0];
-        const skyCol   = "#" + theme.skyBot.toString(16).padStart(6, "0");
-        const grassCol = "#" + theme.grassTop.toString(16).padStart(6, "0");
-        orb.style.cssText = `
-          width:18px; height:18px;
-          border-radius:50%;
-          background:${skyCol};
-          box-shadow:0 0 5px ${grassCol}99, 0 0 2px rgba(255,255,255,0.5) inset;
-          border:1.5px solid ${grassCol};
-          display:flex; align-items:center; justify-content:center;
-          font-size:10px; line-height:1;
-          filter:drop-shadow(0 0 3px ${grassCol}88);
-          transition:transform 0.15s;
-        `;
-        orb.textContent = art.emoji;
+        // Orbe colorido e brilhante
+        const col = Phaser.Display.Color.HexStringToColor(art.color).color;
+        artOrbsGfx.fillStyle(col, 0.85);
+        artOrbsGfx.fillCircle(cx, y, orbR);
+        artOrbsGfx.lineStyle(1.5, 0xffffff, 0.5);
+        artOrbsGfx.strokeCircle(cx, y, orbR);
       } else {
-        // Orbe vazio — ponto cinzento subtil, sem emoji
-        orb.style.cssText = `
-          width:18px; height:18px;
-          border-radius:50%;
-          background:rgba(30,30,60,0.55);
-          border:1px solid rgba(100,100,140,0.35);
-          display:flex; align-items:center; justify-content:center;
-          font-size:9px; line-height:1;
-          color:rgba(120,120,160,0.5);
-        `;
-        orb.textContent = "·";
+        // Orbe cinzento vazio
+        artOrbsGfx.fillStyle(0x333355, 0.6);
+        artOrbsGfx.fillCircle(cx, y, orbR);
+        artOrbsGfx.lineStyle(1, 0x555577, 0.4);
+        artOrbsGfx.strokeCircle(cx, y, orbR);
       }
-      _artOrbsEl.appendChild(orb);
     });
   }
 
@@ -2905,6 +2907,8 @@ window.addEventListener("DOMContentLoaded", () => {
     if(livesLostThisLevel===0){
       score+=50; bonusStars.textContent="⭐⭐⭐\n+50 Nível Perfeito!";
       bonusStars.classList.add("show"); setTimeout(()=>bonusStars.classList.remove("show"),2000);
+      // Balão de fala — nível perfeito
+      setTimeout(() => vbSayRandom(VB_PERFECT_LEVEL, "perfect", 2800), 300);
     }
     livesLostThisLevel=0;
 
@@ -2915,6 +2919,11 @@ window.addEventListener("DOMContentLoaded", () => {
         loadLevel(scene,next);
         showHistory(next,()=>{
           if(!pausedByTeacher) scene.physics.resume();
+          // Balão de fala — apresentação do nível (pequeno delay para não sobrepor história)
+          setTimeout(() => {
+            const intro = VB_LEVEL_INTRO[next];
+            if (intro) vbSay(intro, "intro", 4000);
+          }, 800);
         });
       });
       saveGame();
@@ -3157,6 +3166,8 @@ window.addEventListener("DOMContentLoaded", () => {
           quizFeedback.textContent=isRetry?"✅ Conseguiste na segunda tentativa! 💪":"✅ Muito bem!";
           quizFeedback.style.color="#208050";
           SFX.coin();
+          // Balão de fala do VanBerto's — celebração
+          vbSayRandom(VB_QUIZ_CORRECT, "good", 3200);
           // Mostrar SEMPRE: explicação do quiz E/OU dica do tema
           const tipFact = QUIZ_TIPS[LEVELS[currentLevel]?.quizTheme] || "";
           const expText = quiz.exp ? "💡 " + quiz.exp : "";
@@ -3188,6 +3199,8 @@ window.addEventListener("DOMContentLoaded", () => {
             saveGlobalStats();
             showDynamicMsg(DYNAMIC_MSGS_WRONG);
           }
+          // Balão de fala do VanBerto's — encorajamento ao errar
+          vbSayRandom(VB_QUIZ_WRONG, "wrong", 3200);
           if(sceneRef&&player){sceneRef.tweens.add({targets:player,angle:{from:-10,to:10},duration:80,yoyo:true,repeat:4,ease:"Sine.easeInOut",onComplete:()=>{if(player)player.setAngle(0);}});}
 
           quizStats.errors=quizStats.errors||[];
@@ -3348,6 +3361,8 @@ window.addEventListener("DOMContentLoaded", () => {
         duration: 400, ease: "Quad.easeOut",
         onComplete: () => spawnFlash.destroy() });
       tipText.setText("⚡ Protegido por 2s!");
+      // Balão de fala do VanBerto's — encorajamento após perder vida
+      vbSayRandom(VB_HIT, "hit", 3000);
     });
     if(lives<=0) return; // evitar correr o resto se já vai para game over
     // Ao perder uma vida, os itens voltam a aparecer — EXCETO os corações já apanhados
@@ -3495,6 +3510,8 @@ window.addEventListener("DOMContentLoaded", () => {
     starPowerTimer=scene.time.delayedCall(8000,()=>clearStarPower(scene));
     // Piscar apenas — sem tint de cor
     if(player) player.clearTint();
+    // Balão de fala do VanBerto's
+    vbSayRandom(VB_STAR_POWER, "star", 2800);
   }
   function clearStarPower(scene){
     starPower=false;
@@ -5770,6 +5787,7 @@ window.addEventListener("DOMContentLoaded", () => {
               loadLevel(sceneRef, 0);
               showHistory(0, () => {
                 if(!pausedByTeacher) sceneRef.physics.resume();
+                setTimeout(() => vbSay(VB_LEVEL_INTRO[0], "intro", 4000), 800);
               });
               saveGame();
             });
@@ -5780,6 +5798,7 @@ window.addEventListener("DOMContentLoaded", () => {
           loadLevel(sceneRef, 0);
           showHistory(0, () => {
             if(!pausedByTeacher) sceneRef.physics.resume();
+            setTimeout(() => vbSay(VB_LEVEL_INTRO[0], "intro", 4000), 800);
           });
           saveGame();
         });

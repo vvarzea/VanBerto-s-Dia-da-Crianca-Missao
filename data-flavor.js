@@ -50,3 +50,74 @@ export const DYNAMIC_MSGS_WRONG = [
   "❤️ Não desistas!", "💡 Próxima vez consegues!"
 ];
 
+// ===== Frases do VanBerto's — balão de fala em jogo =====
+
+// Apresentação antes de cada nível (um por nível, por ordem)
+export const VB_LEVEL_INTRO = [
+  "Hoje vamos recuperar o Direito à Celebração! 🎈 Estás preparado?",
+  "A Declaração de 1959 mudou o mundo! 📜 Vamos descobrir porquê?",
+  "Em 1989, quase todo o mundo assinou! 🌍 Sabes o que foi?",
+  "Brincar é um direito! ⚽ Vamos recuperá-lo juntos?",
+  "Aprender abre todas as portas! 📚 Este nível é importante!",
+  "Saúde é um tesouro! 💊 Cuida-te e vamos lá!",
+  "Nenhuma criança deve ter medo! 🛡️ Vamos protegê-las!",
+  "A tua opinião importa SEMPRE! 🗣️ Vamos fazer barulho?",
+  "O futuro começa com os ODS! 🌱 Pronto para o desafio?",
+  "A UNICEF protege crianças em todo o mundo! 🌟 Vamos ajudá-la!",
+  "O teu nome é o primeiro direito que tens! 🪪 Sabes porquê?",
+  "A família é o porto seguro de toda a criança! 👨‍👩‍👧 Vamos lá!",
+  "Refugiado não significa sem direitos! ✈️ Vamos provar isso!",
+  "Crianças têm direito a ser crianças! 🚫 Nada de trabalho infantil!",
+  "A tua voz é poderosa — usa-a! 🗽 Vamos recuperar este direito!",
+  "Os teus segredos são teus! 🔒 A privacidade também é um direito!",
+  "7000 línguas no mundo — cada uma é um tesouro! 🎭 Vamos lá!",
+  "Juntos somos mais fortes! ♿ A inclusão é para todos!",
+  "O planeta precisa de ti! 🌿 Este é um nível muito especial!",
+  "Online também tens direitos! 💻 Vamos ao último nível — dá tudo!"
+];
+
+// Reação ao perder uma vida (aleatório)
+export const VB_HIT = [
+  "Ups! Perdemos uma vida, mas os heróis nunca desistem! 💪",
+  "Autsch! Cuida-te! Os vilões estão rápidos hoje! 🔴",
+  "Ai! Respira fundo e vamos de novo! ❤️",
+  "Atenção aos vilões! Já consegues! 🛡️",
+  "Não faz mal! Cada erro ensina algo novo! 📚",
+  "Vamos lá, guerreiro! Ainda temos vidas! 🌟"
+];
+
+// Reação ao acertar no quiz (aleatório)
+export const VB_QUIZ_CORRECT = [
+  "INCRÍVEL! Sabias mesmo a resposta! 🏆",
+  "Que craque! Direito recuperado! ✨",
+  "Fantástico! Estou tão orgulhoso de ti! 🎉",
+  "Isso mesmo! Os direitos das crianças agradecem! 🌍",
+  "Brilhante! Nada te escapa! 🌟",
+  "Que resposta! Mereces uma estrela! ⭐"
+];
+
+// Reação ao errar no quiz (aleatório)
+export const VB_QUIZ_WRONG = [
+  "Quase! Aprende e vai mais forte na próxima! 📖",
+  "Não faz mal! Errar também é aprender! 💡",
+  "Boa tentativa! Desta vez não foi, mas chegas lá! 💪",
+  "Até os heróis erram — o importante é tentar! ❤️",
+  "Relê a dica e tenta outra vez! 🔄"
+];
+
+// Reação ao apanhar o Star Power (aleatório)
+export const VB_STAR_POWER = [
+  "STAR POWER! Agora és IMPARÁVEL! ⭐",
+  "Uau, a estrela! Vai atropelar tudo! 💥",
+  "SUPER VANBERTO'S ATIVADO! 🌟",
+  "Estrela apanhada! 8 segundos de glória! ✨"
+];
+
+// Bónus de nível perfeito (sem perder vidas)
+export const VB_PERFECT_LEVEL = [
+  "PERFEITO! Nenhuma vida perdida! Lendário! 🏆",
+  "Wow! Passaste o nível sem um arranhão! ⭐",
+  "Impecável! Guardião dos direitos nível máximo! 🌟",
+  "Incrível! Isso merecia um bónus extra! 🎉"
+];
+
