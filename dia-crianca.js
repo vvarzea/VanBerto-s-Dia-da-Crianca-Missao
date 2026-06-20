@@ -532,16 +532,20 @@ window.addEventListener("DOMContentLoaded", () => {
       const orb = document.createElement("div");
       orb.title = art.name; // tooltip ao passar o rato
       if (got) {
-        // Orbe colorido com emoji visível
+        // Cor do tema do nível correspondente (skyBot = cor do céu, grassTop = borda)
+        const themeIdx = LEVELS[i]?.theme ?? 0;
+        const theme    = THEMES[themeIdx] ?? THEMES[0];
+        const skyCol   = "#" + theme.skyBot.toString(16).padStart(6, "0");
+        const grassCol = "#" + theme.grassTop.toString(16).padStart(6, "0");
         orb.style.cssText = `
           width:18px; height:18px;
           border-radius:50%;
-          background:${art.color};
-          box-shadow:0 0 5px ${art.glow}, 0 0 2px rgba(255,255,255,0.5) inset;
-          border:1.5px solid rgba(255,255,255,0.55);
+          background:${skyCol};
+          box-shadow:0 0 5px ${grassCol}99, 0 0 2px rgba(255,255,255,0.5) inset;
+          border:1.5px solid ${grassCol};
           display:flex; align-items:center; justify-content:center;
           font-size:10px; line-height:1;
-          filter:drop-shadow(0 0 3px ${art.glow});
+          filter:drop-shadow(0 0 3px ${grassCol}88);
           transition:transform 0.15s;
         `;
         orb.textContent = art.emoji;
