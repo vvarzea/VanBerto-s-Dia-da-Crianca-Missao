@@ -2038,16 +2038,15 @@ body.hc-mode .ag-cell--got { background:#111 !important; border-color:#fff !impo
 body.hc-mode .ag-name { color:#ffff00 !important; }
 
 /* =====================================================
-   BALÃO DE FALA DO VANBERTO'S — canto inferior direito
-   Avatar à esquerda, bolha à direita, cauda aponta à esquerda
+   BALÃO DE FALA DO VANBERTO'S
+   Avatar à esquerda, bolha à direita, cauda aponta ←
    ===================================================== */
 #vbSpeech {
   position: fixed;
   bottom: 36px;
   right: 12px;
-  left: auto;
   display: flex;
-  flex-direction: row;        /* avatar | bolha — ordem natural do HTML */
+  flex-direction: row;
   align-items: flex-end;
   gap: 8px;
   z-index: 8700;
@@ -2067,7 +2066,8 @@ body.hc-mode .ag-name { color:#ffff00 !important; }
 #vbSpeech.vb-intro   { --vb-border:#80c8ff; --vb-bg:rgba(8,20,48,0.93);  --vb-text:#c8eaff; }
 #vbSpeech.vb-perfect { --vb-border:#ffd700; --vb-bg:rgba(40,30,0,0.93);  --vb-text:#fff4b0; }
 #vbSpeechAvatar {
-  width: 62px; height: 62px; object-fit: contain; flex-shrink: 0;
+  width: 62px; height: 62px;
+  object-fit: contain; flex-shrink: 0;
   filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
 }
 #vbSpeech.vb-show    #vbSpeechAvatar { animation: vbBob    0.6s ease-out; }
@@ -2083,34 +2083,65 @@ body.hc-mode .ag-name { color:#ffff00 !important; }
   position: relative;
   background: var(--vb-bg, rgba(8,20,48,0.93));
   border: 2px solid var(--vb-border, #80c8ff);
-  border-radius: 14px; padding: 10px 14px; max-width: 210px;
+  border-radius: 14px;
+  padding: 10px 14px;
+  max-width: 210px;
   box-shadow: 0 0 16px color-mix(in srgb, var(--vb-border,#80c8ff) 35%, transparent),
               0 4px 12px rgba(0,0,0,0.5);
   font-family: 'Baloo 2', sans-serif;
 }
-/* Cauda aponta para a ESQUERDA — onde está o avatar */
 #vbSpeechTail {
   position: absolute;
   left: -10px; bottom: 14px;
-  right: auto;
   width: 0; height: 0;
   border-top: 7px solid transparent;
   border-bottom: 7px solid transparent;
   border-right: 10px solid var(--vb-border, #80c8ff);
-  border-left: none;
 }
 #vbSpeechTail::after {
-  content: ""; position: absolute;
+  content: "";
+  position: absolute;
   left: 3px; top: -5px;
-  right: auto;
   width: 0; height: 0;
   border-top: 5px solid transparent;
   border-bottom: 5px solid transparent;
   border-right: 8px solid var(--vb-bg, rgba(8,20,48,0.93));
-  border-left: none;
 }
 #vbSpeechText {
-  margin: 0; font-size: 12px; font-weight: 700; line-height: 1.45;
+  margin: 0;
+  font-size: 12px; font-weight: 700; line-height: 1.45;
   color: var(--vb-text, #c8eaff);
+}
+/* Mobile — avatar e bolha mais pequenos */
+@media (max-width: 600px) {
+  #vbSpeech {
+    bottom: 28px;
+    right: 6px;
+    gap: 5px;
+  }
+  #vbSpeechAvatar {
+    width: 36px;
+    height: 36px;
+  }
+  #vbSpeechBubble {
+    max-width: 150px;
+    padding: 7px 10px;
+    border-radius: 10px;
+  }
+  #vbSpeechText {
+    font-size: 10px;
+  }
+  #vbSpeechTail {
+    left: -8px;
+    border-top-width: 5px;
+    border-bottom-width: 5px;
+    border-right-width: 8px;
+  }
+  #vbSpeechTail::after {
+    left: 2px; top: -4px;
+    border-top-width: 4px;
+    border-bottom-width: 4px;
+    border-right-width: 6px;
+  }
 }
 body.hc-mode #vbSpeech { display: none !important; }
