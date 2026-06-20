@@ -2036,6 +2036,8 @@ body.hc-mode .sb-name, body.hc-mode .sb-bonus { color:#ffff00 !important; }
 .ag-cell--miss .ag-name { color: #555; }
 body.hc-mode .ag-cell--got { background:#111 !important; border-color:#fff !important; }
 body.hc-mode .ag-name { color:#ffff00 !important; }
+
+/* ── VanBerto speech bubble ── */
 #vbSpeech{position:fixed;bottom:36px;right:12px;display:flex;flex-direction:row;align-items:flex-end;gap:8px;z-index:8700;pointer-events:none;opacity:0;transform:translateY(12px) scale(0.92);transition:opacity 0.28s ease,transform 0.28s cubic-bezier(.34,1.56,.64,1);}
 #vbSpeech.vb-show{opacity:1;transform:translateY(0) scale(1);}
 #vbSpeech.vb-hit{--vb-border:#ff4444;--vb-bg:rgba(60,8,8,0.92);--vb-text:#ffb8b8;}
@@ -2057,5 +2059,43 @@ body.hc-mode .ag-name { color:#ffff00 !important; }
 #vbSpeechTail{position:absolute;left:-10px;bottom:14px;width:0;height:0;border-top:7px solid transparent;border-bottom:7px solid transparent;border-right:10px solid var(--vb-border,#80c8ff);}
 #vbSpeechTail::after{content:"";position:absolute;left:3px;top:-5px;width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-right:8px solid var(--vb-bg,rgba(8,20,48,0.93));}
 #vbSpeechText{margin:0;font-size:12px;font-weight:700;line-height:1.45;color:var(--vb-text,#c8eaff);}
-@media(max-width:600px){#vbSpeech{bottom:28px;right:6px;gap:5px;}#vbSpeechAvatar{width:36px;height:36px;}#vbSpeechBubble{max-width:150px;padding:7px 10px;}#vbSpeechText{font-size:10px;}}
+@media(max-width:600px){
+  #vbSpeech{bottom:28px;right:6px;gap:4px;}
+  #vbSpeechAvatar{width:32px;height:32px;}
+  #vbSpeechBubble{max-width:140px;padding:6px 9px;}
+  #vbSpeechText{font-size:9.5px;}
+}
 body.hc-mode #vbSpeech{display:none!important;}
+
+/* ── Artefact reveal — campos extra ── */
+.ar-article{
+  font-size:13px; font-weight:800; color:#ffe060;
+  background:rgba(0,0,0,0.35); border-radius:8px;
+  padding:4px 12px; margin:4px 0;
+  text-shadow:1px 1px 0 #000;
+  letter-spacing:0.5px;
+}
+.ar-curio{
+  font-size:11.5px; font-weight:600;
+  color:#d0eaff; line-height:1.4;
+  background:rgba(0,0,60,0.40); border-radius:8px;
+  padding:6px 12px; margin:4px 0;
+  text-align:left; max-width:280px;
+  font-style:italic;
+}
+.ar-stats{
+  font-size:11px; font-weight:700; color:#c0ffc0;
+  background:rgba(0,40,0,0.40); border-radius:8px;
+  padding:4px 12px; margin:4px 0;
+  text-shadow:1px 1px 0 #000;
+}
+.ar-close-btn{
+  margin-top:10px;
+  background:var(--art-color,#ffd700); color:#1a0040;
+  border:none; border-radius:20px;
+  padding:8px 24px; font-size:14px; font-weight:800;
+  cursor:pointer; font-family:'Baloo 2',sans-serif;
+  box-shadow:0 0 12px var(--art-glow,rgba(255,215,0,0.6));
+  transition:transform 0.12s;
+}
+.ar-close-btn:active{transform:scale(0.95);}

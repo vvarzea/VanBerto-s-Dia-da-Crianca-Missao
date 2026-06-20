@@ -49,20 +49,7 @@ export const LEVELS = [
     items:[{x:900,y:400,kind:"balao"},{x:1460,y:260,kind:"medalha"},{x:1740,y:330,kind:"estrela"}],
     malwares:[{x:1320,y:480,vx:0,pattern:"mini"},{x:2140,y:480,vx:-155,pattern:"patrol"}]
   },
-  // ══ BOSS 1 — Monstro da Ignorância ══
-  {
-    name:"Boss — Monstro da Ignorância",
-    isBoss:true, bossKey:"ignorancia",
-    theme:1, quizTheme:"educacao",
-    worldW:960, spawn:{x:160,y:420}, doorX:-999,
-    platforms:[
-      {x:480,y:510,w:960,h:28},
-      {x:180,y:390,w:180,h:22},
-      {x:780,y:390,w:180,h:22},
-      {x:480,y:300,w:200,h:22},
-    ],
-    items:[], malwares:[],
-  },
+  { name:"Boss — Monstro da Ignorância",isBoss:true,bossKey:"ignorancia",theme:1,quizTheme:"educacao",worldW:960,spawn:{x:160,y:420},doorX:-999,platforms:[{x:480,y:510,w:960,h:28},{x:180,y:390,w:180,h:22},{x:780,y:390,w:180,h:22},{x:480,y:300,w:200,h:22}],items:[],malwares:[] },
   {
     name: "Nível 3 — A Convenção de 1989",
     theme:2, quizTheme:"convencao", worldW:2900,
@@ -148,6 +135,19 @@ export const LEVELS = [
     malwares:[{x:1010,y:480,vx:170},{x:1480,y:480,vx:-170},{x:1940,y:480,vx:172},{x:2400,y:480,vx:-168},{x:2720,y:480,vx:165}],
     trampolines:[{x:1220,y:462}],
     secrets:[{x:2160,y:355,kind:"estrela",points:20}]
+  },
+  {
+    name: "Boss — Gigante da Violência",
+    isBoss:true, bossKey:"violencia",
+    theme:6, quizTheme:"protecao",
+    worldW:960, spawn:{x:160,y:420}, doorX:-999,
+    platforms:[
+      {x:480,y:510,w:960,h:28},
+      {x:160,y:380,w:200,h:22},
+      {x:480,y:290,w:220,h:22},
+      {x:800,y:380,w:200,h:22},
+    ],
+    items:[], malwares:[],
   },
   {
     name: "Nível 7 — O Direito à Proteção",
@@ -538,6 +538,20 @@ export const LEVELS = [
       {x:2950,y:173,kind:"medalha"},
       {x:3550,y:343,kind:"estrela",points:40}
     ]
-  },
+  },,
+  {
+    name:"Boss — Senhor do Ciberbullying",
+    isBoss:true, bossKey:"ciberbullying",
+    theme:19, quizTheme:"digital",
+    worldW:960, spawn:{x:160,y:420}, doorX:-999,
+    platforms:[
+      {x:480,y:510,w:960,h:28},
+      {x:150,y:370,w:180,h:22},
+      {x:480,y:280,w:240,h:22},
+      {x:810,y:370,w:180,h:22},
+      {x:300,y:430,w:140,h:22},
+      {x:660,y:430,w:140,h:22},
+    ],
+    items:[], malwares:[],
+  }
 ];
-

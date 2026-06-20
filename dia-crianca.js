@@ -450,38 +450,75 @@ window.addEventListener("DOMContentLoaded", () => {
     // Marcar como colectado e guardar
     collectedArtefacts[levelIdx] = true;
     saveArtefacts();
-
-    // Actualizar o HUD de orbes
     updateArtOrbs();
 
-    // Injectar conteúdo no overlay épico
     const overlay = document.getElementById("artefactRevealOverlay");
     if (!overlay) return;
 
-    document.getElementById("arRevEmoji").textContent   = art.emoji;
-    document.getElementById("arRevName").textContent    = art.name;
-    document.getElementById("arRevShort").textContent   = art.short;
-    document.getElementById("arRevSpeech").textContent  = `"${art.vanberto}"`;
+    // Conteúdo base
+    document.getElementById("arRevEmoji").textContent  = art.emoji;
+    document.getElementById("arRevName").textContent   = art.name;
+    document.getElementById("arRevShort").textContent  = "✅ Desbloqueado";
 
-    // Cor temática dinâmica via CSS var
-    overlay.style.setProperty("--art-color",  art.color);
-    overlay.style.setProperty("--art-glow",   art.glow);
+    // Artigo da Convenção
+    const L = LEVELS[levelIdx];
+    const articleEl = document.getElementById("arRevArticle");
+    const article = L ? (QUIZ_ARTICLE[L.quizTheme] || null) : null;
+    if (articleEl) {
+      if (article) {
+        articleEl.textContent = "📋 " + article;
+        articleEl.style.display = "";
+      } else {
+        articleEl.style.display = "none";
+      }
+    }
+
+    // Curiosidade — texto breve do HISTORY
+    const curioEl = document.getElementById("arRevCurio");
+    const hist = HISTORY[levelIdx];
+    if (curioEl && hist) {
+      // Primeira frase do texto histórico (até ao primeiro ponto final)
+      const firstSentence = hist.text.split(/\.\s/)[0] + ".";
+      curioEl.textContent = "💡 " + firstSentence;
+      curioEl.style.display = "";
+    } else if (curioEl) {
+      curioEl.style.display = "none";
+    }
+
+    // Estatísticas: pontos ganhos + nível
+    const statsEl = document.getElementById("arRevStats");
+    if (statsEl) {
+      const total = Object.values(collectedArtefacts).filter(Boolean).length;
+      statsEl.innerHTML =
+        "🌟 +" + (score > 0 ? score : "—") + " pontos &nbsp;|&nbsp; " +
+        "🏅 " + total + "/20 direitos &nbsp;|&nbsp; " +
+        "📊 Nível " + (levelIdx + 1);
+      statsEl.style.display = "";
+    }
+
+    // Fala do VanBerto
+    document.getElementById("arRevSpeech").textContent = "“" + art.vanberto + "”";
+
+    // Cor temática
+    overlay.style.setProperty("--art-color", art.color);
+    overlay.style.setProperty("--art-glow",  art.glow);
 
     overlay.classList.add("show");
     ensureAudio();
-    // Som de desbloquear: arpejo ascendente dourado
     [0,110,230,370,540].forEach((t,i) => setTimeout(() =>
       beep({freq:[440,554,660,880,1100][i], dur:0.14, type:"triangle", vol:0.07, slideTo:[554,660,880,1100,1400][i]}), t));
-
-    // Lançar partículas em CSS no overlay
     spawnArtefactParticles(overlay, art.color);
 
-    // Fechar após 3.2s
-    setTimeout(() => {
+    // Fechar pelo botão OU após 7s (mais tempo para ler)
+    let _closed = false;
+    function _closeReveal() {
+      if (_closed) return; _closed = true;
       overlay.classList.remove("show");
-      // Verificar bónus de conjunto
       checkSetBonus(levelIdx);
-    }, 3200);
+    }
+    const btn = document.getElementById("arRevClose");
+    if (btn) { btn.onclick = _closeReveal; }
+    setTimeout(_closeReveal, 7000);
   }
 
   // Partículas de CSS no popup do artefacto
@@ -811,10 +848,8 @@ window.addEventListener("DOMContentLoaded", () => {
   let trailSprites = [];
   let footStepTimer = 0;
   let balloons=[], critters=[], enemyTimers=[];
-  // Boss state — booksCollected é a única fonte de verdade (precisa de 3 para vencer)
-  const BOSS_BOOKS_NEEDED = 3;
-  let bossSprite=null, booksCollected=0;
-  let bossProjectiles=null, bossBooks=null, bossTimers=[], _bossActive=false;
+  const BOSS_BOOKS_NEEDED=3;
+  let bossSprite=null,booksCollected=0,bossProjectiles=null,bossBooks=null,bossTimers=[],_bossActive=false;
   let movingPlatforms=[], trampolines=[], secretDoors=[], hazards=[];
   let player, platforms, itemsGroup, malwareGroup, door, doorOverlap=null;
   let cursors, keySpace;
@@ -2171,8 +2206,8 @@ window.addEventListener("DOMContentLoaded", () => {
     if(bossSprite){try{bossSprite.destroy();}catch{}bossSprite=null;}
     if(bossProjectiles)bossProjectiles.clear(true,true);
     if(bossBooks)bossBooks.clear(true,true);
-    _bossActive=false; booksCollected=0; _hideBossHUD();
-    platforms.clear(true,true); itemsGroup.clear(true,true);
+    _bossActive=false;booksCollected=0;_hideBossHUD();
+    platforms.clear(true,true);itemsGroup.clear(true,true);
     malwareGroup.clear(true,true);
     if(door) door.destroy();
 
@@ -2488,16 +2523,15 @@ window.addEventListener("DOMContentLoaded", () => {
 
 
   // ═══════════════════════════════════════════════════════════
-  // BOSS — Monstro da Ignorância
-  //
-  // REGRA ÚNICA: apanha BOSS_BOOKS_NEEDED (3) livros abertos
-  //              SEM MORRER para vencer.
-  // Morte → reset: booksCollected=0, livros respawnam.
-  // Vitória → explosão + dança + nextLevel (sem quiz).
-  //
-  // booksCollected é a única fonte de verdade.
-  // Não existe bossHP separado — evita bugs de estado.
+  // SISTEMA DE BOSS
+  // Boss 1 — Monstro da Ignorância (após nível 2, tema educação)
+  //   Mecânica: apanha 3 livros ABERTOS sem morrer
+  // Boss 2 — Gigante da Violência (após nível 6, tema proteção)
+  //   Mecânica: ativa 3 escudos espalhados pela arena
+  // Boss 3 — Senhor do Ciberbullying (nível final, tema digital)
+  //   Mecânica: apanha 3 dispositivos seguros sem morrer
   // ═══════════════════════════════════════════════════════════
+
   function loadBossLevel(scene,idx){
     currentLevel=idx;
     const L=LEVELS[idx];
@@ -2515,10 +2549,7 @@ window.addEventListener("DOMContentLoaded", () => {
     if(!bossBooks)bossBooks=scene.physics.add.staticGroup();
     else bossBooks.clear(true,true);
 
-    // Reset completo de estado — garantido antes de qualquer lógica
-    booksCollected=0;
-    _bossActive=false;
-
+    booksCollected=0;_bossActive=false;
     awaitingQuiz=true;invuln=false;clearPower(scene);clearDoubleJump(scene);clearStarPower(scene);
     livesLostThisLevel=0;
     scene.physics.pause();
@@ -2542,213 +2573,246 @@ window.addEventListener("DOMContentLoaded", () => {
     player.setVelocity(0,0);player.setFlipX(false);player.setAngle(0);player.setScale(1);
     scene.cameras.main.startFollow(player,true,0.08,0.08);
 
-    // Boss: vilão redondo 180×180, tint escuro
+    // Criar boss consoante bossKey
+    const bossKey=L.bossKey||"ignorancia";
+    if(bossKey==="ignorancia") _setupBossIgnorancia(scene,L);
+    else if(bossKey==="violencia") _setupBossViolencia(scene,L);
+    else if(bossKey==="ciberbullying") _setupBossCiberbullying(scene,L);
+
+    _showBossHUD(L);
+  }
+
+  // ── Boss 1: Monstro da Ignorância ───────────────────────────
+  function _setupBossIgnorancia(scene,L){
     bossSprite=scene.physics.add.sprite(L.worldW/2,370,"vilao_round");
-    bossSprite.setDisplaySize(180,180);
-    bossSprite.body.setSize(155,155,true);
+    bossSprite.setDisplaySize(180,180).body.setSize(155,155,true);
     bossSprite.setCollideWorldBounds(true).setDepth(3).setTint(0x660000);
     scene.physics.add.collider(bossSprite,platforms);
+    scene.tweens.add({targets:bossSprite,scaleX:{from:1,to:1.06},scaleY:{from:1,to:0.96},duration:900,yoyo:true,repeat:-1,ease:"Sine.easeInOut"});
 
-    // Respiração ameaçadora
-    scene.tweens.add({targets:bossSprite,
-      scaleX:{from:1,to:1.06},scaleY:{from:1,to:0.96},
-      duration:900,yoyo:true,repeat:-1,ease:"Sine.easeInOut"});
-
-    // Patrulha — acelera conforme mais livros apanhados
     let bossDir=1;bossSprite.setVelocityX(80);
-    const patrolTimer=scene.time.addEvent({delay:50,loop:true,callback:()=>{
+    bossTimers.push(scene.time.addEvent({delay:50,loop:true,callback:()=>{
       if(!bossSprite?.active||!_bossActive)return;
       if(bossSprite.x>L.worldW-110)bossDir=-1;
       if(bossSprite.x<110)bossDir=1;
-      const speed=80+booksCollected*45; // acelera com cada livro apanhado
-      bossSprite.setVelocityX(speed*bossDir);
+      bossSprite.setVelocityX((80+booksCollected*45)*bossDir);
       bossSprite.setFlipX(bossDir<0);
-    }});
-    bossTimers.push(patrolTimer);
+    }}));
 
-    // Contacto boss → dano (usa _bossPlayerHit, NÃO onHitMalware)
-    scene.physics.add.overlap(player,bossSprite,()=>{
-      if(!_bossActive||invuln)return;
-      _bossPlayerHit(scene,L);
-    },null,scene);
+    scene.physics.add.overlap(player,bossSprite,()=>{if(!_bossActive||invuln)return;_bossPlayerHit(scene,L);},null,scene);
 
-    // Projéteis — livros fechados
-    scene.physics.add.collider(bossProjectiles,platforms,(proj)=>{
-      scene.time.delayedCall(1200,()=>{if(proj.active)proj.destroy();});
-    });
-    scene.physics.add.overlap(player,bossProjectiles,(p,proj)=>{
-      if(!_bossActive||invuln)return;
-      proj.destroy();_bossPlayerHit(scene,L);
-    },null,scene);
-
-    // Cadência de disparo aumenta com livros apanhados
-    const shootTimer=scene.time.addEvent({delay:100,loop:true,callback:()=>{
-      if(!bossSprite?.active||!_bossActive)return;
-      const cadencia=2200-booksCollected*300; // 2200 → 1600 → 1000 ms
-      shootTimer._elapsed=shootTimer._elapsed||0;
-      // Usar um timer separado por disparo não é prático — usar flag de tempo
-    }});
-    // Timer de disparo correto: re-schedule após cada tiro
     let _lastShot=0;
-    const shootLoop=scene.time.addEvent({delay:100,loop:true,callback:()=>{
+    bossTimers.push(scene.time.addEvent({delay:100,loop:true,callback:()=>{
       if(!bossSprite?.active||!_bossActive)return;
-      const now=scene.time.now;
-      const cadencia=2200-booksCollected*300;
-      if(now-_lastShot<cadencia)return;
-      _lastShot=now;
+      const now=scene.time.now,cadencia=2200-booksCollected*300;
+      if(now-_lastShot<cadencia)return;_lastShot=now;
       const proj=bossProjectiles.create(bossSprite.x,bossSprite.y-50,"boss_book_closed");
       proj.setDisplaySize(36,28).setDepth(4);
-      const dx=player.x-bossSprite.x,dy=player.y-bossSprite.y;
-      const len=Math.sqrt(dx*dx+dy*dy)||1;
+      const dx=player.x-bossSprite.x,dy=player.y-bossSprite.y,len=Math.sqrt(dx*dx+dy*dy)||1;
       proj.setVelocity((dx/len)*240,(dy/len)*240-70);
       scene.tweens.add({targets:proj,angle:{from:0,to:360},duration:500,repeat:-1});
-    }});
-    bossTimers.push(shootTimer);
-    bossTimers.push(shootLoop);
+    }}));
 
-    // Livros abertos no chão
-    _spawnBossBooks(scene);
+    scene.physics.add.collider(bossProjectiles,platforms,(proj)=>{scene.time.delayedCall(1200,()=>{if(proj.active)proj.destroy();});});
+    scene.physics.add.overlap(player,bossProjectiles,(p,proj)=>{if(!_bossActive||invuln)return;proj.destroy();_bossPlayerHit(scene,L);},null,scene);
 
-    // Overlap: apanhar livro aberto
-    scene.physics.add.overlap(player,bossBooks,(p,book)=>{
-      if(!_bossActive||book.getData("collected"))return;
-      book.setData("collected",true);
-      // Animação de recolha
-      scene.tweens.add({targets:book,y:book.y-50,alpha:0,scaleX:1.8,scaleY:1.8,
-        duration:380,onComplete:()=>book.destroy()});
-      SFX.coin();
-      _bossBookCollected(scene,L);
-    },null,scene);
+    _spawnBossItems(scene,"boss_book_open",L);
+    scene.physics.add.overlap(player,bossBooks,(p,book)=>{if(!_bossActive||book.getData("collected"))return;book.setData("collected",true);scene.tweens.add({targets:book,y:book.y-50,alpha:0,scaleX:1.8,scaleY:1.8,duration:380,onComplete:()=>book.destroy()});SFX.coin();_bossItemCollected(scene,L);},null,scene);
 
-    _showBossHUD();
-    setTimeout(()=>vbSay(
-      "Apanha os "+BOSS_BOOKS_NEEDED+" livros ABERTOS 📖 sem morrer! Cuidado com os livros que o Monstro atira!",
-      "wrong",5500),900);
+    setTimeout(()=>vbSay("Apanha os 3 livros ABERTOS 📖 sem morrer para derrotar o Monstro da Ignorância!","wrong",5000),900);
   }
 
-  // Jogador é atingido → reset COMPLETO (booksCollected volta a 0)
+  // ── Boss 2: Gigante da Violência ────────────────────────────
+  function _setupBossViolencia(scene,L){
+    bossSprite=scene.physics.add.sprite(L.worldW/2,340,"vilao_bug");
+    bossSprite.setDisplaySize(200,200).body.setSize(170,170,true);
+    bossSprite.setCollideWorldBounds(true).setDepth(3).setTint(0x2a0040);
+    scene.physics.add.collider(bossSprite,platforms);
+    scene.tweens.add({targets:bossSprite,angle:{from:-8,to:8},duration:500,yoyo:true,repeat:-1,ease:"Sine.easeInOut"});
+    scene.tweens.add({targets:bossSprite,scaleX:{from:1,to:1.08},scaleY:{from:1.08,to:1},duration:700,yoyo:true,repeat:-1});
+
+    // Patrulha agressiva — muda direção aleatoriamente
+    let bossDir=1;bossSprite.setVelocityX(100);
+    bossTimers.push(scene.time.addEvent({delay:50,loop:true,callback:()=>{
+      if(!bossSprite?.active||!_bossActive)return;
+      if(bossSprite.x>L.worldW-120)bossDir=-1;
+      if(bossSprite.x<120)bossDir=1;
+      bossSprite.setVelocityX((100+booksCollected*50)*bossDir);
+      bossSprite.setFlipX(bossDir<0);
+    }}));
+    // Saltos periódicos
+    bossTimers.push(scene.time.addEvent({delay:1800,loop:true,callback:()=>{
+      if(!bossSprite?.active||!_bossActive)return;
+      if(bossSprite.body.blocked.down)bossSprite.setVelocityY(-500);
+    }}));
+
+    scene.physics.add.overlap(player,bossSprite,()=>{if(!_bossActive||invuln)return;_bossPlayerHit(scene,L);},null,scene);
+
+    // Projéteis: ondas de choque
+    let _lastShot=0;
+    bossTimers.push(scene.time.addEvent({delay:100,loop:true,callback:()=>{
+      if(!bossSprite?.active||!_bossActive)return;
+      const now=scene.time.now,cadencia=1800-booksCollected*250;
+      if(now-_lastShot<cadencia)return;_lastShot=now;
+      // Dispara 2 projéteis em leque
+      [-1,1].forEach(dir=>{
+        const proj=bossProjectiles.create(bossSprite.x,bossSprite.y,"vilao_round");
+        proj.setDisplaySize(24,24).setDepth(4).setTint(0x8800aa);
+        proj.setVelocity(dir*200+((player.x-bossSprite.x>0)?80:-80),-120);
+        scene.time.delayedCall(2500,()=>{if(proj.active)proj.destroy();});
+      });
+    }}));
+
+    scene.physics.add.collider(bossProjectiles,platforms,(proj)=>{scene.time.delayedCall(800,()=>{if(proj.active)proj.destroy();});});
+    scene.physics.add.overlap(player,bossProjectiles,(p,proj)=>{if(!_bossActive||invuln)return;proj.destroy();_bossPlayerHit(scene,L);},null,scene);
+
+    // Escudos como colectáveis
+    _spawnBossItems(scene,"boss_shield",L);
+    scene.physics.add.overlap(player,bossBooks,(p,shield)=>{if(!_bossActive||shield.getData("collected"))return;shield.setData("collected",true);scene.tweens.add({targets:shield,y:shield.y-50,alpha:0,scaleX:1.8,scaleY:1.8,duration:380,onComplete:()=>shield.destroy()});SFX.coin();_bossItemCollected(scene,L);},null,scene);
+
+    setTimeout(()=>vbSay("Ativa os 3 escudos 🛡️ sem morrer para derrotar o Gigante da Violência!","wrong",5000),900);
+  }
+
+  // ── Boss 3: Senhor do Ciberbullying ─────────────────────────
+  function _setupBossCiberbullying(scene,L){
+    bossSprite=scene.physics.add.sprite(L.worldW/2,350,"vilao_spike");
+    bossSprite.setDisplaySize(190,190).body.setSize(160,160,true);
+    bossSprite.setCollideWorldBounds(true).setDepth(3).setTint(0x001a40);
+    scene.physics.add.collider(bossSprite,platforms);
+    // Tremido digital
+    scene.tweens.add({targets:bossSprite,x:{from:bossSprite.x-4,to:bossSprite.x+4},duration:80,yoyo:true,repeat:-1,ease:"Sine.easeInOut"});
+    scene.tweens.add({targets:bossSprite,scaleX:{from:1,to:1.05},scaleY:{from:1.05,to:1},duration:400,yoyo:true,repeat:-1});
+
+    let bossDir=1;bossSprite.setVelocityX(70);
+    bossTimers.push(scene.time.addEvent({delay:50,loop:true,callback:()=>{
+      if(!bossSprite?.active||!_bossActive)return;
+      if(bossSprite.x>L.worldW-115)bossDir=-1;
+      if(bossSprite.x<115)bossDir=1;
+      bossSprite.setVelocityX((70+booksCollected*55)*bossDir);
+      bossSprite.setFlipX(bossDir<0);
+    }}));
+
+    scene.physics.add.overlap(player,bossSprite,()=>{if(!_bossActive||invuln)return;_bossPlayerHit(scene,L);},null,scene);
+
+    // Projéteis: dispositivos maliciosos em chuva
+    let _lastShot=0;
+    bossTimers.push(scene.time.addEvent({delay:100,loop:true,callback:()=>{
+      if(!bossSprite?.active||!_bossActive)return;
+      const now=scene.time.now,cadencia=1600-booksCollected*200;
+      if(now-_lastShot<cadencia)return;_lastShot=now;
+      const proj=bossProjectiles.create(bossSprite.x+(Math.random()-0.5)*100,bossSprite.y-40,"boss_device");
+      proj.setDisplaySize(32,28).setDepth(4).setTint(0xff2244);
+      proj.setVelocity((player.x-bossSprite.x)*0.5+(Math.random()-0.5)*100,200);
+      scene.time.delayedCall(3000,()=>{if(proj.active)proj.destroy();});
+    }}));
+
+    scene.physics.add.collider(bossProjectiles,platforms,(proj)=>{scene.time.delayedCall(600,()=>{if(proj.active)proj.destroy();});});
+    scene.physics.add.overlap(player,bossProjectiles,(p,proj)=>{if(!_bossActive||invuln)return;proj.destroy();_bossPlayerHit(scene,L);},null,scene);
+
+    // Dispositivos seguros como colectáveis
+    _spawnBossItems(scene,"boss_device",L);
+    scene.physics.add.overlap(player,bossBooks,(p,dev)=>{if(!_bossActive||dev.getData("collected"))return;dev.setData("collected",true);scene.tweens.add({targets:dev,y:dev.y-50,alpha:0,scaleX:1.8,scaleY:1.8,duration:380,onComplete:()=>dev.destroy()});SFX.coin();_bossItemCollected(scene,L);},null,scene);
+
+    setTimeout(()=>vbSay("Apanha os 3 dispositivos SEGUROS 💻 sem morrer para derrotar o Senhor do Ciberbullying!","wrong",5000),900);
+  }
+
+  // ── Funções partilhadas pelos 3 bosses ──────────────────────
+  function _spawnBossItems(scene,texKey,L){
+    if(bossBooks)bossBooks.clear(true,true);
+    [[180,480],[480,480],[760,480]].forEach(([x,y])=>{
+      const b=bossBooks.create(x,y,texKey);
+      b.setDisplaySize(46,38).setDepth(2);
+      b.setData("collected",false);b.refreshBody();
+      scene.tweens.add({targets:b,y:y-12,duration:850+Math.random()*300,yoyo:true,repeat:-1,ease:"Sine.easeInOut"});
+      scene.tweens.add({targets:b,alpha:{from:0.75,to:1},scaleX:{from:0.94,to:1.06},duration:550,yoyo:true,repeat:-1});
+    });
+  }
+
   function _bossPlayerHit(scene,L){
     if(invuln||!_bossActive)return;
     lives-=1;updateHearts();_hudDirty=true;
-    if(heartsGfx&&scene)scene.tweens.add({targets:heartsGfx,
-      x:{from:-4,to:4},duration:60,yoyo:true,repeat:3,
-      ease:"Sine.easeInOut",onComplete:()=>{if(heartsGfx)heartsGfx.x=0;}});
-
+    if(heartsGfx&&scene)scene.tweens.add({targets:heartsGfx,x:{from:-4,to:4},duration:60,yoyo:true,repeat:3,ease:"Sine.easeInOut",onComplete:()=>{if(heartsGfx)heartsGfx.x=0;}});
     if(lives<=0){showGameOver();return;}
-
     setInvuln(scene,1800);
     player.setVelocity(0,0);player.setPosition(L.spawn.x,L.spawn.y);
-
-    // Reset COMPLETO: livros voltam a zero
-    booksCollected=0;
-    _updateBossHUD();
+    booksCollected=0;_updateBossHUD();
     if(bossProjectiles)bossProjectiles.clear(true,true);
-    _spawnBossBooks(scene);
-
-    // Flash vermelho
+    _spawnBossItems(scene,_bossItemKey(L),L);
     const flash=scene.add.rectangle(480,270,960,540,0xff0000,0.40).setDepth(20);
     scene.tweens.add({targets:flash,alpha:0,duration:450,onComplete:()=>flash.destroy()});
     showFloat(scene,480,240,"💀 Recomeças do zero!","#ff4444");
-    vbSay("Perdeste uma vida — os livros voltam ao início! Consegues apanhar os "+BOSS_BOOKS_NEEDED+" sem morrer? 💪","hit",3500);
+    vbSay("Perdeste uma vida — recomeças do zero! Consegues apanhar os "+BOSS_BOOKS_NEEDED+" sem morrer? 💪","hit",3500);
   }
 
-  // Um livro aberto foi apanhado
-  function _bossBookCollected(scene,L){
-    booksCollected++;  // ÚNICA alteração de estado
-    _updateBossHUD();
-    scene.cameras.main.shake(150,0.008);
+  function _bossItemKey(L){
+    const k=L.bossKey||"ignorancia";
+    if(k==="violencia")return "boss_shield";
+    if(k==="ciberbullying")return "boss_device";
+    return "boss_book_open";
+  }
 
-    // Recuo + flash branco no boss
+  function _bossItemCollected(scene,L){
+    booksCollected++;_updateBossHUD();
+    scene.cameras.main.shake(150,0.008);
     if(bossSprite?.active){
-      scene.tweens.add({targets:bossSprite,
-        x:{from:bossSprite.x+20,to:bossSprite.x-20},duration:50,yoyo:true,repeat:2});
+      scene.tweens.add({targets:bossSprite,x:{from:bossSprite.x+20,to:bossSprite.x-20},duration:50,yoyo:true,repeat:2});
       bossSprite.setTint(0xffffff);
-      scene.time.delayedCall(160,()=>{if(bossSprite?.active)bossSprite.setTint(0x660000);});
+      scene.time.delayedCall(160,()=>{
+        if(!bossSprite?.active)return;
+        const k=L.bossKey||"ignorancia";
+        bossSprite.setTint(k==="violencia"?0x2a0040:k==="ciberbullying"?0x001a40:0x660000);
+      });
     }
     SFX.hit();
-
-    // Mensagem de progresso clara
     const restam=BOSS_BOOKS_NEEDED-booksCollected;
+    const itemName=L.bossKey==="violencia"?"escudo":L.bossKey==="ciberbullying"?"dispositivo":"livro";
     const msg=restam>0
-      ? "📖 "+booksCollected+"/"+BOSS_BOOKS_NEEDED+" — Faltam "+restam+" livro"+(restam>1?"s":"")+"!"
-      : "📖 "+BOSS_BOOKS_NEEDED+"/"+BOSS_BOOKS_NEEDED+" — VENCESTE! 🏆";
-    showFloat(scene,bossSprite?.x||480,(bossSprite?.y||370)-90,msg,"#ffe000");
-
-    if(booksCollected>=BOSS_BOOKS_NEEDED){
-      _bossDefeated(scene,L);
-    } else {
-      vbSay(restam===2?
-        "Boa! "+booksCollected+" apanhado — faltam "+restam+"! Não morras agora! 💪":
-        "Incrível! Só falta 1 livro! Cuidado com os projéteis! ⭐",
-        "good",2800);
-      // Livros restantes respawnam
-      scene.time.delayedCall(500,()=>_spawnBossBooks(scene));
+      ?(booksCollected)+"/"+BOSS_BOOKS_NEEDED+" — Faltam "+restam+" "+itemName+(restam>1?"s":"")+"!"
+      :BOSS_BOOKS_NEEDED+"/"+BOSS_BOOKS_NEEDED+" — VENCESTE! 🏆";
+    showFloat(scene,bossSprite?.x||480,(bossSprite?.y||370)-90,"📖 "+msg,"#ffe000");
+    if(booksCollected>=BOSS_BOOKS_NEEDED){_bossDefeated(scene,L);}
+    else{
+      vbSay(restam===2?"Boa! 1 apanhado — faltam "+restam+"! Não morras agora! 💪":"Incrível! Só falta 1! Cuidado com os projéteis! ⭐","good",2800);
+      scene.time.delayedCall(500,()=>_spawnBossItems(scene,_bossItemKey(L),L));
     }
   }
 
-  function _spawnBossBooks(scene){
-    if(bossBooks)bossBooks.clear(true,true);
-    // 3 livros sempre (o jogador só precisa de apanhar BOSS_BOOKS_NEEDED no total)
-    [[180,480],[480,480],[760,480]].forEach(([x,y])=>{
-      const b=bossBooks.create(x,y,"boss_book_open");
-      b.setDisplaySize(46,38).setDepth(2);
-      b.setData("collected",false);b.refreshBody();
-      scene.tweens.add({targets:b,y:y-12,duration:850+Math.random()*300,
-        yoyo:true,repeat:-1,ease:"Sine.easeInOut"});
-      scene.tweens.add({targets:b,alpha:{from:0.75,to:1},
-        scaleX:{from:0.94,to:1.06},duration:550,yoyo:true,repeat:-1});
-    });
-  }
-
-  // Vitória — SEM quiz, direto para nextLevel
   function _bossDefeated(scene,L){
     _bossActive=false;
     bossTimers.forEach(t=>{try{t.remove(false);}catch{}});bossTimers=[];
     if(bossProjectiles)bossProjectiles.clear(true,true);
-
     scene.cameras.main.shake(500,0.022);
     const colors=[0xffd700,0xff6b35,0xff80c0,0x80d0ff,0xffffff];
-    for(let i=0;i<4;i++){
-      scene.time.delayedCall(i*160,()=>{
-        if(!scene?.add)return;
-        const p=scene.add.particles(0,0,"spark_item",{
-          x:bossSprite?.x||480,y:bossSprite?.y||370,
-          speed:{min:120,max:320},lifespan:750,quantity:35,
-          scale:{start:1.5,end:0},gravityY:80,angle:{min:0,max:360},tint:colors
-        });
-        scene.time.delayedCall(700,()=>p.destroy());
-      });
-    }
-    scene.tweens.add({targets:bossSprite,alpha:0,scaleX:2.5,scaleY:2.5,
-      duration:600,ease:"Quad.easeOut",
-      onComplete:()=>{bossSprite?.destroy();bossSprite=null;}});
-
+    for(let i=0;i<4;i++){scene.time.delayedCall(i*160,()=>{
+      if(!scene?.add)return;
+      const p=scene.add.particles(0,0,"spark_item",{x:bossSprite?.x||480,y:bossSprite?.y||370,speed:{min:120,max:320},lifespan:750,quantity:35,scale:{start:1.5,end:0},gravityY:80,angle:{min:0,max:360},tint:colors});
+      scene.time.delayedCall(700,()=>p.destroy());
+    });}
+    scene.tweens.add({targets:bossSprite,alpha:0,scaleX:2.5,scaleY:2.5,duration:600,ease:"Quad.easeOut",onComplete:()=>{bossSprite?.destroy();bossSprite=null;}});
     _hideBossHUD();
-    vbSay("LENDÁRIO! Apanhaste os "+BOSS_BOOKS_NEEDED+" livros sem morrer! O Conhecimento Venceu! 🏆","perfect",4000);
+    const bossNames={ignorancia:"Monstro da Ignorância",violencia:"Gigante da Violência",ciberbullying:"Senhor do Ciberbullying"};
+    const nome=bossNames[L.bossKey||"ignorancia"]||"Boss";
+    vbSay("LENDÁRIO! Derrotaste o "+nome+"! 🏆","perfect",4000);
     SFX.starMelody?.();
     score+=300;scoreText?.setText("🌟 Pontos: "+score);
     showFloat(scene,480,280,"🏆 +300 Boss Derrotado!","#ffd700");
-
-    // Dança + nextLevel (sem quiz)
     scene.time.delayedCall(900,()=>robotDance(scene,()=>nextLevel(scene)));
   }
 
-  function _showBossHUD(){
+  function _showBossHUD(L){
     let hud=document.getElementById("bossHUD");
     if(!hud){
       hud=document.createElement("div");hud.id="bossHUD";
       hud.style.cssText="position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:9000;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:5px;font-family:'Baloo 2',sans-serif;";
-      hud.innerHTML=`
-        <div style="font-size:15px;font-weight:900;color:#ff2200;
-          text-shadow:0 0 10px rgba(255,34,0,0.9),1px 1px 0 #000;letter-spacing:2px;">
-          👹 Monstro da Ignorância
-        </div>
-        <div id="bossBookCount" style="font-size:14px;font-weight:800;
-          color:#ffe060;text-shadow:1px 1px 0 #000;letter-spacing:1px;">
-          📕📕📕 0/3 livros apanhados
-        </div>`;
       document.body.appendChild(hud);
     }
+    const bossNames={ignorancia:"👹 Monstro da Ignorância",violencia:"💪 Gigante da Violência",ciberbullying:"💻 Senhor do Ciberbullying"};
+    const itemLabels={ignorancia:"livros abertos",violencia:"escudos",ciberbullying:"dispositivos seguros"};
+    const nome=bossNames[L.bossKey||"ignorancia"];
+    const label=itemLabels[L.bossKey||"ignorancia"];
+    hud.innerHTML=`
+      <div style="font-size:15px;font-weight:900;color:#ff2200;text-shadow:0 0 10px rgba(255,34,0,0.9),1px 1px 0 #000;letter-spacing:2px;">${nome}</div>
+      <div id="bossBookCount" style="font-size:14px;font-weight:800;color:#ffe060;text-shadow:1px 1px 0 #000;">📕📕📕 0/${BOSS_BOOKS_NEEDED} ${label}</div>`;
     hud.style.display="flex";
     _updateBossHUD();
   }
@@ -2756,22 +2820,17 @@ window.addEventListener("DOMContentLoaded", () => {
   function _updateBossHUD(){
     const cnt=document.getElementById("bossBookCount");
     if(!cnt)return;
-    const apanhados="📖".repeat(booksCollected);
-    const restam="📕".repeat(BOSS_BOOKS_NEEDED-booksCollected);
-    cnt.textContent=apanhados+restam+" "+booksCollected+"/"+BOSS_BOOKS_NEEDED+" livros apanhados";
+    const L=LEVELS[currentLevel];
+    const icons={ignorancia:["📖","📕"],violencia:["🛡️","⬛"],ciberbullying:["💻","📵"]};
+    const k=L?.bossKey||"ignorancia";
+    const [on,off]=icons[k]||["📖","📕"];
+    const label={ignorancia:"livros abertos",violencia:"escudos",ciberbullying:"dispositivos seguros"}[k]||"itens";
+    cnt.textContent=on.repeat(booksCollected)+off.repeat(BOSS_BOOKS_NEEDED-booksCollected)+" "+booksCollected+"/"+BOSS_BOOKS_NEEDED+" "+label;
   }
 
-  function _hideBossHUD(){
-    const hud=document.getElementById("bossHUD");
-    if(hud)hud.style.display="none";
-  }
+  function _hideBossHUD(){const hud=document.getElementById("bossHUD");if(hud)hud.style.display="none";}
 
-  function _startBossIfNeeded(){
-    if(LEVELS[currentLevel]?.isBoss&&!_bossActive){
-      booksCollected=0; // garantia extra
-      _bossActive=true;
-    }
-  }
+  function _startBossIfNeeded(){if(LEVELS[currentLevel]?.isBoss&&!_bossActive){booksCollected=0;_bossActive=true;}}
 
   function updateHUD(L) {
     hudText.setText(`${L.name}  (${currentLevel+1}/${LEVELS.length})`);
@@ -3116,7 +3175,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     elNum.style.color    = numCol;
     elNum.textContent    = LEVELS[nextIdx]?.isBoss
-      ? "👹 Boss — Reino da Educação"
+      ? ("👹 Boss — "+(LEVELS[nextIdx].name||"").replace("Boss — ",""))
       : `Nível ${nextIdx+1} / ${LEVELS.length}`;
     elTitle.style.color  = textCol;
     elTitle.textContent  = nextL.name.replace(/^Nível \d+\s*[—–-]\s*/, "");
@@ -3173,10 +3232,9 @@ window.addEventListener("DOMContentLoaded", () => {
     awaitingQuiz=true;
     scene.physics.pause();
 
-    if(livesLostThisLevel===0&&!LEVELS[currentLevel]?.isBoss){
+    if(livesLostThisLevel===0){
       score+=50; bonusStars.textContent="⭐⭐⭐\n+50 Nível Perfeito!";
       bonusStars.classList.add("show"); setTimeout(()=>bonusStars.classList.remove("show"),2000);
-      setTimeout(()=>vbSayRandom(VB_PERFECT_LEVEL,"perfect",2800),300);
     }
     livesLostThisLevel=0;
 
@@ -3188,7 +3246,6 @@ window.addEventListener("DOMContentLoaded", () => {
         showHistory(next,()=>{
           if(!pausedByTeacher) scene.physics.resume();
           _startBossIfNeeded();
-          setTimeout(()=>{const intro=VB_LEVEL_INTRO[next];if(intro&&!LEVELS[next]?.isBoss)vbSay(intro,"intro",4000);},800);
         });
       });
       saveGame();
@@ -3624,7 +3681,7 @@ window.addEventListener("DOMContentLoaded", () => {
         duration: 400, ease: "Quad.easeOut",
         onComplete: () => spawnFlash.destroy() });
       tipText.setText("⚡ Protegido por 2s!");
-      if(!LEVELS[currentLevel]?.isBoss) vbSayRandom(VB_HIT,"hit",3000);
+      if(!LEVELS[currentLevel]?.isBoss)vbSayRandom(VB_HIT,"hit",3000);
     });
     if(lives<=0) return; // evitar correr o resto se já vai para game over
     // Ao perder uma vida, os itens voltam a aparecer — EXCETO os corações já apanhados
@@ -3953,6 +4010,29 @@ window.addEventListener("DOMContentLoaded", () => {
         ctx.beginPath();ctx.moveTo(28,y);ctx.lineTo(40,y);ctx.stroke();
       });
       ctx.fillStyle="#ffe000";ctx.font="bold 14px Arial";ctx.textAlign="center";ctx.fillText("✦",24,22);
+      t.refresh();
+    }
+    if(!scene.textures.exists("boss_shield")){
+      const t=scene.textures.createCanvas("boss_shield",44,44),ctx=t.getContext();
+      const grd=ctx.createRadialGradient(22,18,4,22,22,20);
+      grd.addColorStop(0,"#a0d0ff");grd.addColorStop(0.5,"#2060cc");grd.addColorStop(1,"#001880");
+      ctx.fillStyle=grd;
+      ctx.beginPath();ctx.moveTo(22,4);ctx.lineTo(40,12);ctx.lineTo(40,26);ctx.quadraticCurveTo(40,40,22,44);ctx.quadraticCurveTo(4,40,4,26);ctx.lineTo(4,12);ctx.closePath();ctx.fill();
+      ctx.strokeStyle="#80c0ff";ctx.lineWidth=2;ctx.stroke();
+      ctx.fillStyle="rgba(255,255,255,0.85)";ctx.font="bold 20px Arial";
+      ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("🛡️",22,22);
+      t.refresh();
+    }
+    if(!scene.textures.exists("boss_device")){
+      const t=scene.textures.createCanvas("boss_device",40,36),ctx=t.getContext();
+      ctx.fillStyle="#1a1a2e";ctx.fillRoundedRect?ctx.fillRoundedRect(2,2,36,28,4):ctx.fillRect(2,2,36,28);
+      ctx.fillStyle="#0f3460";ctx.fillRect(4,4,32,20);
+      ctx.fillStyle="#e94560";ctx.font="bold 14px Arial";
+      ctx.textAlign="center";ctx.fillText("⚠",22,18);
+      ctx.fillStyle="#333";ctx.fillRect(14,28,12,6);
+      ctx.fillStyle="#555";ctx.fillRect(10,32,20,3);
+      ctx.strokeStyle="#e94560";ctx.lineWidth=1.5;
+      ctx.strokeRect(2,2,36,28);
       t.refresh();
     }
   }
