@@ -52,7 +52,6 @@ export const DYNAMIC_MSGS_WRONG = [
 
 // ===== Frases do VanBerto's — balão de fala em jogo =====
 
-// Apresentação antes de cada nível (um por nível, por ordem)
 export const VB_LEVEL_INTRO = [
   "Hoje vamos recuperar o Direito à Celebração! 🎈 Estás preparado?",
   "A Declaração de 1959 mudou o mundo! 📜 Vamos descobrir porquê?",
@@ -76,7 +75,6 @@ export const VB_LEVEL_INTRO = [
   "Online também tens direitos! 💻 Vamos ao último nível — dá tudo!"
 ];
 
-// Reação ao perder uma vida (aleatório)
 export const VB_HIT = [
   "Ups! Perdemos uma vida, mas os heróis nunca desistem! 💪",
   "Autsch! Cuida-te! Os vilões estão rápidos hoje! 🔴",
@@ -86,7 +84,6 @@ export const VB_HIT = [
   "Vamos lá, guerreiro! Ainda temos vidas! 🌟"
 ];
 
-// Reação ao acertar no quiz (aleatório)
 export const VB_QUIZ_CORRECT = [
   "INCRÍVEL! Sabias mesmo a resposta! 🏆",
   "Que craque! Direito recuperado! ✨",
@@ -96,7 +93,6 @@ export const VB_QUIZ_CORRECT = [
   "Que resposta! Mereces uma estrela! ⭐"
 ];
 
-// Reação ao errar no quiz (aleatório)
 export const VB_QUIZ_WRONG = [
   "Quase! Aprende e vai mais forte na próxima! 📖",
   "Não faz mal! Errar também é aprender! 💡",
@@ -105,7 +101,6 @@ export const VB_QUIZ_WRONG = [
   "Relê a dica e tenta outra vez! 🔄"
 ];
 
-// Reação ao apanhar o Star Power (aleatório)
 export const VB_STAR_POWER = [
   "STAR POWER! Agora és IMPARÁVEL! ⭐",
   "Uau, a estrela! Vai atropelar tudo! 💥",
@@ -113,7 +108,6 @@ export const VB_STAR_POWER = [
   "Estrela apanhada! 8 segundos de glória! ✨"
 ];
 
-// Bónus de nível perfeito (sem perder vidas)
 export const VB_PERFECT_LEVEL = [
   "PERFEITO! Nenhuma vida perdida! Lendário! 🏆",
   "Wow! Passaste o nível sem um arranhão! ⭐",

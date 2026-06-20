@@ -47,28 +47,18 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // ===== Balão de fala do VanBerto's =====
   // Tipos: "intro" | "hit" | "good" | "wrong" | "star" | "perfect"
-  // duration: ms antes de desaparecer (default 3400)
   let _vbTimer = null;
   function vbSay(text, type = "intro", duration = 3400) {
-    if (document.body.classList.contains("hc-mode")) return; // off no alto contraste
-    const el      = document.getElementById("vbSpeech");
-    const textEl  = document.getElementById("vbSpeechText");
+    if (document.body.classList.contains("hc-mode")) return;
+    const el     = document.getElementById("vbSpeech");
+    const textEl = document.getElementById("vbSpeechText");
     if (!el || !textEl) return;
-
-    // Cancelar timer anterior se ainda estiver a correr
     if (_vbTimer) { clearTimeout(_vbTimer); _vbTimer = null; }
-
-    // Atualizar conteúdo e estilo
     textEl.textContent = text;
-    el.className = `vb-${type}`; // remove vb-show e aplica a classe de cor
-    // Forçar reflow para reiniciar a animação
-    void el.offsetWidth;
+    el.className = `vb-${type}`;
+    void el.offsetWidth; // forçar reflow para reiniciar animação
     el.classList.add("vb-show");
-
-    _vbTimer = setTimeout(() => {
-      el.classList.remove("vb-show");
-      _vbTimer = null;
-    }, duration);
+    _vbTimer = setTimeout(() => { el.classList.remove("vb-show"); _vbTimer = null; }, duration);
   }
   function vbSayRandom(arr, type, duration) {
     vbSay(arr[Math.floor(Math.random() * arr.length)], type, duration);
@@ -528,43 +518,58 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // =====================================================
   // ===== HUD DE ORBES — faixa de artefactos no jogo =====
-  // 20 orbes pequenos no canto inferior, em Phaser.
+  // 20 orbes em DOM com emoji do artefacto e cores do tema do nível.
   // =====================================================
-  let artOrbsGfx = null; // graphics object Phaser
+  let _artOrbsEl = null;
 
   function createArtOrbs(scene) {
-    if (artOrbsGfx) { try { artOrbsGfx.destroy(); } catch {} }
-    artOrbsGfx = scene.add.graphics().setScrollFactor(0).setDepth(105);
+    if (_artOrbsEl) { _artOrbsEl.remove(); _artOrbsEl = null; }
+    const strip = document.createElement("div");
+    strip.id = "artOrbsHUD";
+    strip.style.cssText = `
+      position:fixed; bottom:6px; left:50%; transform:translateX(-50%);
+      display:flex; gap:3px; align-items:center;
+      z-index:110; pointer-events:none;
+    `;
+    document.body.appendChild(strip);
+    _artOrbsEl = strip;
     updateArtOrbs();
   }
 
   function updateArtOrbs() {
-    if (!artOrbsGfx || !artOrbsGfx.active) return;
-    artOrbsGfx.clear();
-    const total  = ARTEFACTS.length; // 20
-    const orbR   = 7;
-    const gap    = 3;
-    const totalW = total * (orbR * 2 + gap) - gap;
-    const startX = (960 - totalW) / 2;
-    const y      = 540 - 14;
-
+    if (!_artOrbsEl) return;
+    _artOrbsEl.innerHTML = "";
     ARTEFACTS.forEach((art, i) => {
-      const cx  = startX + i * (orbR * 2 + gap) + orbR;
       const got = !!collectedArtefacts[i];
+      const orb = document.createElement("div");
+      orb.title = art.name;
       if (got) {
-        // Orbe colorido e brilhante
-        const col = Phaser.Display.Color.HexStringToColor(art.color).color;
-        artOrbsGfx.fillStyle(col, 0.85);
-        artOrbsGfx.fillCircle(cx, y, orbR);
-        artOrbsGfx.lineStyle(1.5, 0xffffff, 0.5);
-        artOrbsGfx.strokeCircle(cx, y, orbR);
+        // Cor do tema do nível correspondente
+        const themeIdx = LEVELS[i]?.theme ?? 0;
+        const theme    = THEMES[themeIdx] ?? THEMES[0];
+        const skyCol   = "#" + theme.skyBot.toString(16).padStart(6, "0");
+        const grassCol = "#" + theme.grassTop.toString(16).padStart(6, "0");
+        orb.style.cssText = `
+          width:18px; height:18px; border-radius:50%;
+          background:${skyCol};
+          box-shadow:0 0 5px ${grassCol}99, 0 0 2px rgba(255,255,255,0.5) inset;
+          border:1.5px solid ${grassCol};
+          display:flex; align-items:center; justify-content:center;
+          font-size:10px; line-height:1;
+          filter:drop-shadow(0 0 3px ${grassCol}88);
+        `;
+        orb.textContent = art.emoji;
       } else {
-        // Orbe cinzento vazio
-        artOrbsGfx.fillStyle(0x333355, 0.6);
-        artOrbsGfx.fillCircle(cx, y, orbR);
-        artOrbsGfx.lineStyle(1, 0x555577, 0.4);
-        artOrbsGfx.strokeCircle(cx, y, orbR);
+        orb.style.cssText = `
+          width:18px; height:18px; border-radius:50%;
+          background:rgba(30,30,60,0.55);
+          border:1px solid rgba(100,100,140,0.35);
+          display:flex; align-items:center; justify-content:center;
+          font-size:9px; line-height:1; color:rgba(120,120,160,0.5);
+        `;
+        orb.textContent = "·";
       }
+      _artOrbsEl.appendChild(orb);
     });
   }
 
@@ -2907,7 +2912,6 @@ window.addEventListener("DOMContentLoaded", () => {
     if(livesLostThisLevel===0){
       score+=50; bonusStars.textContent="⭐⭐⭐\n+50 Nível Perfeito!";
       bonusStars.classList.add("show"); setTimeout(()=>bonusStars.classList.remove("show"),2000);
-      // Balão de fala — nível perfeito
       setTimeout(() => vbSayRandom(VB_PERFECT_LEVEL, "perfect", 2800), 300);
     }
     livesLostThisLevel=0;
@@ -2919,11 +2923,7 @@ window.addEventListener("DOMContentLoaded", () => {
         loadLevel(scene,next);
         showHistory(next,()=>{
           if(!pausedByTeacher) scene.physics.resume();
-          // Balão de fala — apresentação do nível (pequeno delay para não sobrepor história)
-          setTimeout(() => {
-            const intro = VB_LEVEL_INTRO[next];
-            if (intro) vbSay(intro, "intro", 4000);
-          }, 800);
+          setTimeout(() => { const intro=VB_LEVEL_INTRO[next]; if(intro) vbSay(intro,"intro",4000); }, 800);
         });
       });
       saveGame();
@@ -3166,7 +3166,6 @@ window.addEventListener("DOMContentLoaded", () => {
           quizFeedback.textContent=isRetry?"✅ Conseguiste na segunda tentativa! 💪":"✅ Muito bem!";
           quizFeedback.style.color="#208050";
           SFX.coin();
-          // Balão de fala do VanBerto's — celebração
           vbSayRandom(VB_QUIZ_CORRECT, "good", 3200);
           // Mostrar SEMPRE: explicação do quiz E/OU dica do tema
           const tipFact = QUIZ_TIPS[LEVELS[currentLevel]?.quizTheme] || "";
@@ -3199,9 +3198,8 @@ window.addEventListener("DOMContentLoaded", () => {
             saveGlobalStats();
             showDynamicMsg(DYNAMIC_MSGS_WRONG);
           }
-          // Balão de fala do VanBerto's — encorajamento ao errar
-          vbSayRandom(VB_QUIZ_WRONG, "wrong", 3200);
           if(sceneRef&&player){sceneRef.tweens.add({targets:player,angle:{from:-10,to:10},duration:80,yoyo:true,repeat:4,ease:"Sine.easeInOut",onComplete:()=>{if(player)player.setAngle(0);}});}
+          vbSayRandom(VB_QUIZ_WRONG, "wrong", 3200);
 
           quizStats.errors=quizStats.errors||[];
           if(!isRetry) {
@@ -3361,7 +3359,6 @@ window.addEventListener("DOMContentLoaded", () => {
         duration: 400, ease: "Quad.easeOut",
         onComplete: () => spawnFlash.destroy() });
       tipText.setText("⚡ Protegido por 2s!");
-      // Balão de fala do VanBerto's — encorajamento após perder vida
       vbSayRandom(VB_HIT, "hit", 3000);
     });
     if(lives<=0) return; // evitar correr o resto se já vai para game over
@@ -3510,7 +3507,6 @@ window.addEventListener("DOMContentLoaded", () => {
     starPowerTimer=scene.time.delayedCall(8000,()=>clearStarPower(scene));
     // Piscar apenas — sem tint de cor
     if(player) player.clearTint();
-    // Balão de fala do VanBerto's
     vbSayRandom(VB_STAR_POWER, "star", 2800);
   }
   function clearStarPower(scene){
