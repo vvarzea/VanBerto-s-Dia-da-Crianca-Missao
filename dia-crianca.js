@@ -517,7 +517,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // =====================================================
   // ===== HUD DE ORBES — faixa de artefactos no jogo =====
-  // 20 orbes DOM com emoji do artefacto e cores do tema do nível.
+  // 20 orbes pequenos no canto inferior, em Phaser.
   // =====================================================
   let _artOrbsEl = null;
 
@@ -826,6 +826,10 @@ window.addEventListener("DOMContentLoaded", () => {
   let trailSprites = [];
   let footStepTimer = 0;
   let balloons=[], critters=[], enemyTimers=[];
+
+  // ── Estado do boss ──────────────────────────────────────────────────
+  let bossSprite=null, bossHP=3, bossProjectiles=null, bossBooks=null;
+  let bossTimers=[], _bossActive=false;
   let movingPlatforms=[], trampolines=[], secretDoors=[], hazards=[];
   let player, platforms, itemsGroup, malwareGroup, door, doorOverlap=null;
   let cursors, keySpace;
@@ -2169,6 +2173,8 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // ===== Carregar nível =====
   function loadLevel(scene,idx) {
+    // ── Boss level? Desviar para loader especializado ──
+    if(LEVELS[idx]?.isBoss){ loadBossLevel(scene,idx); return; }
     currentLevel=idx;
     const L=LEVELS[currentLevel];
     const T=THEMES[L.theme%THEMES.length];
@@ -2177,6 +2183,12 @@ window.addEventListener("DOMContentLoaded", () => {
     scene.cameras.main.setBounds(0,0,L.worldW,540);
 
     enemyTimers.forEach(t=>{ try{t.remove(false);}catch{} }); enemyTimers=[];
+    // Limpar boss se existir
+    bossTimers.forEach(t=>{ try{t.remove(false);}catch{} }); bossTimers=[];
+    if(bossSprite){ try{bossSprite.destroy();}catch{} bossSprite=null; }
+    if(bossProjectiles){ bossProjectiles.clear(true,true); }
+    if(bossBooks){ bossBooks.clear(true,true); }
+    _bossActive=false;
     platforms.clear(true,true); itemsGroup.clear(true,true);
     malwareGroup.clear(true,true);
     if(door) door.destroy();
@@ -2488,6 +2500,281 @@ window.addEventListener("DOMContentLoaded", () => {
       scene.tweens.add({targets:v, scaleX:{from:0.95,to:1.20}, scaleY:{from:1.20,to:0.95},
         duration:380+Math.random()*120, yoyo:true, repeat:-1, ease:"Sine.easeInOut"});
 
+    }
+  }
+
+
+  // ═══════════════════════════════════════════════════════════════════
+  // BOSS LEVEL — Monstro da Ignorância
+  // ═══════════════════════════════════════════════════════════════════
+  function loadBossLevel(scene, idx) {
+    currentLevel = idx;
+    const L = LEVELS[idx];
+    const T = THEMES[L.theme % THEMES.length];
+
+    // Setup do mundo e câmara (arena fixa)
+    scene.physics.world.setBounds(0, 0, L.worldW, 514);
+    scene.cameras.main.setBounds(0, 0, L.worldW, 540);
+
+    // Limpar tudo
+    enemyTimers.forEach(t=>{ try{t.remove(false);}catch{} }); enemyTimers=[];
+    bossTimers.forEach(t=>{ try{t.remove(false);}catch{} }); bossTimers=[];
+    if(bossSprite){ try{bossSprite.destroy();}catch{} bossSprite=null; }
+    platforms.clear(true,true); itemsGroup.clear(true,true); malwareGroup.clear(true,true);
+    if(door) door.destroy();
+    if(_doorWatchdogTimer){ try{_doorWatchdogTimer.remove(false);}catch{} _doorWatchdogTimer=null; }
+    if(_landingCheckTimer){ try{_landingCheckTimer.remove(false);}catch{} _landingCheckTimer=null; }
+
+    // Grupos de projéteis e livros
+    if(!bossProjectiles) bossProjectiles = scene.physics.add.group();
+    else bossProjectiles.clear(true,true);
+    if(!bossBooks) bossBooks = scene.physics.add.staticGroup();
+    else bossBooks.clear(true,true);
+
+    awaitingQuiz=true; invuln=false; clearPower(scene); clearDoubleJump(scene); clearStarPower(scene);
+    livesLostThisLevel=0; _doorAnimRunning=false; _bossActive=false;
+    scene.physics.pause();
+    if(powerHaloGfx) powerHaloGfx.setVisible(true);
+    if(shadowGfx)    shadowGfx.setVisible(true);
+    itemsCollected=0; itemsTotal=0; collectedItemIndices=new Set();
+    _hudDirty=true; updateHUD(L);
+    applyBackground(scene, L.theme % THEMES.length, L.worldW, []);
+    createArtOrbs(scene);
+
+    // Plataformas
+    L.platforms.forEach(p=>{
+      const themeIdx = L.theme % THEMES.length;
+      const platKey = "platform_t"+themeIdx;
+      if(!scene.textures.exists(platKey)) makePlatformTextureThemed(scene, platKey, themeIdx);
+      const plat=platforms.create(p.x,p.y,platKey);
+      plat.displayWidth=p.w; plat.displayHeight=p.h; plat.refreshBody();
+      if(plat.body){plat.body.checkCollision.left=false;plat.body.checkCollision.right=false;}
+    });
+
+    // Colisão do jogador com plataformas
+    scene.physics.add.collider(player, platforms);
+
+    // Player no spawn
+    player.setAlpha(1);
+    player.setPosition(L.spawn.x, L.spawn.y);
+    player.setVelocity(0,0);
+    player.setFlipX(false); player.setAngle(0); player.setScale(1);
+    scene.cameras.main.startFollow(player, true, 0.08, 0.08);
+
+    // ── Criar o Boss ────────────────────────────────────────────────
+    bossHP = 3;
+    _bossActive = false;
+    const bossX = L.worldW / 2, bossY = 420;
+    bossSprite = scene.physics.add.sprite(bossX, bossY, "vilao_round");
+    bossSprite.setDisplaySize(120, 120);
+    bossSprite.body.setSize(110, 110, true);
+    bossSprite.setCollideWorldBounds(true);
+    bossSprite.setDepth(3);
+    bossSprite.setTint(0x880000); // mais escuro que o vilão normal
+    scene.physics.add.collider(bossSprite, platforms);
+
+    // Barra de HP do boss (DOM)
+    _showBossHUD(L.name);
+
+    // Movimento de patrulha do boss
+    bossSprite.setVelocityX(90);
+    let bossDir = 1;
+    const bossPatrol = scene.time.addEvent({ delay:50, loop:true, callback:()=>{
+      if(!bossSprite||!bossSprite.active||!_bossActive) return;
+      if(bossSprite.x > L.worldW-80) bossDir=-1;
+      if(bossSprite.x < 80) bossDir=1;
+      bossSprite.setVelocityX(90*bossDir);
+      bossSprite.setFlipX(bossDir<0);
+    }});
+    bossTimers.push(bossPatrol);
+
+    // Animação de respiração do boss
+    scene.tweens.add({targets:bossSprite,
+      scaleX:{from:1,to:1.08}, scaleY:{from:1,to:0.94},
+      duration:700, yoyo:true, repeat:-1, ease:"Sine.easeInOut"});
+
+    // Colisão jogador ↔ boss (causa dano ao jogador)
+    scene.physics.add.overlap(player, bossSprite, ()=>{
+      if(!_bossActive) return;
+      onHitMalware(player, bossSprite);
+    }, null, scene);
+
+    // ── Projéteis do boss (livros fechados) ─────────────────────────
+    scene.physics.add.collider(bossProjectiles, platforms, (proj)=>{
+      proj.setVelocity(0,0);
+      // Apagar após 1.5s no chão
+      scene.time.delayedCall(1500, ()=>{ if(proj.active) proj.destroy(); });
+    });
+    scene.physics.add.overlap(player, bossProjectiles, (p, proj)=>{
+      if(!_bossActive||invuln) return;
+      proj.destroy();
+      onHitMalware(player, null);
+    }, null, scene);
+
+    // Disparar livro fechado a cada 2.2s
+    const shootTimer = scene.time.addEvent({ delay:2200, loop:true, callback:()=>{
+      if(!bossSprite||!bossSprite.active||!_bossActive) return;
+      const proj = bossProjectiles.create(bossSprite.x, bossSprite.y-30, "boss_book_closed");
+      proj.setDisplaySize(36,28);
+      // Apontar ao jogador
+      const dx = player.x - bossSprite.x;
+      const dy = player.y - bossSprite.y;
+      const len = Math.sqrt(dx*dx+dy*dy)||1;
+      const spd = 220;
+      proj.setVelocity((dx/len)*spd, (dy/len)*spd - 80);
+      proj.setDepth(4);
+      // Rotação visual
+      scene.tweens.add({targets:proj,angle:{from:0,to:360},duration:600,repeat:-1});
+    }});
+    bossTimers.push(shootTimer);
+
+    // ── Livros abertos (colectáveis que ferem o boss) ────────────────
+    _spawnBossBooks(scene, L);
+    scene.physics.add.overlap(player, bossBooks, (p, book)=>{
+      if(!_bossActive||book.getData("collected")) return;
+      book.setData("collected", true);
+      // Efeito visual
+      scene.tweens.add({targets:book, y:book.y-40, alpha:0, scaleX:1.6, scaleY:1.6,
+        duration:400, onComplete:()=>book.destroy()});
+      showFloat(scene, book.x, book.y-50, "📖 +Conhecimento!", "#ffe000");
+      SFX.coin();
+      _bossHit(scene, L);
+    }, null, scene);
+
+    // VanBerto apresenta o boss
+    setTimeout(()=>{
+      vbSay("Cuidado! O Monstro da Ignorância está a atirar livros fechados! Apanha os abertos! 📖", "wrong", 4500);
+    }, 800);
+  }
+
+  function _spawnBossBooks(scene, L) {
+    if(bossBooks) bossBooks.clear(true,true);
+    // 3 livros abertos em posições fixas no chão
+    [[200,480],[480,480],[760,480]].forEach(([x,y])=>{
+      const b = bossBooks.create(x, y, "boss_book_open");
+      b.setDisplaySize(44,36);
+      b.setDepth(2);
+      b.setData("collected", false);
+      b.refreshBody();
+      // Flutuação
+      scene.tweens.add({targets:b, y:y-10, duration:900+Math.random()*300,
+        yoyo:true, repeat:-1, ease:"Sine.easeInOut"});
+      // Brilho pulsante
+      scene.tweens.add({targets:b, alpha:{from:0.8,to:1}, scaleX:{from:0.95,to:1.05},
+        duration:600, yoyo:true, repeat:-1});
+    });
+  }
+
+  function _bossHit(scene, L) {
+    bossHP--;
+    _updateBossHUD();
+    // Animação de recuo
+    scene.tweens.add({targets:bossSprite,
+      x:{from:bossSprite.x-30, to:bossSprite.x+30},
+      duration:60, yoyo:true, repeat:2,
+      onComplete:()=>{ scene.tweens.add({targets:bossSprite,tint:0xff4444,
+        duration:200, onComplete:()=>bossSprite?.setTint(0x880000)}); }
+    });
+    scene.cameras.main.shake(200, 0.012);
+    SFX.hit();
+
+    if(bossHP<=0){
+      _bossDefeated(scene, L);
+    } else {
+      // Velocidade aumenta com cada hit
+      const newSpd = 90 + (3-bossHP)*50;
+      showFloat(scene, bossSprite.x, bossSprite.y-60,
+        bossHP===2?"😤 Ainda me faltam 2 livros!":"😱 Mais um livro e ganhas!", "#ff8800");
+      // Respawnar livros restantes
+      scene.time.delayedCall(600, ()=>{ _spawnBossBooks(scene, L); });
+    }
+  }
+
+  function _bossDefeated(scene, L) {
+    _bossActive = false;
+    bossTimers.forEach(t=>{ try{t.remove(false);}catch{} }); bossTimers=[];
+    if(bossProjectiles) bossProjectiles.clear(true,true);
+
+    // Explosão do boss
+    scene.cameras.main.shake(400, 0.02);
+    const colors=[0xffd700,0xff6b35,0xff80c0,0x80d0ff];
+    for(let i=0;i<3;i++){
+      scene.time.delayedCall(i*180, ()=>{
+        if(!scene||!scene.add) return;
+        const p=scene.add.particles(0,0,"spark_item",{
+          x:bossSprite?.x||480, y:bossSprite?.y||420,
+          speed:{min:100,max:300}, lifespan:700, quantity:30,
+          scale:{start:1.4,end:0}, gravityY:100, angle:{min:0,max:360}, tint:colors
+        });
+        scene.time.delayedCall(600,()=>p.destroy());
+      });
+    }
+    scene.tweens.add({targets:bossSprite, alpha:0, scaleX:2, scaleY:2,
+      duration:500, onComplete:()=>{ bossSprite?.destroy(); bossSprite=null; }});
+
+    _hideBossHUD();
+    vbSay("INCRÍVEL! Derrotaste o Monstro da Ignorância! O conhecimento venceu! 🏆", "perfect", 3500);
+    SFX.starMelody?.();
+
+    // Dança de vitória + quiz
+    scene.time.delayedCall(800, ()=>{
+      robotDance(scene, ()=>{
+        showQuiz(
+          pickQuizForLevel(currentLevel, L.quizTheme),
+          (correct)=>{ nextLevel(scene); },
+          false
+        );
+      });
+    });
+  }
+
+  // ── HUD do boss (barra de HP) ────────────────────────────────────────
+  function _showBossHUD(bossName) {
+    let hud = document.getElementById("bossHUD");
+    if(!hud){
+      hud=document.createElement("div"); hud.id="bossHUD";
+      hud.style.cssText=`
+        position:fixed;top:12px;left:50%;transform:translateX(-50%);
+        z-index:9000;pointer-events:none;
+        display:flex;flex-direction:column;align-items:center;gap:4px;
+        font-family:'Baloo 2',sans-serif;
+      `;
+      hud.innerHTML=`
+        <div id="bossHUDName" style="font-size:13px;font-weight:800;color:#ff4400;
+          text-shadow:0 0 8px rgba(255,68,0,0.8),1px 1px 0 #000;letter-spacing:1px;"></div>
+        <div style="background:rgba(0,0,0,0.65);border:2px solid #ff4400;border-radius:8px;
+          padding:3px;width:180px;box-shadow:0 0 12px rgba(255,68,0,0.5);">
+          <div id="bossHPBar" style="height:14px;border-radius:5px;
+            background:linear-gradient(90deg,#ff2200,#ff8800);
+            transition:width 0.3s ease;width:100%;"></div>
+        </div>
+        <div id="bossHPHits" style="font-size:11px;color:#ffaa44;font-weight:700;
+          text-shadow:1px 1px 0 #000;">❤️❤️❤️</div>
+      `;
+      document.body.appendChild(hud);
+    }
+    document.getElementById("bossHUDName").textContent=bossName.replace("Boss — ","👹 ");
+    _updateBossHUD();
+    hud.style.display="flex";
+  }
+
+  function _updateBossHUD() {
+    const bar=document.getElementById("bossHPBar");
+    const hits=document.getElementById("bossHPHits");
+    if(bar) bar.style.width=Math.round((bossHP/3)*100)+"%";
+    if(hits) hits.textContent="❤️".repeat(bossHP)+"🖤".repeat(3-bossHP);
+  }
+
+  function _hideBossHUD() {
+    const hud=document.getElementById("bossHUD");
+    if(hud) hud.style.display="none";
+  }
+
+  // Activar boss após showHistory fechar (física resume)
+  // chamado em showHistory callback via nextLevel
+  function _startBossIfNeeded() {
+    if(LEVELS[currentLevel]?.isBoss && !_bossActive){
+      _bossActive = true;
     }
   }
 
@@ -2833,7 +3120,9 @@ window.addEventListener("DOMContentLoaded", () => {
     panel.style.background  = isDark ? "rgba(0,0,0,0.40)" : "rgba(255,255,255,0.18)";
 
     elNum.style.color    = numCol;
-    elNum.textContent    = `Nível ${nextIdx+1} / ${LEVELS.length}`;
+    elNum.textContent    = LEVELS[nextIdx]?.isBoss
+      ? `👹 Boss — Reino da Educação`
+      : `Nível ${nextIdx+1} / ${LEVELS.length}`;
     elTitle.style.color  = textCol;
     elTitle.textContent  = nextL.name.replace(/^Nível \d+\s*[—–-]\s*/, "");
     elPhrase.style.color = subCol;
@@ -2903,7 +3192,8 @@ window.addEventListener("DOMContentLoaded", () => {
         loadLevel(scene,next);
         showHistory(next,()=>{
           if(!pausedByTeacher) scene.physics.resume();
-          setTimeout(()=>{const intro=VB_LEVEL_INTRO[next];if(intro)vbSay(intro,"intro",4000);},800);
+          _startBossIfNeeded();
+          setTimeout(()=>{const intro=VB_LEVEL_INTRO[next];if(intro&&!LEVELS[next]?.isBoss)vbSay(intro,"intro",4000);},800);
         });
       });
       saveGame();
@@ -3634,6 +3924,60 @@ window.addEventListener("DOMContentLoaded", () => {
     makeVanBertoTexture(scene,"vanberto_blink",true,-1);
     makeVanBertoTexture(scene,"vanberto_walk1",false,0);
     makeVanBertoTexture(scene,"vanberto_walk2",false,1);
+    makeBossTextures(scene);
+  }
+
+  // ── Texturas do boss ──────────────────────────────────────────────────
+  function makeBossTextures(scene){
+    // Livro fechado (projétil do boss)
+    if(!scene.textures.exists("boss_book_closed")){
+      const t=scene.textures.createCanvas("boss_book_closed",40,32), ctx=t.getContext();
+      ctx.fillStyle="#1a0a00"; ctx.fillRect(2,2,36,28);
+      ctx.fillStyle="#8B1a00"; ctx.fillRect(4,4,32,24);
+      ctx.strokeStyle="#ff6600"; ctx.lineWidth=1.5;
+      ctx.strokeRect(4,4,32,24);
+      // Lombada
+      ctx.fillStyle="#5a0f00"; ctx.fillRect(4,4,6,24);
+      ctx.strokeStyle="#ffaa44"; ctx.lineWidth=1;
+      ctx.strokeRect(4,4,6,24);
+      // Título (linhas)
+      ctx.strokeStyle="rgba(255,180,80,0.6)"; ctx.lineWidth=1.5;
+      [10,14,18,22].forEach(y=>{ ctx.beginPath(); ctx.moveTo(14,y); ctx.lineTo(34,y); ctx.stroke(); });
+      // Fechadura
+      ctx.fillStyle="#ffaa00";
+      ctx.beginPath(); ctx.arc(24,16,3,0,Math.PI*2); ctx.fill();
+      t.refresh();
+    }
+    // Livro aberto (colectável para derrotar o boss)
+    if(!scene.textures.exists("boss_book_open")){
+      const t=scene.textures.createCanvas("boss_book_open",48,40), ctx=t.getContext();
+      // Brilho de fundo
+      const grd = ctx.createRadialGradient(24,20,4,24,20,22);
+      grd.addColorStop(0,"rgba(255,255,120,0.55)");
+      grd.addColorStop(1,"rgba(255,200,0,0)");
+      ctx.fillStyle=grd; ctx.fillRect(0,0,48,40);
+      // Página esquerda
+      ctx.fillStyle="#fffde8"; ctx.beginPath();
+      ctx.moveTo(24,8); ctx.lineTo(4,4); ctx.lineTo(4,36); ctx.lineTo(24,34); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle="#c8a800"; ctx.lineWidth=1.5; ctx.stroke();
+      // Página direita
+      ctx.fillStyle="#fff8cc"; ctx.beginPath();
+      ctx.moveTo(24,8); ctx.lineTo(44,4); ctx.lineTo(44,36); ctx.lineTo(24,34); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle="#c8a800"; ctx.lineWidth=1.5; ctx.stroke();
+      // Lombada central
+      ctx.strokeStyle="#8B6914"; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.moveTo(24,8); ctx.lineTo(24,34); ctx.stroke();
+      // Linhas de texto nas páginas
+      ctx.strokeStyle="rgba(100,80,20,0.4)"; ctx.lineWidth=1;
+      [14,19,24,29].forEach(y=>{
+        ctx.beginPath(); ctx.moveTo(8,y); ctx.lineTo(20,y); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(28,y); ctx.lineTo(40,y); ctx.stroke();
+      });
+      // Estrela a brilhar
+      ctx.fillStyle="#ffe000"; ctx.font="bold 14px Arial";
+      ctx.textAlign="center"; ctx.fillText("✦",24,22);
+      t.refresh();
+    }
   }
 
   // Plataforma colorida estilo cartoon
@@ -5763,6 +6107,7 @@ window.addEventListener("DOMContentLoaded", () => {
               loadLevel(sceneRef, 0);
               showHistory(0, () => {
                 if(!pausedByTeacher) sceneRef.physics.resume();
+                _startBossIfNeeded();
                 setTimeout(()=>vbSay(VB_LEVEL_INTRO[0],"intro",4000),800);
               });
               saveGame();
@@ -5774,6 +6119,7 @@ window.addEventListener("DOMContentLoaded", () => {
           loadLevel(sceneRef, 0);
           showHistory(0, () => {
             if(!pausedByTeacher) sceneRef.physics.resume();
+            _startBossIfNeeded();
             setTimeout(()=>vbSay(VB_LEVEL_INTRO[0],"intro",4000),800);
           });
           saveGame();

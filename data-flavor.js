@@ -49,7 +49,6 @@ export const DYNAMIC_MSGS_WRONG = [
   "💪 Quase!", "🔄 Vamos tentar novamente!", "📚 Aprender também é vencer!",
   "❤️ Não desistas!", "💡 Próxima vez consegues!"
 ];
-
 export const VB_LEVEL_INTRO = [
   "Hoje vamos recuperar o Direito à Celebração! 🎈 Estás preparado?",
   "A Declaração de 1959 mudou o mundo! 📜 Vamos descobrir porquê?",
