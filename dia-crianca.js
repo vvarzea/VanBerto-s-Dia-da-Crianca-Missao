@@ -45,23 +45,18 @@ window.addEventListener("DOMContentLoaded", () => {
 
   let playerName = "";
 
-  // ===== Balão de fala do VanBerto's =====
-  let _vbTimer = null;
-  function vbSay(text, type = "intro", duration = 3400) {
-    if (document.body.classList.contains("hc-mode")) return;
-    const el     = document.getElementById("vbSpeech");
-    const textEl = document.getElementById("vbSpeechText");
-    if (!el || !textEl) return;
-    if (_vbTimer) { clearTimeout(_vbTimer); _vbTimer = null; }
-    textEl.textContent = text;
-    el.className = "vb-" + type;
-    void el.offsetWidth;
+  // ── VanBerto's speech bubble ──
+  let _vbTimer=null;
+  function vbSay(text,type="intro",duration=3400){
+    if(document.body.classList.contains("hc-mode"))return;
+    const el=document.getElementById("vbSpeech"), textEl=document.getElementById("vbSpeechText");
+    if(!el||!textEl)return;
+    if(_vbTimer){clearTimeout(_vbTimer);_vbTimer=null;}
+    textEl.textContent=text; el.className="vb-"+type; void el.offsetWidth;
     el.classList.add("vb-show");
-    _vbTimer = setTimeout(() => { el.classList.remove("vb-show"); _vbTimer = null; }, duration);
+    _vbTimer=setTimeout(()=>{el.classList.remove("vb-show");_vbTimer=null;},duration);
   }
-  function vbSayRandom(arr, type, duration) {
-    vbSay(arr[Math.floor(Math.random() * arr.length)], type, duration);
-  }
+  function vbSayRandom(arr,type,duration){vbSay(arr[Math.floor(Math.random()*arr.length)],type,duration);}
 
   // ===== Áudio =====
   let audioCtx = null, muted = false;
@@ -519,35 +514,26 @@ window.addEventListener("DOMContentLoaded", () => {
   // ===== HUD DE ORBES — faixa de artefactos no jogo =====
   // 20 orbes pequenos no canto inferior, em Phaser.
   // =====================================================
-  let _artOrbsEl = null;
-
-  function createArtOrbs(scene) {
-    if (_artOrbsEl) { _artOrbsEl.remove(); _artOrbsEl = null; }
-    const strip = document.createElement("div");
-    strip.id = "artOrbsHUD";
-    strip.style.cssText = "position:fixed;bottom:6px;left:50%;transform:translateX(-50%);display:flex;gap:3px;align-items:center;z-index:110;pointer-events:none;";
-    document.body.appendChild(strip);
-    _artOrbsEl = strip;
-    updateArtOrbs();
+  let _artOrbsEl=null;
+  function createArtOrbs(scene){
+    if(_artOrbsEl){_artOrbsEl.remove();_artOrbsEl=null;}
+    const strip=document.createElement("div"); strip.id="artOrbsHUD";
+    strip.style.cssText="position:fixed;bottom:6px;left:50%;transform:translateX(-50%);display:flex;gap:3px;align-items:center;z-index:110;pointer-events:none;";
+    document.body.appendChild(strip); _artOrbsEl=strip; updateArtOrbs();
   }
-
-  function updateArtOrbs() {
-    if (!_artOrbsEl) return;
-    _artOrbsEl.innerHTML = "";
-    ARTEFACTS.forEach((art, i) => {
-      const got = !!collectedArtefacts[i];
-      const orb = document.createElement("div");
-      orb.title = art.name;
-      if (got) {
-        const themeIdx = LEVELS[i]?.theme ?? 0;
-        const theme    = THEMES[themeIdx] ?? THEMES[0];
-        const skyCol   = "#" + theme.skyBot.toString(16).padStart(6, "0");
-        const grassCol = "#" + theme.grassTop.toString(16).padStart(6, "0");
-        orb.style.cssText = "width:18px;height:18px;border-radius:50%;background:" + skyCol + ";box-shadow:0 0 5px " + grassCol + "99,0 0 2px rgba(255,255,255,0.5) inset;border:1.5px solid " + grassCol + ";display:flex;align-items:center;justify-content:center;font-size:10px;line-height:1;";
-        orb.textContent = art.emoji;
-      } else {
-        orb.style.cssText = "width:18px;height:18px;border-radius:50%;background:rgba(30,30,60,0.55);border:1px solid rgba(100,100,140,0.35);display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1;color:rgba(120,120,160,0.5);";
-        orb.textContent = "·";
+  function updateArtOrbs(){
+    if(!_artOrbsEl)return; _artOrbsEl.innerHTML="";
+    ARTEFACTS.forEach((art,i)=>{
+      const got=!!collectedArtefacts[i], orb=document.createElement("div"); orb.title=art.name;
+      if(got){
+        const themeIdx=LEVELS[i]?.theme??0, theme=THEMES[themeIdx]??THEMES[0];
+        const skyCol="#"+theme.skyBot.toString(16).padStart(6,"0");
+        const grassCol="#"+theme.grassTop.toString(16).padStart(6,"0");
+        orb.style.cssText="width:18px;height:18px;border-radius:50%;background:"+skyCol+";box-shadow:0 0 5px "+grassCol+"99,0 0 2px rgba(255,255,255,0.5) inset;border:1.5px solid "+grassCol+";display:flex;align-items:center;justify-content:center;font-size:10px;line-height:1;";
+        orb.textContent=art.emoji;
+      }else{
+        orb.style.cssText="width:18px;height:18px;border-radius:50%;background:rgba(30,30,60,0.55);border:1px solid rgba(100,100,140,0.35);display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1;color:rgba(120,120,160,0.5);";
+        orb.textContent="·";
       }
       _artOrbsEl.appendChild(orb);
     });
@@ -826,10 +812,9 @@ window.addEventListener("DOMContentLoaded", () => {
   let trailSprites = [];
   let footStepTimer = 0;
   let balloons=[], critters=[], enemyTimers=[];
-
-  // ── Estado do boss ──────────────────────────────────────────────────
-  let bossSprite=null, bossHP=3, bossProjectiles=null, bossBooks=null;
-  let bossTimers=[], _bossActive=false;
+  // ── Boss state ──
+  let bossSprite=null, bossHP=3, booksCollected=0;
+  let bossProjectiles=null, bossBooks=null, bossTimers=[], _bossActive=false;
   let movingPlatforms=[], trampolines=[], secretDoors=[], hazards=[];
   let player, platforms, itemsGroup, malwareGroup, door, doorOverlap=null;
   let cursors, keySpace;
@@ -2172,9 +2157,8 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   // ===== Carregar nível =====
-  function loadLevel(scene,idx) {
-    // ── Boss level? Desviar para loader especializado ──
-    if(LEVELS[idx]?.isBoss){ loadBossLevel(scene,idx); return; }
+  function loadLevel(scene,idx){
+    if(LEVELS[idx]?.isBoss){loadBossLevel(scene,idx);return;}
     currentLevel=idx;
     const L=LEVELS[currentLevel];
     const T=THEMES[L.theme%THEMES.length];
@@ -2183,12 +2167,11 @@ window.addEventListener("DOMContentLoaded", () => {
     scene.cameras.main.setBounds(0,0,L.worldW,540);
 
     enemyTimers.forEach(t=>{ try{t.remove(false);}catch{} }); enemyTimers=[];
-    // Limpar boss se existir
     bossTimers.forEach(t=>{ try{t.remove(false);}catch{} }); bossTimers=[];
-    if(bossSprite){ try{bossSprite.destroy();}catch{} bossSprite=null; }
-    if(bossProjectiles){ bossProjectiles.clear(true,true); }
-    if(bossBooks){ bossBooks.clear(true,true); }
-    _bossActive=false;
+    if(bossSprite){try{bossSprite.destroy();}catch{}bossSprite=null;}
+    if(bossProjectiles)bossProjectiles.clear(true,true);
+    if(bossBooks)bossBooks.clear(true,true);
+    _bossActive=false; booksCollected=0; _hideBossHUD();
     platforms.clear(true,true); itemsGroup.clear(true,true);
     malwareGroup.clear(true,true);
     if(door) door.destroy();
@@ -2504,278 +2487,239 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
 
-  // ═══════════════════════════════════════════════════════════════════
-  // BOSS LEVEL — Monstro da Ignorância
-  // ═══════════════════════════════════════════════════════════════════
-  function loadBossLevel(scene, idx) {
-    currentLevel = idx;
-    const L = LEVELS[idx];
-    const T = THEMES[L.theme % THEMES.length];
+  // ═══════════════════════════════════════════
+  // BOSS — Monstro da Ignorância
+  // ═══════════════════════════════════════════
+  function loadBossLevel(scene,idx){
+    currentLevel=idx;
+    const L=LEVELS[idx];
+    scene.physics.world.setBounds(0,0,L.worldW,514);
+    scene.cameras.main.setBounds(0,0,L.worldW,540);
 
-    // Setup do mundo e câmara (arena fixa)
-    scene.physics.world.setBounds(0, 0, L.worldW, 514);
-    scene.cameras.main.setBounds(0, 0, L.worldW, 540);
-
-    // Limpar tudo
-    enemyTimers.forEach(t=>{ try{t.remove(false);}catch{} }); enemyTimers=[];
-    bossTimers.forEach(t=>{ try{t.remove(false);}catch{} }); bossTimers=[];
-    if(bossSprite){ try{bossSprite.destroy();}catch{} bossSprite=null; }
-    platforms.clear(true,true); itemsGroup.clear(true,true); malwareGroup.clear(true,true);
-    if(door) door.destroy();
-    if(_doorWatchdogTimer){ try{_doorWatchdogTimer.remove(false);}catch{} _doorWatchdogTimer=null; }
-    if(_landingCheckTimer){ try{_landingCheckTimer.remove(false);}catch{} _landingCheckTimer=null; }
-
-    // Grupos de projéteis e livros
-    if(!bossProjectiles) bossProjectiles = scene.physics.add.group();
+    enemyTimers.forEach(t=>{try{t.remove(false);}catch{}});enemyTimers=[];
+    bossTimers.forEach(t=>{try{t.remove(false);}catch{}});bossTimers=[];
+    if(bossSprite){try{bossSprite.destroy();}catch{}bossSprite=null;}
+    platforms.clear(true,true);itemsGroup.clear(true,true);malwareGroup.clear(true,true);
+    if(door)door.destroy();
+    if(_doorWatchdogTimer){try{_doorWatchdogTimer.remove(false);}catch{}_doorWatchdogTimer=null;}
+    if(!bossProjectiles)bossProjectiles=scene.physics.add.group();
     else bossProjectiles.clear(true,true);
-    if(!bossBooks) bossBooks = scene.physics.add.staticGroup();
+    if(!bossBooks)bossBooks=scene.physics.add.staticGroup();
     else bossBooks.clear(true,true);
 
-    awaitingQuiz=true; invuln=false; clearPower(scene); clearDoubleJump(scene); clearStarPower(scene);
-    livesLostThisLevel=0; _doorAnimRunning=false; _bossActive=false;
+    awaitingQuiz=true;invuln=false;clearPower(scene);clearDoubleJump(scene);clearStarPower(scene);
+    livesLostThisLevel=0;_bossActive=false;booksCollected=0;bossHP=3;
     scene.physics.pause();
-    if(powerHaloGfx) powerHaloGfx.setVisible(true);
-    if(shadowGfx)    shadowGfx.setVisible(true);
-    itemsCollected=0; itemsTotal=0; collectedItemIndices=new Set();
-    _hudDirty=true; updateHUD(L);
-    applyBackground(scene, L.theme % THEMES.length, L.worldW, []);
+    if(powerHaloGfx)powerHaloGfx.setVisible(true);
+    if(shadowGfx)shadowGfx.setVisible(true);
+    itemsCollected=0;itemsTotal=0;collectedItemIndices=new Set();
+    _hudDirty=true;updateHUD(L);
+    applyBackground(scene,L.theme%THEMES.length,L.worldW,[]);
     createArtOrbs(scene);
 
     // Plataformas
     L.platforms.forEach(p=>{
-      const themeIdx = L.theme % THEMES.length;
-      const platKey = "platform_t"+themeIdx;
-      if(!scene.textures.exists(platKey)) makePlatformTextureThemed(scene, platKey, themeIdx);
+      const themeIdx=L.theme%THEMES.length, platKey="platform_t"+themeIdx;
+      if(!scene.textures.exists(platKey))makePlatformTextureThemed(scene,platKey,themeIdx);
       const plat=platforms.create(p.x,p.y,platKey);
-      plat.displayWidth=p.w; plat.displayHeight=p.h; plat.refreshBody();
+      plat.displayWidth=p.w;plat.displayHeight=p.h;plat.refreshBody();
       if(plat.body){plat.body.checkCollision.left=false;plat.body.checkCollision.right=false;}
     });
-
-    // Colisão do jogador com plataformas
-    scene.physics.add.collider(player, platforms);
+    scene.physics.add.collider(player,platforms);
 
     // Player no spawn
-    player.setAlpha(1);
-    player.setPosition(L.spawn.x, L.spawn.y);
-    player.setVelocity(0,0);
-    player.setFlipX(false); player.setAngle(0); player.setScale(1);
-    scene.cameras.main.startFollow(player, true, 0.08, 0.08);
+    player.setAlpha(1);player.setPosition(L.spawn.x,L.spawn.y);
+    player.setVelocity(0,0);player.setFlipX(false);player.setAngle(0);player.setScale(1);
+    scene.cameras.main.startFollow(player,true,0.08,0.08);
 
-    // ── Criar o Boss ────────────────────────────────────────────────
-    bossHP = 3;
-    _bossActive = false;
-    const bossX = L.worldW / 2, bossY = 420;
-    bossSprite = scene.physics.add.sprite(bossX, bossY, "vilao_round");
-    bossSprite.setDisplaySize(120, 120);
-    bossSprite.body.setSize(110, 110, true);
+    // ── Boss: vilão redondo a 180×180px ──────────────────────────
+    bossSprite=scene.physics.add.sprite(L.worldW/2,380,"vilao_round");
+    bossSprite.setDisplaySize(180,180);
+    bossSprite.body.setSize(160,160,true);
     bossSprite.setCollideWorldBounds(true);
     bossSprite.setDepth(3);
-    bossSprite.setTint(0x880000); // mais escuro que o vilão normal
-    scene.physics.add.collider(bossSprite, platforms);
+    bossSprite.setTint(0x660000);   // vermelho muito escuro — claramente diferente dos vilões normais
+    scene.physics.add.collider(bossSprite,platforms);
 
-    // Barra de HP do boss (DOM)
-    _showBossHUD(L.name);
+    // Respiração lenta e ameaçadora
+    scene.tweens.add({targets:bossSprite,
+      scaleX:{from:1,to:1.06},scaleY:{from:1,to:0.96},
+      duration:900,yoyo:true,repeat:-1,ease:"Sine.easeInOut"});
 
-    // Movimento de patrulha do boss
-    bossSprite.setVelocityX(90);
-    let bossDir = 1;
-    const bossPatrol = scene.time.addEvent({ delay:50, loop:true, callback:()=>{
-      if(!bossSprite||!bossSprite.active||!_bossActive) return;
-      if(bossSprite.x > L.worldW-80) bossDir=-1;
-      if(bossSprite.x < 80) bossDir=1;
-      bossSprite.setVelocityX(90*bossDir);
+    // Patrulha
+    let bossDir=1; bossSprite.setVelocityX(80);
+    const patrolTimer=scene.time.addEvent({delay:50,loop:true,callback:()=>{
+      if(!bossSprite?.active||!_bossActive)return;
+      if(bossSprite.x>L.worldW-110){bossDir=-1;}
+      if(bossSprite.x<110){bossDir=1;}
+      bossSprite.setVelocityX((80+((3-bossHP)*40))*bossDir);
       bossSprite.setFlipX(bossDir<0);
     }});
-    bossTimers.push(bossPatrol);
+    bossTimers.push(patrolTimer);
 
-    // Animação de respiração do boss
-    scene.tweens.add({targets:bossSprite,
-      scaleX:{from:1,to:1.08}, scaleY:{from:1,to:0.94},
-      duration:700, yoyo:true, repeat:-1, ease:"Sine.easeInOut"});
+    // Dano ao jogador por contacto
+    scene.physics.add.overlap(player,bossSprite,()=>{
+      if(!_bossActive)return;
+      onHitMalware(player,bossSprite);
+    },null,scene);
 
-    // Colisão jogador ↔ boss (causa dano ao jogador)
-    scene.physics.add.overlap(player, bossSprite, ()=>{
-      if(!_bossActive) return;
-      onHitMalware(player, bossSprite);
-    }, null, scene);
-
-    // ── Projéteis do boss (livros fechados) ─────────────────────────
-    scene.physics.add.collider(bossProjectiles, platforms, (proj)=>{
-      proj.setVelocity(0,0);
-      // Apagar após 1.5s no chão
-      scene.time.delayedCall(1500, ()=>{ if(proj.active) proj.destroy(); });
+    // Projéteis (livros fechados)
+    scene.physics.add.collider(bossProjectiles,platforms,(proj)=>{
+      scene.time.delayedCall(1200,()=>{if(proj.active)proj.destroy();});
     });
-    scene.physics.add.overlap(player, bossProjectiles, (p, proj)=>{
-      if(!_bossActive||invuln) return;
-      proj.destroy();
-      onHitMalware(player, null);
-    }, null, scene);
+    scene.physics.add.overlap(player,bossProjectiles,(p,proj)=>{
+      if(!_bossActive||invuln)return;
+      proj.destroy();onHitMalware(player,null);
+    },null,scene);
 
-    // Disparar livro fechado a cada 2.2s
-    const shootTimer = scene.time.addEvent({ delay:2200, loop:true, callback:()=>{
-      if(!bossSprite||!bossSprite.active||!_bossActive) return;
-      const proj = bossProjectiles.create(bossSprite.x, bossSprite.y-30, "boss_book_closed");
-      proj.setDisplaySize(36,28);
-      // Apontar ao jogador
-      const dx = player.x - bossSprite.x;
-      const dy = player.y - bossSprite.y;
-      const len = Math.sqrt(dx*dx+dy*dy)||1;
-      const spd = 220;
-      proj.setVelocity((dx/len)*spd, (dy/len)*spd - 80);
-      proj.setDepth(4);
-      // Rotação visual
-      scene.tweens.add({targets:proj,angle:{from:0,to:360},duration:600,repeat:-1});
+    const shootTimer=scene.time.addEvent({delay:2200,loop:true,callback:()=>{
+      if(!bossSprite?.active||!_bossActive)return;
+      const proj=bossProjectiles.create(bossSprite.x,bossSprite.y-40,"boss_book_closed");
+      proj.setDisplaySize(36,28).setDepth(4);
+      const dx=player.x-bossSprite.x, dy=player.y-bossSprite.y;
+      const len=Math.sqrt(dx*dx+dy*dy)||1;
+      proj.setVelocity((dx/len)*230,(dy/len)*230-60);
+      scene.tweens.add({targets:proj,angle:{from:0,to:360},duration:550,repeat:-1});
     }});
     bossTimers.push(shootTimer);
 
-    // ── Livros abertos (colectáveis que ferem o boss) ────────────────
-    _spawnBossBooks(scene, L);
-    scene.physics.add.overlap(player, bossBooks, (p, book)=>{
-      if(!_bossActive||book.getData("collected")) return;
-      book.setData("collected", true);
-      // Efeito visual
-      scene.tweens.add({targets:book, y:book.y-40, alpha:0, scaleX:1.6, scaleY:1.6,
-        duration:400, onComplete:()=>book.destroy()});
-      showFloat(scene, book.x, book.y-50, "📖 +Conhecimento!", "#ffe000");
-      SFX.coin();
-      _bossHit(scene, L);
-    }, null, scene);
+    // Livros abertos no chão
+    _spawnBossBooks(scene);
 
-    // VanBerto apresenta o boss
-    setTimeout(()=>{
-      vbSay("Cuidado! O Monstro da Ignorância está a atirar livros fechados! Apanha os abertos! 📖", "wrong", 4500);
-    }, 800);
+    // Overlap livros abertos → hit no boss
+    scene.physics.add.overlap(player,bossBooks,(p,book)=>{
+      if(!_bossActive||book.getData("collected"))return;
+      book.setData("collected",true);
+      scene.tweens.add({targets:book,y:book.y-50,alpha:0,scaleX:1.8,scaleY:1.8,
+        duration:380,onComplete:()=>book.destroy()});
+      SFX.coin();
+      _bossHit(scene,L);
+    },null,scene);
+
+    // HUD do boss
+    _showBossHUD();
+
+    // VanBerto explica
+    setTimeout(()=>vbSay(
+      "O Monstro da Ignorância atira livros fechados! Apanha os livros ABERTOS 📖 para o derrotar!",
+      "wrong",5000),900);
   }
 
-  function _spawnBossBooks(scene, L) {
-    if(bossBooks) bossBooks.clear(true,true);
-    // 3 livros abertos em posições fixas no chão
-    [[200,480],[480,480],[760,480]].forEach(([x,y])=>{
-      const b = bossBooks.create(x, y, "boss_book_open");
-      b.setDisplaySize(44,36);
-      b.setDepth(2);
-      b.setData("collected", false);
-      b.refreshBody();
-      // Flutuação
-      scene.tweens.add({targets:b, y:y-10, duration:900+Math.random()*300,
-        yoyo:true, repeat:-1, ease:"Sine.easeInOut"});
-      // Brilho pulsante
-      scene.tweens.add({targets:b, alpha:{from:0.8,to:1}, scaleX:{from:0.95,to:1.05},
-        duration:600, yoyo:true, repeat:-1});
+  function _spawnBossBooks(scene){
+    if(bossBooks)bossBooks.clear(true,true);
+    [[180,480],[480,480],[760,480]].forEach(([x,y])=>{
+      const b=bossBooks.create(x,y,"boss_book_open");
+      b.setDisplaySize(46,38).setDepth(2);
+      b.setData("collected",false);b.refreshBody();
+      scene.tweens.add({targets:b,y:y-12,duration:850+Math.random()*300,yoyo:true,repeat:-1,ease:"Sine.easeInOut"});
+      scene.tweens.add({targets:b,alpha:{from:0.75,to:1},scaleX:{from:0.94,to:1.06},duration:550,yoyo:true,repeat:-1});
     });
   }
 
-  function _bossHit(scene, L) {
+  function _bossHit(scene,L){
+    booksCollected++;
     bossHP--;
     _updateBossHUD();
-    // Animação de recuo
-    scene.tweens.add({targets:bossSprite,
-      x:{from:bossSprite.x-30, to:bossSprite.x+30},
-      duration:60, yoyo:true, repeat:2,
-      onComplete:()=>{ scene.tweens.add({targets:bossSprite,tint:0xff4444,
-        duration:200, onComplete:()=>bossSprite?.setTint(0x880000)}); }
-    });
-    scene.cameras.main.shake(200, 0.012);
+    scene.cameras.main.shake(180,0.010);
     SFX.hit();
 
+    // Recuo visual do boss
+    scene.tweens.add({targets:bossSprite,
+      x:{from:bossSprite.x+25,to:bossSprite.x-25},
+      duration:55,yoyo:true,repeat:2});
+    // Flash branco
+    bossSprite.setTint(0xffffff);
+    scene.time.delayedCall(180,()=>{if(bossSprite?.active)bossSprite.setTint(0x660000);});
+
+    // Feedback claro para a criança
+    const msg=booksCollected===1?"📖 1/3 — Mais 2 livros!":
+              booksCollected===2?"📖 2/3 — Mais 1 livro!":"📖 3/3 — VENCESTE! 🏆";
+    showFloat(scene,bossSprite?.x||480,(bossSprite?.y||380)-80,msg,"#ffe000");
+
     if(bossHP<=0){
-      _bossDefeated(scene, L);
+      _bossDefeated(scene,L);
     } else {
-      // Velocidade aumenta com cada hit
-      const newSpd = 90 + (3-bossHP)*50;
-      showFloat(scene, bossSprite.x, bossSprite.y-60,
-        bossHP===2?"😤 Ainda me faltam 2 livros!":"😱 Mais um livro e ganhas!", "#ff8800");
-      // Respawnar livros restantes
-      scene.time.delayedCall(600, ()=>{ _spawnBossBooks(scene, L); });
+      // VanBerto encoraja
+      vbSay(bossHP===2?"Boa! Mais 2 livros abertos e o monstro cai! 💪":
+                       "Incrível! Mais 1 livro e acabaste com ele! ⭐","good",2800);
+      scene.time.delayedCall(500,()=>_spawnBossBooks(scene));
     }
   }
 
-  function _bossDefeated(scene, L) {
-    _bossActive = false;
-    bossTimers.forEach(t=>{ try{t.remove(false);}catch{} }); bossTimers=[];
-    if(bossProjectiles) bossProjectiles.clear(true,true);
+  function _bossDefeated(scene,L){
+    _bossActive=false;
+    bossTimers.forEach(t=>{try{t.remove(false);}catch{}});bossTimers=[];
+    if(bossProjectiles)bossProjectiles.clear(true,true);
 
-    // Explosão do boss
-    scene.cameras.main.shake(400, 0.02);
-    const colors=[0xffd700,0xff6b35,0xff80c0,0x80d0ff];
-    for(let i=0;i<3;i++){
-      scene.time.delayedCall(i*180, ()=>{
-        if(!scene||!scene.add) return;
+    scene.cameras.main.shake(500,0.022);
+    const colors=[0xffd700,0xff6b35,0xff80c0,0x80d0ff,0xffffff];
+    for(let i=0;i<4;i++){
+      scene.time.delayedCall(i*160,()=>{
+        if(!scene?.add)return;
         const p=scene.add.particles(0,0,"spark_item",{
-          x:bossSprite?.x||480, y:bossSprite?.y||420,
-          speed:{min:100,max:300}, lifespan:700, quantity:30,
-          scale:{start:1.4,end:0}, gravityY:100, angle:{min:0,max:360}, tint:colors
+          x:bossSprite?.x||480,y:bossSprite?.y||380,
+          speed:{min:120,max:320},lifespan:750,quantity:35,
+          scale:{start:1.5,end:0},gravityY:80,angle:{min:0,max:360},tint:colors
         });
-        scene.time.delayedCall(600,()=>p.destroy());
+        scene.time.delayedCall(700,()=>p.destroy());
       });
     }
-    scene.tweens.add({targets:bossSprite, alpha:0, scaleX:2, scaleY:2,
-      duration:500, onComplete:()=>{ bossSprite?.destroy(); bossSprite=null; }});
+    scene.tweens.add({targets:bossSprite,alpha:0,scaleX:2.5,scaleY:2.5,
+      duration:600,ease:"Quad.easeOut",
+      onComplete:()=>{bossSprite?.destroy();bossSprite=null;}});
 
     _hideBossHUD();
-    vbSay("INCRÍVEL! Derrotaste o Monstro da Ignorância! O conhecimento venceu! 🏆", "perfect", 3500);
+    vbSay("INCRÍVEL! Derrotaste o Monstro da Ignorância com 3 livros abertos! O Conhecimento Vence Sempre! 🏆","perfect",4000);
     SFX.starMelody?.();
+    score+=200; scoreText?.setText(`🌟 Pontos: ${score}`);
+    showFloat(scene,480,300,"🏆 +200 Monstro Derrotado!","#ffd700");
 
-    // Dança de vitória + quiz
-    scene.time.delayedCall(800, ()=>{
-      robotDance(scene, ()=>{
-        showQuiz(
-          pickQuizForLevel(currentLevel, L.quizTheme),
-          (correct)=>{ nextLevel(scene); },
-          false
-        );
+    scene.time.delayedCall(900,()=>{
+      robotDance(scene,()=>{
+        showQuiz(pickQuizForLevel(currentLevel,L.quizTheme),(correct)=>{nextLevel(scene);},false);
       });
     });
   }
 
-  // ── HUD do boss (barra de HP) ────────────────────────────────────────
-  function _showBossHUD(bossName) {
-    let hud = document.getElementById("bossHUD");
+  // ── Boss HUD (barra HP + contador de livros) ─────────────────
+  function _showBossHUD(){
+    let hud=document.getElementById("bossHUD");
     if(!hud){
-      hud=document.createElement("div"); hud.id="bossHUD";
-      hud.style.cssText=`
-        position:fixed;top:12px;left:50%;transform:translateX(-50%);
-        z-index:9000;pointer-events:none;
-        display:flex;flex-direction:column;align-items:center;gap:4px;
-        font-family:'Baloo 2',sans-serif;
-      `;
+      hud=document.createElement("div");hud.id="bossHUD";
+      hud.style.cssText="position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:9000;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:5px;font-family:'Baloo 2',sans-serif;";
       hud.innerHTML=`
-        <div id="bossHUDName" style="font-size:13px;font-weight:800;color:#ff4400;
-          text-shadow:0 0 8px rgba(255,68,0,0.8),1px 1px 0 #000;letter-spacing:1px;"></div>
-        <div style="background:rgba(0,0,0,0.65);border:2px solid #ff4400;border-radius:8px;
-          padding:3px;width:180px;box-shadow:0 0 12px rgba(255,68,0,0.5);">
-          <div id="bossHPBar" style="height:14px;border-radius:5px;
-            background:linear-gradient(90deg,#ff2200,#ff8800);
-            transition:width 0.3s ease;width:100%;"></div>
+        <div style="font-size:15px;font-weight:900;color:#ff2200;text-shadow:0 0 10px rgba(255,34,0,0.9),1px 1px 0 #000;letter-spacing:2px;">
+          👹 Monstro da Ignorância
         </div>
-        <div id="bossHPHits" style="font-size:11px;color:#ffaa44;font-weight:700;
-          text-shadow:1px 1px 0 #000;">❤️❤️❤️</div>
-      `;
+        <div style="background:rgba(0,0,0,0.70);border:2px solid #ff2200;border-radius:8px;padding:3px 4px;width:200px;box-shadow:0 0 14px rgba(255,34,0,0.55);">
+          <div id="bossHPBar" style="height:16px;border-radius:5px;background:linear-gradient(90deg,#cc0000,#ff6600);transition:width 0.35s ease;width:100%;"></div>
+        </div>
+        <div id="bossBookCount" style="font-size:13px;font-weight:800;color:#ffe060;text-shadow:1px 1px 0 #000;letter-spacing:1px;">
+          📖 0/3 livros abertos apanhados
+        </div>`;
       document.body.appendChild(hud);
     }
-    document.getElementById("bossHUDName").textContent=bossName.replace("Boss — ","👹 ");
-    _updateBossHUD();
     hud.style.display="flex";
+    _updateBossHUD();
   }
 
-  function _updateBossHUD() {
+  function _updateBossHUD(){
     const bar=document.getElementById("bossHPBar");
-    const hits=document.getElementById("bossHPHits");
-    if(bar) bar.style.width=Math.round((bossHP/3)*100)+"%";
-    if(hits) hits.textContent="❤️".repeat(bossHP)+"🖤".repeat(3-bossHP);
-  }
-
-  function _hideBossHUD() {
-    const hud=document.getElementById("bossHUD");
-    if(hud) hud.style.display="none";
-  }
-
-  // Activar boss após showHistory fechar (física resume)
-  // chamado em showHistory callback via nextLevel
-  function _startBossIfNeeded() {
-    if(LEVELS[currentLevel]?.isBoss && !_bossActive){
-      _bossActive = true;
+    const cnt=document.getElementById("bossBookCount");
+    if(bar)bar.style.width=Math.round((bossHP/3)*100)+"%";
+    if(cnt){
+      const icons="📖".repeat(booksCollected)+"📕".repeat(3-booksCollected);
+      cnt.textContent=icons+" "+booksCollected+"/3 livros abertos apanhados";
     }
+  }
+
+  function _hideBossHUD(){
+    const hud=document.getElementById("bossHUD");
+    if(hud)hud.style.display="none";
+  }
+
+  function _startBossIfNeeded(){
+    if(LEVELS[currentLevel]?.isBoss&&!_bossActive)_bossActive=true;
   }
 
   function updateHUD(L) {
@@ -3121,7 +3065,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     elNum.style.color    = numCol;
     elNum.textContent    = LEVELS[nextIdx]?.isBoss
-      ? `👹 Boss — Reino da Educação`
+      ? "👹 Boss — Reino da Educação"
       : `Nível ${nextIdx+1} / ${LEVELS.length}`;
     elTitle.style.color  = textCol;
     elTitle.textContent  = nextL.name.replace(/^Nível \d+\s*[—–-]\s*/, "");
@@ -3436,7 +3380,7 @@ window.addEventListener("DOMContentLoaded", () => {
           quizFeedback.textContent=isRetry?"✅ Conseguiste na segunda tentativa! 💪":"✅ Muito bem!";
           quizFeedback.style.color="#208050";
           SFX.coin();
-          vbSayRandom(VB_QUIZ_CORRECT, "good", 3200);
+          vbSayRandom(VB_QUIZ_CORRECT,"good",3200);
           // Mostrar SEMPRE: explicação do quiz E/OU dica do tema
           const tipFact = QUIZ_TIPS[LEVELS[currentLevel]?.quizTheme] || "";
           const expText = quiz.exp ? "💡 " + quiz.exp : "";
@@ -3469,7 +3413,7 @@ window.addEventListener("DOMContentLoaded", () => {
             showDynamicMsg(DYNAMIC_MSGS_WRONG);
           }
           if(sceneRef&&player){sceneRef.tweens.add({targets:player,angle:{from:-10,to:10},duration:80,yoyo:true,repeat:4,ease:"Sine.easeInOut",onComplete:()=>{if(player)player.setAngle(0);}});}
-          vbSayRandom(VB_QUIZ_WRONG, "wrong", 3200);
+          vbSayRandom(VB_QUIZ_WRONG,"wrong",3200);
 
           quizStats.errors=quizStats.errors||[];
           if(!isRetry) {
@@ -3629,7 +3573,7 @@ window.addEventListener("DOMContentLoaded", () => {
         duration: 400, ease: "Quad.easeOut",
         onComplete: () => spawnFlash.destroy() });
       tipText.setText("⚡ Protegido por 2s!");
-      vbSayRandom(VB_HIT, "hit", 3000);
+      vbSayRandom(VB_HIT,"hit",3000);
     });
     if(lives<=0) return; // evitar correr o resto se já vai para game over
     // Ao perder uma vida, os itens voltam a aparecer — EXCETO os corações já apanhados
@@ -3777,7 +3721,7 @@ window.addEventListener("DOMContentLoaded", () => {
     starPowerTimer=scene.time.delayedCall(8000,()=>clearStarPower(scene));
     // Piscar apenas — sem tint de cor
     if(player) player.clearTint();
-    vbSayRandom(VB_STAR_POWER, "star", 2800);
+    vbSayRandom(VB_STAR_POWER,"star",2800);
   }
   function clearStarPower(scene){
     starPower=false;
@@ -3927,55 +3871,38 @@ window.addEventListener("DOMContentLoaded", () => {
     makeBossTextures(scene);
   }
 
-  // ── Texturas do boss ──────────────────────────────────────────────────
   function makeBossTextures(scene){
-    // Livro fechado (projétil do boss)
     if(!scene.textures.exists("boss_book_closed")){
-      const t=scene.textures.createCanvas("boss_book_closed",40,32), ctx=t.getContext();
+      const t=scene.textures.createCanvas("boss_book_closed",40,32),ctx=t.getContext();
       ctx.fillStyle="#1a0a00"; ctx.fillRect(2,2,36,28);
       ctx.fillStyle="#8B1a00"; ctx.fillRect(4,4,32,24);
-      ctx.strokeStyle="#ff6600"; ctx.lineWidth=1.5;
-      ctx.strokeRect(4,4,32,24);
-      // Lombada
+      ctx.strokeStyle="#ff6600"; ctx.lineWidth=1.5; ctx.strokeRect(4,4,32,24);
       ctx.fillStyle="#5a0f00"; ctx.fillRect(4,4,6,24);
-      ctx.strokeStyle="#ffaa44"; ctx.lineWidth=1;
-      ctx.strokeRect(4,4,6,24);
-      // Título (linhas)
+      ctx.strokeStyle="#ffaa44"; ctx.lineWidth=1; ctx.strokeRect(4,4,6,24);
       ctx.strokeStyle="rgba(255,180,80,0.6)"; ctx.lineWidth=1.5;
-      [10,14,18,22].forEach(y=>{ ctx.beginPath(); ctx.moveTo(14,y); ctx.lineTo(34,y); ctx.stroke(); });
-      // Fechadura
-      ctx.fillStyle="#ffaa00";
-      ctx.beginPath(); ctx.arc(24,16,3,0,Math.PI*2); ctx.fill();
+      [10,14,18,22].forEach(y=>{ctx.beginPath();ctx.moveTo(14,y);ctx.lineTo(34,y);ctx.stroke();});
+      ctx.fillStyle="#ffaa00"; ctx.beginPath(); ctx.arc(24,16,3,0,Math.PI*2); ctx.fill();
       t.refresh();
     }
-    // Livro aberto (colectável para derrotar o boss)
     if(!scene.textures.exists("boss_book_open")){
-      const t=scene.textures.createCanvas("boss_book_open",48,40), ctx=t.getContext();
-      // Brilho de fundo
-      const grd = ctx.createRadialGradient(24,20,4,24,20,22);
-      grd.addColorStop(0,"rgba(255,255,120,0.55)");
-      grd.addColorStop(1,"rgba(255,200,0,0)");
+      const t=scene.textures.createCanvas("boss_book_open",48,40),ctx=t.getContext();
+      const grd=ctx.createRadialGradient(24,20,4,24,20,22);
+      grd.addColorStop(0,"rgba(255,255,120,0.65)"); grd.addColorStop(1,"rgba(255,200,0,0)");
       ctx.fillStyle=grd; ctx.fillRect(0,0,48,40);
-      // Página esquerda
       ctx.fillStyle="#fffde8"; ctx.beginPath();
-      ctx.moveTo(24,8); ctx.lineTo(4,4); ctx.lineTo(4,36); ctx.lineTo(24,34); ctx.closePath(); ctx.fill();
+      ctx.moveTo(24,8);ctx.lineTo(4,4);ctx.lineTo(4,36);ctx.lineTo(24,34);ctx.closePath();ctx.fill();
       ctx.strokeStyle="#c8a800"; ctx.lineWidth=1.5; ctx.stroke();
-      // Página direita
       ctx.fillStyle="#fff8cc"; ctx.beginPath();
-      ctx.moveTo(24,8); ctx.lineTo(44,4); ctx.lineTo(44,36); ctx.lineTo(24,34); ctx.closePath(); ctx.fill();
+      ctx.moveTo(24,8);ctx.lineTo(44,4);ctx.lineTo(44,36);ctx.lineTo(24,34);ctx.closePath();ctx.fill();
       ctx.strokeStyle="#c8a800"; ctx.lineWidth=1.5; ctx.stroke();
-      // Lombada central
       ctx.strokeStyle="#8B6914"; ctx.lineWidth=3;
-      ctx.beginPath(); ctx.moveTo(24,8); ctx.lineTo(24,34); ctx.stroke();
-      // Linhas de texto nas páginas
+      ctx.beginPath();ctx.moveTo(24,8);ctx.lineTo(24,34);ctx.stroke();
       ctx.strokeStyle="rgba(100,80,20,0.4)"; ctx.lineWidth=1;
       [14,19,24,29].forEach(y=>{
-        ctx.beginPath(); ctx.moveTo(8,y); ctx.lineTo(20,y); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(28,y); ctx.lineTo(40,y); ctx.stroke();
+        ctx.beginPath();ctx.moveTo(8,y);ctx.lineTo(20,y);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(28,y);ctx.lineTo(40,y);ctx.stroke();
       });
-      // Estrela a brilhar
-      ctx.fillStyle="#ffe000"; ctx.font="bold 14px Arial";
-      ctx.textAlign="center"; ctx.fillText("✦",24,22);
+      ctx.fillStyle="#ffe000"; ctx.font="bold 14px Arial"; ctx.textAlign="center"; ctx.fillText("✦",24,22);
       t.refresh();
     }
   }

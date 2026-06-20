@@ -52,18 +52,18 @@ export const LEVELS = [
   // ══ BOSS 1 — Monstro da Ignorância ══
   {
     name: "Boss — Monstro da Ignorância",
-    isBoss: true, bossKey: "ignorancia",
-    theme: 1, quizTheme: "educacao",
-    worldW: 960,
-    spawn: { x: 160, y: 430 },
-    doorX: -999,
-    platforms: [
-      { x: 480, y: 510, w: 960, h: 28 },
-      { x: 180, y: 390, w: 180, h: 22 },
-      { x: 780, y: 390, w: 180, h: 22 },
-      { x: 480, y: 300, w: 200, h: 22 },
+    isBoss:true, bossKey:"ignorancia",
+    theme:1, quizTheme:"educacao",
+    worldW:960,
+    spawn:{x:160,y:420},
+    doorX:-999,
+    platforms:[
+      {x:480,y:510,w:960,h:28},
+      {x:180,y:390,w:180,h:22},
+      {x:780,y:390,w:180,h:22},
+      {x:480,y:300,w:200,h:22},
     ],
-    items: [], malwares: [],
+    items:[], malwares:[],
   },
   {
     name: "Nível 3 — A Convenção de 1989",
