@@ -2036,7 +2036,6 @@ body.hc-mode .sb-name, body.hc-mode .sb-bonus { color:#ffff00 !important; }
 .ag-cell--miss .ag-name { color: #555; }
 body.hc-mode .ag-cell--got { background:#111 !important; border-color:#fff !important; }
 body.hc-mode .ag-name { color:#ffff00 !important; }
-/* ── VanBerto speech ── */
 #vbSpeech{position:fixed;bottom:36px;right:12px;display:flex;flex-direction:row;align-items:flex-end;gap:8px;z-index:8700;pointer-events:none;opacity:0;transform:translateY(12px) scale(0.92);transition:opacity 0.28s ease,transform 0.28s cubic-bezier(.34,1.56,.64,1);}
 #vbSpeech.vb-show{opacity:1;transform:translateY(0) scale(1);}
 #vbSpeech.vb-hit{--vb-border:#ff4444;--vb-bg:rgba(60,8,8,0.92);--vb-text:#ffb8b8;}

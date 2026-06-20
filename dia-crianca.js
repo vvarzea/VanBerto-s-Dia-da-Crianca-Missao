@@ -45,14 +45,14 @@ window.addEventListener("DOMContentLoaded", () => {
 
   let playerName = "";
 
-  // ── VanBerto's speech bubble ──
+  // VanBerto speech
   let _vbTimer=null;
   function vbSay(text,type="intro",duration=3400){
     if(document.body.classList.contains("hc-mode"))return;
-    const el=document.getElementById("vbSpeech"), textEl=document.getElementById("vbSpeechText");
+    const el=document.getElementById("vbSpeech"),textEl=document.getElementById("vbSpeechText");
     if(!el||!textEl)return;
     if(_vbTimer){clearTimeout(_vbTimer);_vbTimer=null;}
-    textEl.textContent=text; el.className="vb-"+type; void el.offsetWidth;
+    textEl.textContent=text;el.className="vb-"+type;void el.offsetWidth;
     el.classList.add("vb-show");
     _vbTimer=setTimeout(()=>{el.classList.remove("vb-show");_vbTimer=null;},duration);
   }
@@ -517,16 +517,16 @@ window.addEventListener("DOMContentLoaded", () => {
   let _artOrbsEl=null;
   function createArtOrbs(scene){
     if(_artOrbsEl){_artOrbsEl.remove();_artOrbsEl=null;}
-    const strip=document.createElement("div"); strip.id="artOrbsHUD";
+    const strip=document.createElement("div");strip.id="artOrbsHUD";
     strip.style.cssText="position:fixed;bottom:6px;left:50%;transform:translateX(-50%);display:flex;gap:3px;align-items:center;z-index:110;pointer-events:none;";
-    document.body.appendChild(strip); _artOrbsEl=strip; updateArtOrbs();
+    document.body.appendChild(strip);_artOrbsEl=strip;updateArtOrbs();
   }
   function updateArtOrbs(){
-    if(!_artOrbsEl)return; _artOrbsEl.innerHTML="";
+    if(!_artOrbsEl)return;_artOrbsEl.innerHTML="";
     ARTEFACTS.forEach((art,i)=>{
-      const got=!!collectedArtefacts[i], orb=document.createElement("div"); orb.title=art.name;
+      const got=!!collectedArtefacts[i],orb=document.createElement("div");orb.title=art.name;
       if(got){
-        const themeIdx=LEVELS[i]?.theme??0, theme=THEMES[themeIdx]??THEMES[0];
+        const themeIdx=LEVELS[i]?.theme??0,theme=THEMES[themeIdx]??THEMES[0];
         const skyCol="#"+theme.skyBot.toString(16).padStart(6,"0");
         const grassCol="#"+theme.grassTop.toString(16).padStart(6,"0");
         orb.style.cssText="width:18px;height:18px;border-radius:50%;background:"+skyCol+";box-shadow:0 0 5px "+grassCol+"99,0 0 2px rgba(255,255,255,0.5) inset;border:1.5px solid "+grassCol+";display:flex;align-items:center;justify-content:center;font-size:10px;line-height:1;";
@@ -812,9 +812,8 @@ window.addEventListener("DOMContentLoaded", () => {
   let trailSprites = [];
   let footStepTimer = 0;
   let balloons=[], critters=[], enemyTimers=[];
-  // ── Boss state ──
-  let bossSprite=null, bossHP=3, booksCollected=0;
-  let bossProjectiles=null, bossBooks=null, bossTimers=[], _bossActive=false;
+  // Boss state
+  let bossSprite=null,bossHP=3,booksCollected=0,bossProjectiles=null,bossBooks=null,bossTimers=[],_bossActive=false;
   let movingPlatforms=[], trampolines=[], secretDoors=[], hazards=[];
   let player, platforms, itemsGroup, malwareGroup, door, doorOverlap=null;
   let cursors, keySpace;
@@ -2166,12 +2165,12 @@ window.addEventListener("DOMContentLoaded", () => {
     scene.physics.world.setBounds(0,0,L.worldW,514);
     scene.cameras.main.setBounds(0,0,L.worldW,540);
 
-    enemyTimers.forEach(t=>{ try{t.remove(false);}catch{} }); enemyTimers=[];
-    bossTimers.forEach(t=>{ try{t.remove(false);}catch{} }); bossTimers=[];
+    enemyTimers.forEach(t=>{try{t.remove(false);}catch{}}); enemyTimers=[];
+    bossTimers.forEach(t=>{try{t.remove(false);}catch{}}); bossTimers=[];
     if(bossSprite){try{bossSprite.destroy();}catch{}bossSprite=null;}
     if(bossProjectiles)bossProjectiles.clear(true,true);
     if(bossBooks)bossBooks.clear(true,true);
-    _bossActive=false; booksCollected=0; _hideBossHUD();
+    _bossActive=false;booksCollected=0;_hideBossHUD();
     platforms.clear(true,true); itemsGroup.clear(true,true);
     malwareGroup.clear(true,true);
     if(door) door.destroy();
@@ -2489,6 +2488,10 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // ═══════════════════════════════════════════
   // BOSS — Monstro da Ignorância
+  // Regras:
+  //   • Apanha 3 livros abertos SEM MORRER para vencer
+  //   • Morrer → reset completo (HP volta a 3, livros respawnam, contador a zero)
+  //   • Vitória → explosão + dança + avança direto (sem quiz)
   // ═══════════════════════════════════════════
   function loadBossLevel(scene,idx){
     currentLevel=idx;
@@ -2519,7 +2522,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     // Plataformas
     L.platforms.forEach(p=>{
-      const themeIdx=L.theme%THEMES.length, platKey="platform_t"+themeIdx;
+      const themeIdx=L.theme%THEMES.length,platKey="platform_t"+themeIdx;
       if(!scene.textures.exists(platKey))makePlatformTextureThemed(scene,platKey,themeIdx);
       const plat=platforms.create(p.x,p.y,platKey);
       plat.displayWidth=p.w;plat.displayHeight=p.h;plat.refreshBody();
@@ -2527,40 +2530,39 @@ window.addEventListener("DOMContentLoaded", () => {
     });
     scene.physics.add.collider(player,platforms);
 
-    // Player no spawn
     player.setAlpha(1);player.setPosition(L.spawn.x,L.spawn.y);
     player.setVelocity(0,0);player.setFlipX(false);player.setAngle(0);player.setScale(1);
     scene.cameras.main.startFollow(player,true,0.08,0.08);
 
-    // ── Boss: vilão redondo a 180×180px ──────────────────────────
-    bossSprite=scene.physics.add.sprite(L.worldW/2,380,"vilao_round");
+    // Boss: vilão redondo a 180×180px
+    bossSprite=scene.physics.add.sprite(L.worldW/2,370,"vilao_round");
     bossSprite.setDisplaySize(180,180);
     bossSprite.body.setSize(160,160,true);
     bossSprite.setCollideWorldBounds(true);
     bossSprite.setDepth(3);
-    bossSprite.setTint(0x660000);   // vermelho muito escuro — claramente diferente dos vilões normais
+    bossSprite.setTint(0x660000);
     scene.physics.add.collider(bossSprite,platforms);
 
-    // Respiração lenta e ameaçadora
+    // Respiração ameaçadora
     scene.tweens.add({targets:bossSprite,
       scaleX:{from:1,to:1.06},scaleY:{from:1,to:0.96},
       duration:900,yoyo:true,repeat:-1,ease:"Sine.easeInOut"});
 
-    // Patrulha
+    // Patrulha (acelera conforme HP desce)
     let bossDir=1; bossSprite.setVelocityX(80);
     const patrolTimer=scene.time.addEvent({delay:50,loop:true,callback:()=>{
       if(!bossSprite?.active||!_bossActive)return;
-      if(bossSprite.x>L.worldW-110){bossDir=-1;}
-      if(bossSprite.x<110){bossDir=1;}
-      bossSprite.setVelocityX((80+((3-bossHP)*40))*bossDir);
+      if(bossSprite.x>L.worldW-110)bossDir=-1;
+      if(bossSprite.x<110)bossDir=1;
+      bossSprite.setVelocityX((80+((3-bossHP)*45))*bossDir);
       bossSprite.setFlipX(bossDir<0);
     }});
     bossTimers.push(patrolTimer);
 
-    // Dano ao jogador por contacto
+    // Contacto boss → dano ao jogador → reset completo
     scene.physics.add.overlap(player,bossSprite,()=>{
-      if(!_bossActive)return;
-      onHitMalware(player,bossSprite);
+      if(!_bossActive||invuln)return;
+      _bossPlayerHit(scene,L);
     },null,scene);
 
     // Projéteis (livros fechados)
@@ -2569,14 +2571,15 @@ window.addEventListener("DOMContentLoaded", () => {
     });
     scene.physics.add.overlap(player,bossProjectiles,(p,proj)=>{
       if(!_bossActive||invuln)return;
-      proj.destroy();onHitMalware(player,null);
+      proj.destroy();
+      _bossPlayerHit(scene,L);
     },null,scene);
 
-    const shootTimer=scene.time.addEvent({delay:2200,loop:true,callback:()=>{
+    const shootTimer=scene.time.addEvent({delay:2000,loop:true,callback:()=>{
       if(!bossSprite?.active||!_bossActive)return;
       const proj=bossProjectiles.create(bossSprite.x,bossSprite.y-40,"boss_book_closed");
       proj.setDisplaySize(36,28).setDepth(4);
-      const dx=player.x-bossSprite.x, dy=player.y-bossSprite.y;
+      const dx=player.x-bossSprite.x,dy=player.y-bossSprite.y;
       const len=Math.sqrt(dx*dx+dy*dy)||1;
       proj.setVelocity((dx/len)*230,(dy/len)*230-60);
       scene.tweens.add({targets:proj,angle:{from:0,to:360},duration:550,repeat:-1});
@@ -2586,7 +2589,7 @@ window.addEventListener("DOMContentLoaded", () => {
     // Livros abertos no chão
     _spawnBossBooks(scene);
 
-    // Overlap livros abertos → hit no boss
+    // Apanhar livro aberto → hit no boss
     scene.physics.add.overlap(player,bossBooks,(p,book)=>{
       if(!_bossActive||book.getData("collected"))return;
       book.setData("collected",true);
@@ -2596,13 +2599,38 @@ window.addEventListener("DOMContentLoaded", () => {
       _bossHit(scene,L);
     },null,scene);
 
-    // HUD do boss
     _showBossHUD();
-
-    // VanBerto explica
     setTimeout(()=>vbSay(
-      "O Monstro da Ignorância atira livros fechados! Apanha os livros ABERTOS 📖 para o derrotar!",
+      "Apanha os 3 livros ABERTOS 📖 sem morrer para derrotar o Monstro! Cuidado com os livros que ele atira!",
       "wrong",5000),900);
+  }
+
+  // Jogador é atingido durante o boss → reset COMPLETO
+  function _bossPlayerHit(scene,L){
+    if(invuln||!_bossActive)return;
+    lives-=1; updateHearts(); _hudDirty=true;
+    // Flash de dano
+    if(heartsGfx&&scene)scene.tweens.add({targets:heartsGfx,
+      x:{from:-4,to:4},duration:60,yoyo:true,repeat:3,
+      ease:"Sine.easeInOut",onComplete:()=>{if(heartsGfx)heartsGfx.x=0;}});
+
+    if(lives<=0){showGameOver();return;}
+
+    setInvuln(scene,1500);
+    player.setVelocity(0,0);
+    player.setPosition(L.spawn.x,L.spawn.y);
+
+    // Reset completo do boss: HP e livros voltam ao início
+    bossHP=3; booksCollected=0;
+    _updateBossHUD();
+    if(bossProjectiles)bossProjectiles.clear(true,true);
+    _spawnBossBooks(scene);
+
+    // Flash de reset
+    const flash=scene.add.rectangle(480,270,960,540,0xff0000,0.35).setDepth(20);
+    scene.tweens.add({targets:flash,alpha:0,duration:400,onComplete:()=>flash.destroy()});
+    showFloat(scene,480,240,"💀 Recomeças do zero!","#ff4444");
+    vbSay("Perdeste uma vida — recomeças do zero! Consegues apanhar os 3 livros sem morrer? 💪","hit",3200);
   }
 
   function _spawnBossBooks(scene){
@@ -2611,8 +2639,10 @@ window.addEventListener("DOMContentLoaded", () => {
       const b=bossBooks.create(x,y,"boss_book_open");
       b.setDisplaySize(46,38).setDepth(2);
       b.setData("collected",false);b.refreshBody();
-      scene.tweens.add({targets:b,y:y-12,duration:850+Math.random()*300,yoyo:true,repeat:-1,ease:"Sine.easeInOut"});
-      scene.tweens.add({targets:b,alpha:{from:0.75,to:1},scaleX:{from:0.94,to:1.06},duration:550,yoyo:true,repeat:-1});
+      scene.tweens.add({targets:b,y:y-12,duration:850+Math.random()*300,
+        yoyo:true,repeat:-1,ease:"Sine.easeInOut"});
+      scene.tweens.add({targets:b,alpha:{from:0.75,to:1},
+        scaleX:{from:0.94,to:1.06},duration:550,yoyo:true,repeat:-1});
     });
   }
 
@@ -2623,29 +2653,30 @@ window.addEventListener("DOMContentLoaded", () => {
     scene.cameras.main.shake(180,0.010);
     SFX.hit();
 
-    // Recuo visual do boss
+    // Recuo + flash branco
     scene.tweens.add({targets:bossSprite,
       x:{from:bossSprite.x+25,to:bossSprite.x-25},
       duration:55,yoyo:true,repeat:2});
-    // Flash branco
     bossSprite.setTint(0xffffff);
     scene.time.delayedCall(180,()=>{if(bossSprite?.active)bossSprite.setTint(0x660000);});
 
-    // Feedback claro para a criança
+    // Contador claro
     const msg=booksCollected===1?"📖 1/3 — Mais 2 livros!":
               booksCollected===2?"📖 2/3 — Mais 1 livro!":"📖 3/3 — VENCESTE! 🏆";
-    showFloat(scene,bossSprite?.x||480,(bossSprite?.y||380)-80,msg,"#ffe000");
+    showFloat(scene,bossSprite?.x||480,(bossSprite?.y||370)-90,msg,"#ffe000");
 
     if(bossHP<=0){
       _bossDefeated(scene,L);
     } else {
-      // VanBerto encoraja
-      vbSay(bossHP===2?"Boa! Mais 2 livros abertos e o monstro cai! 💪":
-                       "Incrível! Mais 1 livro e acabaste com ele! ⭐","good",2800);
+      vbSay(bossHP===2?
+        "Boa! Mais 2 livros abertos — não morras agora! 💪":
+        "Incrível! Só falta 1 livro! Cuidado com os projéteis! ⭐",
+        "good",2800);
       scene.time.delayedCall(500,()=>_spawnBossBooks(scene));
     }
   }
 
+  // Vitória — SEM quiz, direto para nextLevel
   function _bossDefeated(scene,L){
     _bossActive=false;
     bossTimers.forEach(t=>{try{t.remove(false);}catch{}});bossTimers=[];
@@ -2657,7 +2688,7 @@ window.addEventListener("DOMContentLoaded", () => {
       scene.time.delayedCall(i*160,()=>{
         if(!scene?.add)return;
         const p=scene.add.particles(0,0,"spark_item",{
-          x:bossSprite?.x||480,y:bossSprite?.y||380,
+          x:bossSprite?.x||480,y:bossSprite?.y||370,
           speed:{min:120,max:320},lifespan:750,quantity:35,
           scale:{start:1.5,end:0},gravityY:80,angle:{min:0,max:360},tint:colors
         });
@@ -2669,33 +2700,37 @@ window.addEventListener("DOMContentLoaded", () => {
       onComplete:()=>{bossSprite?.destroy();bossSprite=null;}});
 
     _hideBossHUD();
-    vbSay("INCRÍVEL! Derrotaste o Monstro da Ignorância com 3 livros abertos! O Conhecimento Vence Sempre! 🏆","perfect",4000);
+    vbSay("LENDÁRIO! Apanhaste os 3 livros sem morrer! O Conhecimento Venceu! 🏆","perfect",4000);
     SFX.starMelody?.();
-    score+=200; scoreText?.setText(`🌟 Pontos: ${score}`);
-    showFloat(scene,480,300,"🏆 +200 Monstro Derrotado!","#ffd700");
+    score+=300; scoreText?.setText(`🌟 Pontos: ${score}`);
+    showFloat(scene,480,280,"🏆 +300 Boss Derrotado!","#ffd700");
 
+    // Dança + avança direto (sem quiz)
     scene.time.delayedCall(900,()=>{
-      robotDance(scene,()=>{
-        showQuiz(pickQuizForLevel(currentLevel,L.quizTheme),(correct)=>{nextLevel(scene);},false);
-      });
+      robotDance(scene,()=>nextLevel(scene));
     });
   }
 
-  // ── Boss HUD (barra HP + contador de livros) ─────────────────
+  // ── Boss HUD ─────────────────────────────────────────────────
   function _showBossHUD(){
     let hud=document.getElementById("bossHUD");
     if(!hud){
       hud=document.createElement("div");hud.id="bossHUD";
       hud.style.cssText="position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:9000;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:5px;font-family:'Baloo 2',sans-serif;";
       hud.innerHTML=`
-        <div style="font-size:15px;font-weight:900;color:#ff2200;text-shadow:0 0 10px rgba(255,34,0,0.9),1px 1px 0 #000;letter-spacing:2px;">
+        <div style="font-size:15px;font-weight:900;color:#ff2200;
+          text-shadow:0 0 10px rgba(255,34,0,0.9),1px 1px 0 #000;letter-spacing:2px;">
           👹 Monstro da Ignorância
         </div>
-        <div style="background:rgba(0,0,0,0.70);border:2px solid #ff2200;border-radius:8px;padding:3px 4px;width:200px;box-shadow:0 0 14px rgba(255,34,0,0.55);">
-          <div id="bossHPBar" style="height:16px;border-radius:5px;background:linear-gradient(90deg,#cc0000,#ff6600);transition:width 0.35s ease;width:100%;"></div>
+        <div style="background:rgba(0,0,0,0.70);border:2px solid #ff2200;border-radius:8px;
+          padding:3px 4px;width:200px;box-shadow:0 0 14px rgba(255,34,0,0.55);">
+          <div id="bossHPBar" style="height:16px;border-radius:5px;
+            background:linear-gradient(90deg,#cc0000,#ff6600);
+            transition:width 0.35s ease;width:100%;"></div>
         </div>
-        <div id="bossBookCount" style="font-size:13px;font-weight:800;color:#ffe060;text-shadow:1px 1px 0 #000;letter-spacing:1px;">
-          📖 0/3 livros abertos apanhados
+        <div id="bossBookCount" style="font-size:13px;font-weight:800;
+          color:#ffe060;text-shadow:1px 1px 0 #000;">
+          📕📕📕 — apanha os livros abertos!
         </div>`;
       document.body.appendChild(hud);
     }
@@ -2709,7 +2744,7 @@ window.addEventListener("DOMContentLoaded", () => {
     if(bar)bar.style.width=Math.round((bossHP/3)*100)+"%";
     if(cnt){
       const icons="📖".repeat(booksCollected)+"📕".repeat(3-booksCollected);
-      cnt.textContent=icons+" "+booksCollected+"/3 livros abertos apanhados";
+      cnt.textContent=icons+" "+booksCollected+"/3";
     }
   }
 
@@ -3122,7 +3157,7 @@ window.addEventListener("DOMContentLoaded", () => {
     awaitingQuiz=true;
     scene.physics.pause();
 
-    if(livesLostThisLevel===0){
+    if(livesLostThisLevel===0&&!LEVELS[currentLevel]?.isBoss){
       score+=50; bonusStars.textContent="⭐⭐⭐\n+50 Nível Perfeito!";
       bonusStars.classList.add("show"); setTimeout(()=>bonusStars.classList.remove("show"),2000);
       setTimeout(()=>vbSayRandom(VB_PERFECT_LEVEL,"perfect",2800),300);
@@ -3573,7 +3608,7 @@ window.addEventListener("DOMContentLoaded", () => {
         duration: 400, ease: "Quad.easeOut",
         onComplete: () => spawnFlash.destroy() });
       tipText.setText("⚡ Protegido por 2s!");
-      vbSayRandom(VB_HIT,"hit",3000);
+      if(!LEVELS[currentLevel]?.isBoss) vbSayRandom(VB_HIT,"hit",3000);
     });
     if(lives<=0) return; // evitar correr o resto se já vai para game over
     // Ao perder uma vida, os itens voltam a aparecer — EXCETO os corações já apanhados
@@ -3870,39 +3905,38 @@ window.addEventListener("DOMContentLoaded", () => {
     makeVanBertoTexture(scene,"vanberto_walk2",false,1);
     makeBossTextures(scene);
   }
-
   function makeBossTextures(scene){
     if(!scene.textures.exists("boss_book_closed")){
       const t=scene.textures.createCanvas("boss_book_closed",40,32),ctx=t.getContext();
-      ctx.fillStyle="#1a0a00"; ctx.fillRect(2,2,36,28);
-      ctx.fillStyle="#8B1a00"; ctx.fillRect(4,4,32,24);
-      ctx.strokeStyle="#ff6600"; ctx.lineWidth=1.5; ctx.strokeRect(4,4,32,24);
-      ctx.fillStyle="#5a0f00"; ctx.fillRect(4,4,6,24);
-      ctx.strokeStyle="#ffaa44"; ctx.lineWidth=1; ctx.strokeRect(4,4,6,24);
-      ctx.strokeStyle="rgba(255,180,80,0.6)"; ctx.lineWidth=1.5;
+      ctx.fillStyle="#1a0a00";ctx.fillRect(2,2,36,28);
+      ctx.fillStyle="#8B1a00";ctx.fillRect(4,4,32,24);
+      ctx.strokeStyle="#ff6600";ctx.lineWidth=1.5;ctx.strokeRect(4,4,32,24);
+      ctx.fillStyle="#5a0f00";ctx.fillRect(4,4,6,24);
+      ctx.strokeStyle="#ffaa44";ctx.lineWidth=1;ctx.strokeRect(4,4,6,24);
+      ctx.strokeStyle="rgba(255,180,80,0.6)";ctx.lineWidth=1.5;
       [10,14,18,22].forEach(y=>{ctx.beginPath();ctx.moveTo(14,y);ctx.lineTo(34,y);ctx.stroke();});
-      ctx.fillStyle="#ffaa00"; ctx.beginPath(); ctx.arc(24,16,3,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle="#ffaa00";ctx.beginPath();ctx.arc(24,16,3,0,Math.PI*2);ctx.fill();
       t.refresh();
     }
     if(!scene.textures.exists("boss_book_open")){
       const t=scene.textures.createCanvas("boss_book_open",48,40),ctx=t.getContext();
       const grd=ctx.createRadialGradient(24,20,4,24,20,22);
-      grd.addColorStop(0,"rgba(255,255,120,0.65)"); grd.addColorStop(1,"rgba(255,200,0,0)");
-      ctx.fillStyle=grd; ctx.fillRect(0,0,48,40);
-      ctx.fillStyle="#fffde8"; ctx.beginPath();
+      grd.addColorStop(0,"rgba(255,255,120,0.65)");grd.addColorStop(1,"rgba(255,200,0,0)");
+      ctx.fillStyle=grd;ctx.fillRect(0,0,48,40);
+      ctx.fillStyle="#fffde8";ctx.beginPath();
       ctx.moveTo(24,8);ctx.lineTo(4,4);ctx.lineTo(4,36);ctx.lineTo(24,34);ctx.closePath();ctx.fill();
-      ctx.strokeStyle="#c8a800"; ctx.lineWidth=1.5; ctx.stroke();
-      ctx.fillStyle="#fff8cc"; ctx.beginPath();
+      ctx.strokeStyle="#c8a800";ctx.lineWidth=1.5;ctx.stroke();
+      ctx.fillStyle="#fff8cc";ctx.beginPath();
       ctx.moveTo(24,8);ctx.lineTo(44,4);ctx.lineTo(44,36);ctx.lineTo(24,34);ctx.closePath();ctx.fill();
-      ctx.strokeStyle="#c8a800"; ctx.lineWidth=1.5; ctx.stroke();
-      ctx.strokeStyle="#8B6914"; ctx.lineWidth=3;
+      ctx.strokeStyle="#c8a800";ctx.lineWidth=1.5;ctx.stroke();
+      ctx.strokeStyle="#8B6914";ctx.lineWidth=3;
       ctx.beginPath();ctx.moveTo(24,8);ctx.lineTo(24,34);ctx.stroke();
-      ctx.strokeStyle="rgba(100,80,20,0.4)"; ctx.lineWidth=1;
+      ctx.strokeStyle="rgba(100,80,20,0.4)";ctx.lineWidth=1;
       [14,19,24,29].forEach(y=>{
         ctx.beginPath();ctx.moveTo(8,y);ctx.lineTo(20,y);ctx.stroke();
         ctx.beginPath();ctx.moveTo(28,y);ctx.lineTo(40,y);ctx.stroke();
       });
-      ctx.fillStyle="#ffe000"; ctx.font="bold 14px Arial"; ctx.textAlign="center"; ctx.fillText("✦",24,22);
+      ctx.fillStyle="#ffe000";ctx.font="bold 14px Arial";ctx.textAlign="center";ctx.fillText("✦",24,22);
       t.refresh();
     }
   }
