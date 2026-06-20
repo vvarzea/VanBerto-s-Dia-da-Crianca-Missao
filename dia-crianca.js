@@ -46,7 +46,6 @@ window.addEventListener("DOMContentLoaded", () => {
   let playerName = "";
 
   // ===== Balão de fala do VanBerto's =====
-  // Tipos: "intro" | "hit" | "good" | "wrong" | "star" | "perfect"
   let _vbTimer = null;
   function vbSay(text, type = "intro", duration = 3400) {
     if (document.body.classList.contains("hc-mode")) return;
@@ -56,7 +55,7 @@ window.addEventListener("DOMContentLoaded", () => {
     if (_vbTimer) { clearTimeout(_vbTimer); _vbTimer = null; }
     textEl.textContent = text;
     el.className = `vb-${type}`;
-    void el.offsetWidth; // forçar reflow para reiniciar animação
+    void el.offsetWidth;
     el.classList.add("vb-show");
     _vbTimer = setTimeout(() => { el.classList.remove("vb-show"); _vbTimer = null; }, duration);
   }
@@ -544,7 +543,6 @@ window.addEventListener("DOMContentLoaded", () => {
       const orb = document.createElement("div");
       orb.title = art.name;
       if (got) {
-        // Cor do tema do nível correspondente
         const themeIdx = LEVELS[i]?.theme ?? 0;
         const theme    = THEMES[themeIdx] ?? THEMES[0];
         const skyCol   = "#" + theme.skyBot.toString(16).padStart(6, "0");
@@ -2923,7 +2921,7 @@ window.addEventListener("DOMContentLoaded", () => {
         loadLevel(scene,next);
         showHistory(next,()=>{
           if(!pausedByTeacher) scene.physics.resume();
-          setTimeout(() => { const intro=VB_LEVEL_INTRO[next]; if(intro) vbSay(intro,"intro",4000); }, 800);
+          setTimeout(()=>{ const intro=VB_LEVEL_INTRO[next]; if(intro) vbSay(intro,"intro",4000); },800);
         });
       });
       saveGame();
@@ -5783,7 +5781,7 @@ window.addEventListener("DOMContentLoaded", () => {
               loadLevel(sceneRef, 0);
               showHistory(0, () => {
                 if(!pausedByTeacher) sceneRef.physics.resume();
-                setTimeout(() => vbSay(VB_LEVEL_INTRO[0], "intro", 4000), 800);
+                setTimeout(()=>vbSay(VB_LEVEL_INTRO[0],"intro",4000),800);
               });
               saveGame();
             });
@@ -5794,7 +5792,7 @@ window.addEventListener("DOMContentLoaded", () => {
           loadLevel(sceneRef, 0);
           showHistory(0, () => {
             if(!pausedByTeacher) sceneRef.physics.resume();
-            setTimeout(() => vbSay(VB_LEVEL_INTRO[0], "intro", 4000), 800);
+            setTimeout(()=>vbSay(VB_LEVEL_INTRO[0],"intro",4000),800);
           });
           saveGame();
         });
