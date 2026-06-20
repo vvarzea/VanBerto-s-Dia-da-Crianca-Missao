@@ -54,7 +54,7 @@ window.addEventListener("DOMContentLoaded", () => {
     if (!el || !textEl) return;
     if (_vbTimer) { clearTimeout(_vbTimer); _vbTimer = null; }
     textEl.textContent = text;
-    el.className = `vb-${type}`;
+    el.className = "vb-" + type;
     void el.offsetWidth;
     el.classList.add("vb-show");
     _vbTimer = setTimeout(() => { el.classList.remove("vb-show"); _vbTimer = null; }, duration);
@@ -517,7 +517,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // =====================================================
   // ===== HUD DE ORBES — faixa de artefactos no jogo =====
-  // 20 orbes em DOM com emoji do artefacto e cores do tema do nível.
+  // 20 orbes DOM com emoji do artefacto e cores do tema do nível.
   // =====================================================
   let _artOrbsEl = null;
 
@@ -525,11 +525,7 @@ window.addEventListener("DOMContentLoaded", () => {
     if (_artOrbsEl) { _artOrbsEl.remove(); _artOrbsEl = null; }
     const strip = document.createElement("div");
     strip.id = "artOrbsHUD";
-    strip.style.cssText = `
-      position:fixed; bottom:6px; left:50%; transform:translateX(-50%);
-      display:flex; gap:3px; align-items:center;
-      z-index:110; pointer-events:none;
-    `;
+    strip.style.cssText = "position:fixed;bottom:6px;left:50%;transform:translateX(-50%);display:flex;gap:3px;align-items:center;z-index:110;pointer-events:none;";
     document.body.appendChild(strip);
     _artOrbsEl = strip;
     updateArtOrbs();
@@ -547,24 +543,10 @@ window.addEventListener("DOMContentLoaded", () => {
         const theme    = THEMES[themeIdx] ?? THEMES[0];
         const skyCol   = "#" + theme.skyBot.toString(16).padStart(6, "0");
         const grassCol = "#" + theme.grassTop.toString(16).padStart(6, "0");
-        orb.style.cssText = `
-          width:18px; height:18px; border-radius:50%;
-          background:${skyCol};
-          box-shadow:0 0 5px ${grassCol}99, 0 0 2px rgba(255,255,255,0.5) inset;
-          border:1.5px solid ${grassCol};
-          display:flex; align-items:center; justify-content:center;
-          font-size:10px; line-height:1;
-          filter:drop-shadow(0 0 3px ${grassCol}88);
-        `;
+        orb.style.cssText = "width:18px;height:18px;border-radius:50%;background:" + skyCol + ";box-shadow:0 0 5px " + grassCol + "99,0 0 2px rgba(255,255,255,0.5) inset;border:1.5px solid " + grassCol + ";display:flex;align-items:center;justify-content:center;font-size:10px;line-height:1;";
         orb.textContent = art.emoji;
       } else {
-        orb.style.cssText = `
-          width:18px; height:18px; border-radius:50%;
-          background:rgba(30,30,60,0.55);
-          border:1px solid rgba(100,100,140,0.35);
-          display:flex; align-items:center; justify-content:center;
-          font-size:9px; line-height:1; color:rgba(120,120,160,0.5);
-        `;
+        orb.style.cssText = "width:18px;height:18px;border-radius:50%;background:rgba(30,30,60,0.55);border:1px solid rgba(100,100,140,0.35);display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1;color:rgba(120,120,160,0.5);";
         orb.textContent = "·";
       }
       _artOrbsEl.appendChild(orb);
@@ -2910,7 +2892,7 @@ window.addEventListener("DOMContentLoaded", () => {
     if(livesLostThisLevel===0){
       score+=50; bonusStars.textContent="⭐⭐⭐\n+50 Nível Perfeito!";
       bonusStars.classList.add("show"); setTimeout(()=>bonusStars.classList.remove("show"),2000);
-      setTimeout(() => vbSayRandom(VB_PERFECT_LEVEL, "perfect", 2800), 300);
+      setTimeout(()=>vbSayRandom(VB_PERFECT_LEVEL,"perfect",2800),300);
     }
     livesLostThisLevel=0;
 
@@ -2921,7 +2903,7 @@ window.addEventListener("DOMContentLoaded", () => {
         loadLevel(scene,next);
         showHistory(next,()=>{
           if(!pausedByTeacher) scene.physics.resume();
-          setTimeout(()=>{ const intro=VB_LEVEL_INTRO[next]; if(intro) vbSay(intro,"intro",4000); },800);
+          setTimeout(()=>{const intro=VB_LEVEL_INTRO[next];if(intro)vbSay(intro,"intro",4000);},800);
         });
       });
       saveGame();
