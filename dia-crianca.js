@@ -498,43 +498,67 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // =====================================================
   // ===== HUD DE ORBES — faixa de artefactos no jogo =====
-  // 20 orbes pequenos no canto inferior, em Phaser.
+  // 20 orbes em DOM com emoji do artefacto (em vez de círculos Phaser).
   // =====================================================
-  let artOrbsGfx = null; // graphics object Phaser
+  let _artOrbsEl = null; // div DOM do HUD
 
   function createArtOrbs(scene) {
-    if (artOrbsGfx) { try { artOrbsGfx.destroy(); } catch {} }
-    artOrbsGfx = scene.add.graphics().setScrollFactor(0).setDepth(105);
+    // Remover div anterior se existir
+    if (_artOrbsEl) { _artOrbsEl.remove(); _artOrbsEl = null; }
+
+    const strip = document.createElement("div");
+    strip.id = "artOrbsHUD";
+    strip.style.cssText = `
+      position:fixed;
+      bottom:6px;
+      left:50%;
+      transform:translateX(-50%);
+      display:flex;
+      gap:3px;
+      align-items:center;
+      z-index:110;
+      pointer-events:none;
+    `;
+    document.body.appendChild(strip);
+    _artOrbsEl = strip;
     updateArtOrbs();
   }
 
   function updateArtOrbs() {
-    if (!artOrbsGfx || !artOrbsGfx.active) return;
-    artOrbsGfx.clear();
-    const total  = ARTEFACTS.length; // 20
-    const orbR   = 7;
-    const gap    = 3;
-    const totalW = total * (orbR * 2 + gap) - gap;
-    const startX = (960 - totalW) / 2;
-    const y      = 540 - 14;
-
+    if (!_artOrbsEl) return;
+    _artOrbsEl.innerHTML = "";
     ARTEFACTS.forEach((art, i) => {
-      const cx  = startX + i * (orbR * 2 + gap) + orbR;
       const got = !!collectedArtefacts[i];
+      const orb = document.createElement("div");
+      orb.title = art.name; // tooltip ao passar o rato
       if (got) {
-        // Orbe colorido e brilhante
-        const col = Phaser.Display.Color.HexStringToColor(art.color).color;
-        artOrbsGfx.fillStyle(col, 0.85);
-        artOrbsGfx.fillCircle(cx, y, orbR);
-        artOrbsGfx.lineStyle(1.5, 0xffffff, 0.5);
-        artOrbsGfx.strokeCircle(cx, y, orbR);
+        // Orbe colorido com emoji visível
+        orb.style.cssText = `
+          width:18px; height:18px;
+          border-radius:50%;
+          background:${art.color};
+          box-shadow:0 0 5px ${art.glow}, 0 0 2px rgba(255,255,255,0.5) inset;
+          border:1.5px solid rgba(255,255,255,0.55);
+          display:flex; align-items:center; justify-content:center;
+          font-size:10px; line-height:1;
+          filter:drop-shadow(0 0 3px ${art.glow});
+          transition:transform 0.15s;
+        `;
+        orb.textContent = art.emoji;
       } else {
-        // Orbe cinzento vazio
-        artOrbsGfx.fillStyle(0x333355, 0.6);
-        artOrbsGfx.fillCircle(cx, y, orbR);
-        artOrbsGfx.lineStyle(1, 0x555577, 0.4);
-        artOrbsGfx.strokeCircle(cx, y, orbR);
+        // Orbe vazio — ponto cinzento subtil, sem emoji
+        orb.style.cssText = `
+          width:18px; height:18px;
+          border-radius:50%;
+          background:rgba(30,30,60,0.55);
+          border:1px solid rgba(100,100,140,0.35);
+          display:flex; align-items:center; justify-content:center;
+          font-size:9px; line-height:1;
+          color:rgba(120,120,160,0.5);
+        `;
+        orb.textContent = "·";
       }
+      _artOrbsEl.appendChild(orb);
     });
   }
 
