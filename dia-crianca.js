@@ -45,7 +45,6 @@ window.addEventListener("DOMContentLoaded", () => {
 
   let playerName = "";
 
-  // VanBerto speech
   let _vbTimer=null;
   function vbSay(text,type="intro",duration=3400){
     if(document.body.classList.contains("hc-mode"))return;
@@ -812,8 +811,10 @@ window.addEventListener("DOMContentLoaded", () => {
   let trailSprites = [];
   let footStepTimer = 0;
   let balloons=[], critters=[], enemyTimers=[];
-  // Boss state
-  let bossSprite=null,bossHP=3,booksCollected=0,bossProjectiles=null,bossBooks=null,bossTimers=[],_bossActive=false;
+  // Boss state — booksCollected é a única fonte de verdade (precisa de 3 para vencer)
+  const BOSS_BOOKS_NEEDED = 3;
+  let bossSprite=null, booksCollected=0;
+  let bossProjectiles=null, bossBooks=null, bossTimers=[], _bossActive=false;
   let movingPlatforms=[], trampolines=[], secretDoors=[], hazards=[];
   let player, platforms, itemsGroup, malwareGroup, door, doorOverlap=null;
   let cursors, keySpace;
@@ -2170,7 +2171,7 @@ window.addEventListener("DOMContentLoaded", () => {
     if(bossSprite){try{bossSprite.destroy();}catch{}bossSprite=null;}
     if(bossProjectiles)bossProjectiles.clear(true,true);
     if(bossBooks)bossBooks.clear(true,true);
-    _bossActive=false;booksCollected=0;_hideBossHUD();
+    _bossActive=false; booksCollected=0; _hideBossHUD();
     platforms.clear(true,true); itemsGroup.clear(true,true);
     malwareGroup.clear(true,true);
     if(door) door.destroy();
@@ -2486,13 +2487,17 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
 
-  // ═══════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════
   // BOSS — Monstro da Ignorância
-  // Regras:
-  //   • Apanha 3 livros abertos SEM MORRER para vencer
-  //   • Morrer → reset completo (HP volta a 3, livros respawnam, contador a zero)
-  //   • Vitória → explosão + dança + avança direto (sem quiz)
-  // ═══════════════════════════════════════════
+  //
+  // REGRA ÚNICA: apanha BOSS_BOOKS_NEEDED (3) livros abertos
+  //              SEM MORRER para vencer.
+  // Morte → reset: booksCollected=0, livros respawnam.
+  // Vitória → explosão + dança + nextLevel (sem quiz).
+  //
+  // booksCollected é a única fonte de verdade.
+  // Não existe bossHP separado — evita bugs de estado.
+  // ═══════════════════════════════════════════════════════════
   function loadBossLevel(scene,idx){
     currentLevel=idx;
     const L=LEVELS[idx];
@@ -2510,8 +2515,12 @@ window.addEventListener("DOMContentLoaded", () => {
     if(!bossBooks)bossBooks=scene.physics.add.staticGroup();
     else bossBooks.clear(true,true);
 
+    // Reset completo de estado — garantido antes de qualquer lógica
+    booksCollected=0;
+    _bossActive=false;
+
     awaitingQuiz=true;invuln=false;clearPower(scene);clearDoubleJump(scene);clearStarPower(scene);
-    livesLostThisLevel=0;_bossActive=false;booksCollected=0;bossHP=3;
+    livesLostThisLevel=0;
     scene.physics.pause();
     if(powerHaloGfx)powerHaloGfx.setVisible(true);
     if(shadowGfx)shadowGfx.setVisible(true);
@@ -2520,7 +2529,6 @@ window.addEventListener("DOMContentLoaded", () => {
     applyBackground(scene,L.theme%THEMES.length,L.worldW,[]);
     createArtOrbs(scene);
 
-    // Plataformas
     L.platforms.forEach(p=>{
       const themeIdx=L.theme%THEMES.length,platKey="platform_t"+themeIdx;
       if(!scene.textures.exists(platKey))makePlatformTextureThemed(scene,platKey,themeIdx);
@@ -2534,13 +2542,11 @@ window.addEventListener("DOMContentLoaded", () => {
     player.setVelocity(0,0);player.setFlipX(false);player.setAngle(0);player.setScale(1);
     scene.cameras.main.startFollow(player,true,0.08,0.08);
 
-    // Boss: vilão redondo a 180×180px
+    // Boss: vilão redondo 180×180, tint escuro
     bossSprite=scene.physics.add.sprite(L.worldW/2,370,"vilao_round");
     bossSprite.setDisplaySize(180,180);
-    bossSprite.body.setSize(160,160,true);
-    bossSprite.setCollideWorldBounds(true);
-    bossSprite.setDepth(3);
-    bossSprite.setTint(0x660000);
+    bossSprite.body.setSize(155,155,true);
+    bossSprite.setCollideWorldBounds(true).setDepth(3).setTint(0x660000);
     scene.physics.add.collider(bossSprite,platforms);
 
     // Respiração ameaçadora
@@ -2548,93 +2554,141 @@ window.addEventListener("DOMContentLoaded", () => {
       scaleX:{from:1,to:1.06},scaleY:{from:1,to:0.96},
       duration:900,yoyo:true,repeat:-1,ease:"Sine.easeInOut"});
 
-    // Patrulha (acelera conforme HP desce)
-    let bossDir=1; bossSprite.setVelocityX(80);
+    // Patrulha — acelera conforme mais livros apanhados
+    let bossDir=1;bossSprite.setVelocityX(80);
     const patrolTimer=scene.time.addEvent({delay:50,loop:true,callback:()=>{
       if(!bossSprite?.active||!_bossActive)return;
       if(bossSprite.x>L.worldW-110)bossDir=-1;
       if(bossSprite.x<110)bossDir=1;
-      bossSprite.setVelocityX((80+((3-bossHP)*45))*bossDir);
+      const speed=80+booksCollected*45; // acelera com cada livro apanhado
+      bossSprite.setVelocityX(speed*bossDir);
       bossSprite.setFlipX(bossDir<0);
     }});
     bossTimers.push(patrolTimer);
 
-    // Contacto boss → dano ao jogador → reset completo
+    // Contacto boss → dano (usa _bossPlayerHit, NÃO onHitMalware)
     scene.physics.add.overlap(player,bossSprite,()=>{
       if(!_bossActive||invuln)return;
       _bossPlayerHit(scene,L);
     },null,scene);
 
-    // Projéteis (livros fechados)
+    // Projéteis — livros fechados
     scene.physics.add.collider(bossProjectiles,platforms,(proj)=>{
       scene.time.delayedCall(1200,()=>{if(proj.active)proj.destroy();});
     });
     scene.physics.add.overlap(player,bossProjectiles,(p,proj)=>{
       if(!_bossActive||invuln)return;
-      proj.destroy();
-      _bossPlayerHit(scene,L);
+      proj.destroy();_bossPlayerHit(scene,L);
     },null,scene);
 
-    const shootTimer=scene.time.addEvent({delay:2000,loop:true,callback:()=>{
+    // Cadência de disparo aumenta com livros apanhados
+    const shootTimer=scene.time.addEvent({delay:100,loop:true,callback:()=>{
       if(!bossSprite?.active||!_bossActive)return;
-      const proj=bossProjectiles.create(bossSprite.x,bossSprite.y-40,"boss_book_closed");
+      const cadencia=2200-booksCollected*300; // 2200 → 1600 → 1000 ms
+      shootTimer._elapsed=shootTimer._elapsed||0;
+      // Usar um timer separado por disparo não é prático — usar flag de tempo
+    }});
+    // Timer de disparo correto: re-schedule após cada tiro
+    let _lastShot=0;
+    const shootLoop=scene.time.addEvent({delay:100,loop:true,callback:()=>{
+      if(!bossSprite?.active||!_bossActive)return;
+      const now=scene.time.now;
+      const cadencia=2200-booksCollected*300;
+      if(now-_lastShot<cadencia)return;
+      _lastShot=now;
+      const proj=bossProjectiles.create(bossSprite.x,bossSprite.y-50,"boss_book_closed");
       proj.setDisplaySize(36,28).setDepth(4);
       const dx=player.x-bossSprite.x,dy=player.y-bossSprite.y;
       const len=Math.sqrt(dx*dx+dy*dy)||1;
-      proj.setVelocity((dx/len)*230,(dy/len)*230-60);
-      scene.tweens.add({targets:proj,angle:{from:0,to:360},duration:550,repeat:-1});
+      proj.setVelocity((dx/len)*240,(dy/len)*240-70);
+      scene.tweens.add({targets:proj,angle:{from:0,to:360},duration:500,repeat:-1});
     }});
     bossTimers.push(shootTimer);
+    bossTimers.push(shootLoop);
 
     // Livros abertos no chão
     _spawnBossBooks(scene);
 
-    // Apanhar livro aberto → hit no boss
+    // Overlap: apanhar livro aberto
     scene.physics.add.overlap(player,bossBooks,(p,book)=>{
       if(!_bossActive||book.getData("collected"))return;
       book.setData("collected",true);
+      // Animação de recolha
       scene.tweens.add({targets:book,y:book.y-50,alpha:0,scaleX:1.8,scaleY:1.8,
         duration:380,onComplete:()=>book.destroy()});
       SFX.coin();
-      _bossHit(scene,L);
+      _bossBookCollected(scene,L);
     },null,scene);
 
     _showBossHUD();
     setTimeout(()=>vbSay(
-      "Apanha os 3 livros ABERTOS 📖 sem morrer para derrotar o Monstro! Cuidado com os livros que ele atira!",
-      "wrong",5000),900);
+      "Apanha os "+BOSS_BOOKS_NEEDED+" livros ABERTOS 📖 sem morrer! Cuidado com os livros que o Monstro atira!",
+      "wrong",5500),900);
   }
 
-  // Jogador é atingido durante o boss → reset COMPLETO
+  // Jogador é atingido → reset COMPLETO (booksCollected volta a 0)
   function _bossPlayerHit(scene,L){
     if(invuln||!_bossActive)return;
-    lives-=1; updateHearts(); _hudDirty=true;
-    // Flash de dano
+    lives-=1;updateHearts();_hudDirty=true;
     if(heartsGfx&&scene)scene.tweens.add({targets:heartsGfx,
       x:{from:-4,to:4},duration:60,yoyo:true,repeat:3,
       ease:"Sine.easeInOut",onComplete:()=>{if(heartsGfx)heartsGfx.x=0;}});
 
     if(lives<=0){showGameOver();return;}
 
-    setInvuln(scene,1500);
-    player.setVelocity(0,0);
-    player.setPosition(L.spawn.x,L.spawn.y);
+    setInvuln(scene,1800);
+    player.setVelocity(0,0);player.setPosition(L.spawn.x,L.spawn.y);
 
-    // Reset completo do boss: HP e livros voltam ao início
-    bossHP=3; booksCollected=0;
+    // Reset COMPLETO: livros voltam a zero
+    booksCollected=0;
     _updateBossHUD();
     if(bossProjectiles)bossProjectiles.clear(true,true);
     _spawnBossBooks(scene);
 
-    // Flash de reset
-    const flash=scene.add.rectangle(480,270,960,540,0xff0000,0.35).setDepth(20);
-    scene.tweens.add({targets:flash,alpha:0,duration:400,onComplete:()=>flash.destroy()});
+    // Flash vermelho
+    const flash=scene.add.rectangle(480,270,960,540,0xff0000,0.40).setDepth(20);
+    scene.tweens.add({targets:flash,alpha:0,duration:450,onComplete:()=>flash.destroy()});
     showFloat(scene,480,240,"💀 Recomeças do zero!","#ff4444");
-    vbSay("Perdeste uma vida — recomeças do zero! Consegues apanhar os 3 livros sem morrer? 💪","hit",3200);
+    vbSay("Perdeste uma vida — os livros voltam ao início! Consegues apanhar os "+BOSS_BOOKS_NEEDED+" sem morrer? 💪","hit",3500);
+  }
+
+  // Um livro aberto foi apanhado
+  function _bossBookCollected(scene,L){
+    booksCollected++;  // ÚNICA alteração de estado
+    _updateBossHUD();
+    scene.cameras.main.shake(150,0.008);
+
+    // Recuo + flash branco no boss
+    if(bossSprite?.active){
+      scene.tweens.add({targets:bossSprite,
+        x:{from:bossSprite.x+20,to:bossSprite.x-20},duration:50,yoyo:true,repeat:2});
+      bossSprite.setTint(0xffffff);
+      scene.time.delayedCall(160,()=>{if(bossSprite?.active)bossSprite.setTint(0x660000);});
+    }
+    SFX.hit();
+
+    // Mensagem de progresso clara
+    const restam=BOSS_BOOKS_NEEDED-booksCollected;
+    const msg=restam>0
+      ? "📖 "+booksCollected+"/"+BOSS_BOOKS_NEEDED+" — Faltam "+restam+" livro"+(restam>1?"s":"")+"!"
+      : "📖 "+BOSS_BOOKS_NEEDED+"/"+BOSS_BOOKS_NEEDED+" — VENCESTE! 🏆";
+    showFloat(scene,bossSprite?.x||480,(bossSprite?.y||370)-90,msg,"#ffe000");
+
+    if(booksCollected>=BOSS_BOOKS_NEEDED){
+      _bossDefeated(scene,L);
+    } else {
+      vbSay(restam===2?
+        "Boa! "+booksCollected+" apanhado — faltam "+restam+"! Não morras agora! 💪":
+        "Incrível! Só falta 1 livro! Cuidado com os projéteis! ⭐",
+        "good",2800);
+      // Livros restantes respawnam
+      scene.time.delayedCall(500,()=>_spawnBossBooks(scene));
+    }
   }
 
   function _spawnBossBooks(scene){
     if(bossBooks)bossBooks.clear(true,true);
+    // 3 livros sempre (o jogador só precisa de apanhar BOSS_BOOKS_NEEDED no total)
     [[180,480],[480,480],[760,480]].forEach(([x,y])=>{
       const b=bossBooks.create(x,y,"boss_book_open");
       b.setDisplaySize(46,38).setDepth(2);
@@ -2644,36 +2698,6 @@ window.addEventListener("DOMContentLoaded", () => {
       scene.tweens.add({targets:b,alpha:{from:0.75,to:1},
         scaleX:{from:0.94,to:1.06},duration:550,yoyo:true,repeat:-1});
     });
-  }
-
-  function _bossHit(scene,L){
-    booksCollected++;
-    bossHP--;
-    _updateBossHUD();
-    scene.cameras.main.shake(180,0.010);
-    SFX.hit();
-
-    // Recuo + flash branco
-    scene.tweens.add({targets:bossSprite,
-      x:{from:bossSprite.x+25,to:bossSprite.x-25},
-      duration:55,yoyo:true,repeat:2});
-    bossSprite.setTint(0xffffff);
-    scene.time.delayedCall(180,()=>{if(bossSprite?.active)bossSprite.setTint(0x660000);});
-
-    // Contador claro
-    const msg=booksCollected===1?"📖 1/3 — Mais 2 livros!":
-              booksCollected===2?"📖 2/3 — Mais 1 livro!":"📖 3/3 — VENCESTE! 🏆";
-    showFloat(scene,bossSprite?.x||480,(bossSprite?.y||370)-90,msg,"#ffe000");
-
-    if(bossHP<=0){
-      _bossDefeated(scene,L);
-    } else {
-      vbSay(bossHP===2?
-        "Boa! Mais 2 livros abertos — não morras agora! 💪":
-        "Incrível! Só falta 1 livro! Cuidado com os projéteis! ⭐",
-        "good",2800);
-      scene.time.delayedCall(500,()=>_spawnBossBooks(scene));
-    }
   }
 
   // Vitória — SEM quiz, direto para nextLevel
@@ -2700,18 +2724,15 @@ window.addEventListener("DOMContentLoaded", () => {
       onComplete:()=>{bossSprite?.destroy();bossSprite=null;}});
 
     _hideBossHUD();
-    vbSay("LENDÁRIO! Apanhaste os 3 livros sem morrer! O Conhecimento Venceu! 🏆","perfect",4000);
+    vbSay("LENDÁRIO! Apanhaste os "+BOSS_BOOKS_NEEDED+" livros sem morrer! O Conhecimento Venceu! 🏆","perfect",4000);
     SFX.starMelody?.();
-    score+=300; scoreText?.setText(`🌟 Pontos: ${score}`);
+    score+=300;scoreText?.setText("🌟 Pontos: "+score);
     showFloat(scene,480,280,"🏆 +300 Boss Derrotado!","#ffd700");
 
-    // Dança + avança direto (sem quiz)
-    scene.time.delayedCall(900,()=>{
-      robotDance(scene,()=>nextLevel(scene));
-    });
+    // Dança + nextLevel (sem quiz)
+    scene.time.delayedCall(900,()=>robotDance(scene,()=>nextLevel(scene)));
   }
 
-  // ── Boss HUD ─────────────────────────────────────────────────
   function _showBossHUD(){
     let hud=document.getElementById("bossHUD");
     if(!hud){
@@ -2722,15 +2743,9 @@ window.addEventListener("DOMContentLoaded", () => {
           text-shadow:0 0 10px rgba(255,34,0,0.9),1px 1px 0 #000;letter-spacing:2px;">
           👹 Monstro da Ignorância
         </div>
-        <div style="background:rgba(0,0,0,0.70);border:2px solid #ff2200;border-radius:8px;
-          padding:3px 4px;width:200px;box-shadow:0 0 14px rgba(255,34,0,0.55);">
-          <div id="bossHPBar" style="height:16px;border-radius:5px;
-            background:linear-gradient(90deg,#cc0000,#ff6600);
-            transition:width 0.35s ease;width:100%;"></div>
-        </div>
-        <div id="bossBookCount" style="font-size:13px;font-weight:800;
-          color:#ffe060;text-shadow:1px 1px 0 #000;">
-          📕📕📕 — apanha os livros abertos!
+        <div id="bossBookCount" style="font-size:14px;font-weight:800;
+          color:#ffe060;text-shadow:1px 1px 0 #000;letter-spacing:1px;">
+          📕📕📕 0/3 livros apanhados
         </div>`;
       document.body.appendChild(hud);
     }
@@ -2739,13 +2754,11 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   function _updateBossHUD(){
-    const bar=document.getElementById("bossHPBar");
     const cnt=document.getElementById("bossBookCount");
-    if(bar)bar.style.width=Math.round((bossHP/3)*100)+"%";
-    if(cnt){
-      const icons="📖".repeat(booksCollected)+"📕".repeat(3-booksCollected);
-      cnt.textContent=icons+" "+booksCollected+"/3";
-    }
+    if(!cnt)return;
+    const apanhados="📖".repeat(booksCollected);
+    const restam="📕".repeat(BOSS_BOOKS_NEEDED-booksCollected);
+    cnt.textContent=apanhados+restam+" "+booksCollected+"/"+BOSS_BOOKS_NEEDED+" livros apanhados";
   }
 
   function _hideBossHUD(){
@@ -2754,7 +2767,10 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   function _startBossIfNeeded(){
-    if(LEVELS[currentLevel]?.isBoss&&!_bossActive)_bossActive=true;
+    if(LEVELS[currentLevel]?.isBoss&&!_bossActive){
+      booksCollected=0; // garantia extra
+      _bossActive=true;
+    }
   }
 
   function updateHUD(L) {
