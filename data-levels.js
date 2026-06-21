@@ -28,7 +28,7 @@ export const THEMES = [
 export const LEVELS = [
   {
     name: "Nível 1 — O Dia da Criança",
-    theme:0, quizTheme:"historia", worldW:2600,
+    artIdx:0, theme:0, quizTheme:"historia", worldW:2600,
     spawn:{x:480,y:460}, doorX:2100,
     platforms:[
       {x:450,y:520,w:900,h:28},{x:1040,y:450,w:300,h:22},{x:1380,y:380,w:270,h:22},
@@ -39,7 +39,7 @@ export const LEVELS = [
   },
   {
     name: "Nível 2 — A Declaração de 1959",
-    theme:1, quizTheme:"declaracao", worldW:2800,
+    artIdx:1, theme:1, quizTheme:"declaracao", worldW:2800,
     spawn:{x:480,y:460}, doorX:2350,
     platforms:[
       {x:520,y:520,w:980,h:28},{x:900,y:450,w:240,h:22},{x:1180,y:380,w:240,h:22},
@@ -52,7 +52,7 @@ export const LEVELS = [
   { name:"Boss — Monstro da Ignorância",isBoss:true,bossKey:"ignorancia",bossStagger:true,theme:1,quizTheme:"educacao",worldW:960,spawn:{x:160,y:420},doorX:-999,platforms:[{x:480,y:510,w:960,h:28},{x:180,y:390,w:180,h:22},{x:780,y:390,w:180,h:22},{x:480,y:300,w:200,h:22}],items:[],malwares:[] },
   {
     name: "Nível 3 — A Convenção de 1989",
-    theme:2, quizTheme:"convencao", worldW:2900,
+    artIdx:2, theme:2, quizTheme:"convencao", worldW:2900,
     spawn:{x:480,y:460}, doorX:2500,
     platforms:[
       {x:520,y:520,w:1040,h:28},{x:840,y:460,w:240,h:22},{x:1180,y:390,w:240,h:22},
@@ -64,7 +64,7 @@ export const LEVELS = [
   },
   {
     name: "Nível 4 — O Direito ao Brincar",
-    theme:3, quizTheme:"brincar", worldW:2800,
+    artIdx:3, theme:3, quizTheme:"brincar", worldW:2800,
     spawn:{x:480,y:460}, doorX:2630,
     // ══ MECÂNICA ESPECIAL: TRAMPOLINS ══
     // Plataformas mais largas (240px) e vãos mais curtos (~200px) — acessível em mobile.
@@ -102,7 +102,7 @@ export const LEVELS = [
   },
   {
     name: "Nível 5 — O Direito à Educação",
-    theme:4, quizTheme:"educacao", worldW:3100,
+    artIdx:4, theme:4, quizTheme:"educacao", worldW:3100,
     spawn:{x:480,y:460}, doorX:2950,
     platforms:[
       {x:520,y:520,w:1000,h:28},{x:880,y:450,w:220,h:22},{x:1160,y:380,w:220,h:22},
@@ -116,7 +116,7 @@ export const LEVELS = [
   },
   {
     name: "Nível 6 — O Direito à Saúde",
-    theme:5, quizTheme:"saude", worldW:3100,
+    artIdx:5, theme:5, quizTheme:"saude", worldW:3100,
     spawn:{x:480,y:460}, doorX:2700,
     // Layout: ilhas a alturas variadas — umas altas, outras baixas, sem padrão regular
     platforms:[
@@ -138,7 +138,7 @@ export const LEVELS = [
   },
   {
     name: "Boss — Gigante da Violência",
-    isBoss:true, bossKey:"violencia",
+    isBoss:true, bossKey:"violencia", bossStaticItems:true,
     theme:6, quizTheme:"protecao",
     worldW:960, spawn:{x:160,y:420}, doorX:-999,
     platforms:[
@@ -151,7 +151,7 @@ export const LEVELS = [
   },
   {
     name: "Nível 7 — O Direito à Proteção",
-    theme:6, quizTheme:"protecao", worldW:3200,
+    artIdx:6, theme:6, quizTheme:"protecao", worldW:3200,
     spawn:{x:480,y:460}, doorX:2850,
     // Layout: pirâmide central alta + plataformas laterais baixas
     platforms:[
@@ -172,7 +172,7 @@ export const LEVELS = [
   },
   {
     name: "Nível 8 — O Direito à Participação",
-    theme:7, quizTheme:"participacao", worldW:3300,
+    artIdx:7, theme:7, quizTheme:"participacao", worldW:3300,
     spawn:{x:480,y:460}, doorX:2950,
     // Layout: "trampolim central obrigatório" — vão largo a meio onde o trampolim é o único caminho
     platforms:[
@@ -194,7 +194,7 @@ export const LEVELS = [
   },
   {
     name: "Nível 9 — O Futuro Sustentável",
-    theme:8, quizTheme:"futuro", worldW:3400,
+    artIdx:8, theme:8, quizTheme:"futuro", worldW:3400,
     spawn:{x:480,y:460}, doorX:3050,
     // Layout: "cascata de terraços" — desce e sobe de forma orgânica, com plataformas a alturas muito variadas
     platforms:[
@@ -218,7 +218,7 @@ export const LEVELS = [
   },
   {
     name: "Nível 10 — A UNICEF e os Direitos",
-    theme:9, quizTheme:"unicef", worldW:3500,
+    artIdx:9, theme:9, quizTheme:"unicef", worldW:3500,
     spawn:{x:480,y:460}, doorX:3100,
     platforms:[
       {x:520,y:520,w:1000,h:28},{x:920,y:442,w:185,h:22},{x:1200,y:368,w:185,h:22},
@@ -237,7 +237,7 @@ export const LEVELS = [
   },
   {
     name: "Nível 11 — O Direito à Identidade",
-    theme:10, quizTheme:"identidade", worldW:3600,
+    artIdx:10, theme:10, quizTheme:"identidade", worldW:3600,
     spawn:{x:480,y:460}, doorX:3200,
     // Layout: "escadinhas duplas" — dois picos com vale ao meio
     platforms:[
@@ -260,7 +260,7 @@ export const LEVELS = [
   },
   {
     name: "Nível 12 — O Direito à Família",
-    theme:11, quizTheme:"familia", worldW:3650,
+    artIdx:11, theme:11, quizTheme:"familia", worldW:3650,
     spawn:{x:480,y:460}, doorX:3340,
     // Layout: "mini-mundos" — 3 grupos de plataformas isolados com vãos entre eles
     platforms:[
@@ -288,7 +288,7 @@ export const LEVELS = [
   },
   {
     name: "Nível 13 — Os Direitos dos Refugiados",
-    theme:12, quizTheme:"refugiados", worldW:3700,
+    artIdx:12, theme:12, quizTheme:"refugiados", worldW:3700,
     spawn:{x:480,y:460}, doorX:3300,
     // Layout: "labirinto horizontal" — plataformas em ziguezague apertado exige precisão
     platforms:[
@@ -314,7 +314,7 @@ export const LEVELS = [
   },
   {
     name: "Nível 14 — Contra o Trabalho Infantil",
-    theme:13, quizTheme:"trabalho", worldW:3750,
+    artIdx:13, theme:13, quizTheme:"trabalho", worldW:3750,
     spawn:{x:480,y:460}, doorX:3350,
     platforms:[
       {x:520,y:520,w:960,h:28},
@@ -351,7 +351,7 @@ export const LEVELS = [
   },
   {
     name: "Nível 15 — O Direito à Expressão",
-    theme:14, quizTheme:"expressao", worldW:3800,
+    artIdx:14, theme:14, quizTheme:"expressao", worldW:3800,
     spawn:{x:480,y:460}, doorX:3400,
     platforms:[
       {x:520,y:520,w:1000,h:28},{x:980,y:432,w:160,h:22},{x:1260,y:350,w:160,h:22},
@@ -371,7 +371,7 @@ export const LEVELS = [
   },
   {
     name: "Nível 16 — O Direito à Privacidade",
-    theme:15, quizTheme:"privacidade", worldW:3850,
+    artIdx:15, theme:15, quizTheme:"privacidade", worldW:3850,
     spawn:{x:480,y:460}, doorX:3450,
     // Layout: "degraus duplos" — sobe dois andares, desce dois andares, plataformas estreitas
     platforms:[
@@ -399,7 +399,7 @@ export const LEVELS = [
   },
   {
     name: "Nível 17 — O Direito à Cultura",
-    theme:16, quizTheme:"cultura", worldW:3900,
+    artIdx:16, theme:16, quizTheme:"cultura", worldW:3900,
     spawn:{x:480,y:460}, doorX:3500,
     // Layout: "cultura em círculos" — plataformas em grupos de 3 como constelações
     platforms:[
@@ -430,7 +430,7 @@ export const LEVELS = [
   },
   {
     name: "Nível 18 — O Direito à Inclusão",
-    theme:17, quizTheme:"deficiencia", worldW:3950,
+    artIdx:17, theme:17, quizTheme:"deficiencia", worldW:3950,
     spawn:{x:480,y:460}, doorX:3550,
     // ══ MECÂNICA ESPECIAL: ESTEIRA — PLATAFORMAS TODAS EM MOVIMENTO ══
     // Todas as plataformas intermédias se movem. Umas horizontalmente (esq/dir),
@@ -474,7 +474,7 @@ export const LEVELS = [
   },
   {
     name: "Nível 19 — O Direito ao Ambiente",
-    theme:18, quizTheme:"ambiente", worldW:4000,
+    artIdx:18, theme:18, quizTheme:"ambiente", worldW:4000,
     spawn:{x:480,y:460}, doorX:3600,
     // Layout: "floresta" — muitas plataformas pequenas a alturas variadas, como ramos de árvores
     platforms:[
@@ -506,7 +506,7 @@ export const LEVELS = [
   },
   {
     name: "Nível 20 — Os Direitos Digitais",
-    theme:19, quizTheme:"digital", worldW:4100,
+    artIdx:19, theme:19, quizTheme:"digital", worldW:4100,
     spawn:{x:480,y:460}, doorX:3700,
     // Layout: "circuito digital" — plataformas em padrão de circuito impresso: retas longas com viragens bruscas
     platforms:[
@@ -538,10 +538,10 @@ export const LEVELS = [
       {x:2950,y:173,kind:"medalha"},
       {x:3550,y:343,kind:"estrela",points:40}
     ]
-  },,
+  },
   {
     name:"Boss — Senhor do Ciberbullying",
-    isBoss:true, bossKey:"ciberbullying",
+    isBoss:true, bossKey:"ciberbullying", bossStagger:true,
     theme:19, quizTheme:"digital",
     worldW:960, spawn:{x:160,y:420}, doorX:-999,
     platforms:[

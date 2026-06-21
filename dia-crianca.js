@@ -217,7 +217,12 @@ window.addEventListener("DOMContentLoaded", () => {
   let _overlayPaused  = false; // true quando um overlay de consulta (mapa, conquistas, etc.) está aberto
 
   function showHistory(levelIndex, onDone) {
-    const entry = HISTORY[levelIndex] || null;
+    // HISTORY[] está alinhado com os 20 níveis "de direitos" (0-19), não com a
+    // posição bruta na LEVELS (que inclui os bosses). Por isso resolvemos pelo
+    // artIdx do nível — os bosses não têm artIdx, por isso simplesmente não mostram história.
+    const Lh = LEVELS[levelIndex];
+    const histIdx = (Lh && Lh.artIdx != null) ? Lh.artIdx : levelIndex;
+    const entry = HISTORY[histIdx] || null;
     if (!entry) { awaitingQuiz=false; onDone?.(); return; }
     awaitingStory = true;
     historyText.innerHTML = `<strong class="history-title">${entry.title}</strong>\n${entry.text}`;
@@ -389,7 +394,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // Chave de save dos artefactos — separada das estrelas para não interferir
   const ARTEFACTS_SAVE_KEY = "vanbertos_artefacts_v1";
-  let collectedArtefacts = {}; // { [levelIdx]: true }
+  let collectedArtefacts = {}; // { [artIdx]: true } — chave é o índice no ARTEFACTS (0-19), não a posição em LEVELS
 
   function loadArtefacts() {
     try {
@@ -444,11 +449,17 @@ window.addEventListener("DOMContentLoaded", () => {
   // animação de 3.2s com artefacto, nome e fala do VanBerto.
   // =====================================================
   function showRightRecovered(levelIdx) {
-    const art = ARTEFACTS[levelIdx];
+    // ARTEFACTS[] e HISTORY[] estão alinhados pelos 20 níveis "de direitos" (0-19),
+    // não pela posição bruta em LEVELS (que inclui os 3 bosses). Por isso usamos
+    // o artIdx do nível para tudo o que é artefacto/história — levelIdx continua a
+    // servir para tudo o que é específico da posição (LEVELS[], contador "Nível X").
+    const L = LEVELS[levelIdx];
+    const artIdx = (L && L.artIdx != null) ? L.artIdx : levelIdx;
+    const art = ARTEFACTS[artIdx];
     if (!art) return;
 
     // Marcar como colectado e guardar
-    collectedArtefacts[levelIdx] = true;
+    collectedArtefacts[artIdx] = true;
     saveArtefacts();
     updateArtOrbs();
 
@@ -461,7 +472,6 @@ window.addEventListener("DOMContentLoaded", () => {
     document.getElementById("arRevShort").textContent  = "✅ Desbloqueado";
 
     // Artigo da Convenção
-    const L = LEVELS[levelIdx];
     const articleEl = document.getElementById("arRevArticle");
     const article = L ? (QUIZ_ARTICLE[L.quizTheme] || null) : null;
     if (articleEl) {
@@ -475,7 +485,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     // Curiosidade — texto breve do HISTORY
     const curioEl = document.getElementById("arRevCurio");
-    const hist = HISTORY[levelIdx];
+    const hist = HISTORY[artIdx];
     if (curioEl && hist) {
       // Primeira frase do texto histórico (até ao primeiro ponto final)
       const firstSentence = hist.text.split(/\.\s/)[0] + ".";
@@ -514,7 +524,7 @@ window.addEventListener("DOMContentLoaded", () => {
     function _closeReveal() {
       if (_closed) return; _closed = true;
       overlay.classList.remove("show");
-      checkSetBonus(levelIdx);
+      checkSetBonus(artIdx);
     }
     const btn = document.getElementById("arRevClose");
     if (btn) { btn.onclick = _closeReveal; }
@@ -853,8 +863,8 @@ window.addEventListener("DOMContentLoaded", () => {
   // _bossActiveSince NÃO é reposto quando se perde uma vida — é o que dá a escalada
   // de dificuldade persistente (o boss fica mais difícil com o tempo, mesmo morrendo).
   let _bossStunned=false,_bossActiveSince=0,_lastBossItemIdx=-1;
-  // Pontos de spawn dos itens por boss (só preenchido para "ignorancia" por agora).
-  // Pontos em plataformas elevadas obrigam a saltar; ativa-se via L.bossStagger.
+  // Pontos de spawn dos itens por boss. Pontos em plataformas elevadas obrigam
+  // a saltar; ativa-se via L.bossStagger (um item de cada vez, sem repetir o último).
   const BOSS_ITEM_POINTS={
     ignorancia:[
       {x:180,y:345},  // sobre a plataforma esquerda
@@ -863,7 +873,15 @@ window.addEventListener("DOMContentLoaded", () => {
       {x:330,y:460},  // chão, perto do centro-esquerda
       {x:630,y:460},  // chão, perto do centro-direita
     ],
+    ciberbullying:[
+      {x:150,y:335},  // plataforma esquerda alta
+      {x:480,y:245},  // plataforma central, a mais alta da arena
+      {x:810,y:335},  // plataforma direita alta
+      {x:300,y:395},  // plataforma baixa esquerda
+      {x:660,y:395},  // plataforma baixa direita
+    ],
   };
+  let bossShields=[]; // sprites estáticos do boss da Violência (mecânica própria, ver _setupBossViolencia)
   let movingPlatforms=[], trampolines=[], secretDoors=[], hazards=[];
   let player, platforms, itemsGroup, malwareGroup, door, doorOverlap=null;
   let cursors, keySpace;
@@ -2539,11 +2557,16 @@ window.addEventListener("DOMContentLoaded", () => {
   // ═══════════════════════════════════════════════════════════
   // SISTEMA DE BOSS
   // Boss 1 — Monstro da Ignorância (após nível 2, tema educação)
-  //   Mecânica: apanha 3 livros ABERTOS sem morrer
+  //   Mecânica: apanha 3 livros ABERTOS sem morrer, um de cada vez, em pontos
+  //   elevados da arena. Salta-lhe em cima da cabeça para o atordoar (zona segura).
   // Boss 2 — Gigante da Violência (após nível 6, tema proteção)
-  //   Mecânica: ativa 3 escudos espalhados pela arena
+  //   Mecânica: ativa 3 escudos ESTÁTICOS espalhados pela arena — fica parado
+  //   junto a cada um para o carregar; se saíres da zona antes de carregar, perdes
+  //   o progresso desse escudo. Sem stomp (o Gigante salta de forma imprevisível).
   // Boss 3 — Senhor do Ciberbullying (nível final, tema digital)
-  //   Mecânica: apanha 3 dispositivos seguros sem morrer
+  //   Mecânica: combina apanhar 3 dispositivos seguros (um de cada vez, com stomp)
+  //   com uma fase de "anonimato" — o boss desaparece periodicamente e reaparece
+  //   noutro sítio, mas continua a atirar mesmo invisível.
   // ═══════════════════════════════════════════════════════════
 
   function loadBossLevel(scene,idx){
@@ -2562,6 +2585,7 @@ window.addEventListener("DOMContentLoaded", () => {
     else bossProjectiles.clear(true,true);
     if(!bossBooks)bossBooks=scene.physics.add.staticGroup();
     else bossBooks.clear(true,true);
+    bossShields.forEach(s=>{try{s.destroy();}catch{}});bossShields=[];
 
     booksCollected=0;_bossActive=false;_bossStunned=false;_lastBossItemIdx=-1;
     awaitingQuiz=true;invuln=false;clearPower(scene);clearDoubleJump(scene);clearStarPower(scene);
@@ -2694,11 +2718,40 @@ window.addEventListener("DOMContentLoaded", () => {
     scene.physics.add.collider(bossProjectiles,platforms,(proj)=>{scene.time.delayedCall(800,()=>{if(proj.active)proj.destroy();});});
     scene.physics.add.overlap(player,bossProjectiles,(p,proj)=>{if(!_bossActive||invuln)return;proj.destroy();_bossPlayerHit(scene,L);},null,scene);
 
-    // Escudos como colectáveis
-    _spawnBossItems(scene,"boss_shield",L);
-    scene.physics.add.overlap(player,bossBooks,(p,shield)=>{if(!_bossActive||shield.getData("collected"))return;shield.setData("collected",true);scene.tweens.add({targets:shield,y:shield.y-50,alpha:0,scaleX:1.8,scaleY:1.8,duration:380,onComplete:()=>shield.destroy()});SFX.coin();_bossItemCollected(scene,L);},null,scene);
+    // Escudos ESTÁTICOS — fica parado junto a cada um durante ~1,1s para o ativar.
+    // Sair da zona antes de carregar perde o progresso desse escudo (tensão real,
+    // porque o Gigante salta de forma imprevisível enquanto tentas ficar quieto).
+    const CHARGE_MS=1100, CHARGE_RADIUS=58;
+    const shieldPts=[{x:160,y:345},{x:480,y:255},{x:800,y:345}]; // sobre as 3 plataformas elevadas
+    bossShields=shieldPts.map(pt=>{
+      const s=scene.physics.add.staticImage(pt.x,pt.y,"boss_shield");
+      s.setDisplaySize(46,46).setDepth(2).setAlpha(0.5).refreshBody();
+      s.setData("charge",0).setData("active",false);
+      return s;
+    });
+    bossTimers.push(scene.time.addEvent({delay:50,loop:true,callback:()=>{
+      if(!_bossActive)return;
+      bossShields.forEach(s=>{
+        if(s.getData("active"))return;
+        const d=Phaser.Math.Distance.Between(player.x,player.y,s.x,s.y);
+        if(d<CHARGE_RADIUS){
+          const c=s.getData("charge")+50;
+          s.setData("charge",c);
+          s.setAlpha(0.5+0.5*Math.min(c/CHARGE_MS,1));
+          s.setScale(1+0.18*Math.sin(c/70));
+          if(c>=CHARGE_MS){
+            s.setData("active",true);s.setAlpha(1);s.setScale(1);s.setTint(0x70ff90);
+            scene.tweens.add({targets:s,scale:{from:1.7,to:1},duration:300,ease:"Back.easeOut"});
+            SFX.coin();
+            _bossItemCollected(scene,L);
+          }
+        }else if(s.getData("charge")>0){
+          s.setData("charge",0);s.setAlpha(0.5);s.setScale(1); // saiu da zona — perde a carga
+        }
+      });
+    }}));
 
-    setTimeout(()=>vbSay("Ativa os 3 escudos 🛡️ sem morrer para derrotar o Gigante da Violência!","wrong",5000),900);
+    setTimeout(()=>vbSay("Fica parado junto a cada escudo 🛡️ para o ativar! Cuidado com os saltos dele!","wrong",5500),900);
   }
 
   // ── Boss 3: Senhor do Ciberbullying ─────────────────────────
@@ -2711,22 +2764,39 @@ window.addEventListener("DOMContentLoaded", () => {
     scene.tweens.add({targets:bossSprite,x:{from:bossSprite.x-4,to:bossSprite.x+4},duration:80,yoyo:true,repeat:-1,ease:"Sine.easeInOut"});
     scene.tweens.add({targets:bossSprite,scaleX:{from:1,to:1.05},scaleY:{from:1.05,to:1},duration:400,yoyo:true,repeat:-1});
 
-    let bossDir=1;bossSprite.setVelocityX(70);
+    let bossDir=1,bossAnon=false;bossSprite.setVelocityX(70);
     bossTimers.push(scene.time.addEvent({delay:50,loop:true,callback:()=>{
       if(!bossSprite?.active||!_bossActive)return;
+      if(_bossStunned||bossAnon){bossSprite.setVelocityX(0);return;}
       if(bossSprite.x>L.worldW-115)bossDir=-1;
       if(bossSprite.x<115)bossDir=1;
-      bossSprite.setVelocityX((70+booksCollected*55)*bossDir);
+      // Boss final — também tem a escalada persistente de dificuldade do Boss 1.
+      const elapsedSec=(scene.time.now-_bossActiveSince)/1000;
+      const timeFactor=Math.min(elapsedSec/45,1)*0.7;
+      const speed=(70+booksCollected*40)*(1+timeFactor);
+      bossSprite.setVelocityX(speed*bossDir);
       bossSprite.setFlipX(bossDir<0);
     }}));
 
-    scene.physics.add.overlap(player,bossSprite,()=>{if(!_bossActive||invuln)return;_bossPlayerHit(scene,L);},null,scene);
+    // Stomp: salta-lhe em cima da cabeça para o atordoar (como no Boss 1).
+    // Durante o "modo anónimo" o corpo físico está desligado, por isso este
+    // overlap simplesmente não dispara — não há nada para tocar.
+    scene.physics.add.overlap(player,bossSprite,(p,b)=>{
+      if(!_bossActive||invuln)return;
+      if(_bossStunned)return;
+      const bossTop=b.y-(b.displayHeight/2);
+      const isStomp=p.body.velocity.y>30&&p.y<bossTop+30;
+      if(isStomp){_bossStomp(scene,L);return;}
+      _bossPlayerHit(scene,L);
+    },null,scene);
 
-    // Projéteis: dispositivos maliciosos em chuva
+    // Projéteis: dispositivos maliciosos em chuva — continuam mesmo "invisível"
+    // (o ciberbullying anónimo não pára de atacar só porque não se vê quem é).
     let _lastShot=0;
     bossTimers.push(scene.time.addEvent({delay:100,loop:true,callback:()=>{
-      if(!bossSprite?.active||!_bossActive)return;
-      const now=scene.time.now,cadencia=1600-booksCollected*200;
+      if(!bossSprite?.active||!_bossActive||_bossStunned)return;
+      const now=scene.time.now,elapsedSec=(now-_bossActiveSince)/1000;
+      const cadencia=Math.max(700,1600-booksCollected*200-elapsedSec*12);
       if(now-_lastShot<cadencia)return;_lastShot=now;
       const proj=bossProjectiles.create(bossSprite.x+(Math.random()-0.5)*100,bossSprite.y-40,"boss_device");
       proj.setDisplaySize(32,28).setDepth(4).setTint(0xff2244);
@@ -2737,11 +2807,34 @@ window.addEventListener("DOMContentLoaded", () => {
     scene.physics.add.collider(bossProjectiles,platforms,(proj)=>{scene.time.delayedCall(600,()=>{if(proj.active)proj.destroy();});});
     scene.physics.add.overlap(player,bossProjectiles,(p,proj)=>{if(!_bossActive||invuln)return;proj.destroy();_bossPlayerHit(scene,L);},null,scene);
 
-    // Dispositivos seguros como colectáveis
+    // Dispositivos seguros como colectáveis — um de cada vez, em pontos elevados
+    // (ver BOSS_ITEM_POINTS.ciberbullying + L.bossStagger no data-levels.js).
     _spawnBossItems(scene,"boss_device",L);
     scene.physics.add.overlap(player,bossBooks,(p,dev)=>{if(!_bossActive||dev.getData("collected"))return;dev.setData("collected",true);scene.tweens.add({targets:dev,y:dev.y-50,alpha:0,scaleX:1.8,scaleY:1.8,duration:380,onComplete:()=>dev.destroy()});SFX.coin();_bossItemCollected(scene,L);},null,scene);
 
-    setTimeout(()=>vbSay("Apanha os 3 dispositivos SEGUROS 💻 sem morrer para derrotar o Senhor do Ciberbullying!","wrong",5000),900);
+    // Modo Anónimo — a cada ~7s o boss "desaparece" por 1,4s e reaparece noutro
+    // sítio. É a marca própria deste boss final: não há stomp possível enquanto
+    // está anónimo, mas continua perigoso (os projéteis não param).
+    const ANON_SPOTS=[150,300,480,660,810];
+    bossTimers.push(scene.time.addEvent({delay:7000,startAt:3000,loop:true,callback:()=>{
+      if(!bossSprite?.active||!_bossActive||_bossStunned||bossAnon)return;
+      bossAnon=true;
+      scene.tweens.add({targets:bossSprite,alpha:0.12,duration:300});
+      bossSprite.body.enable=false;
+      showFloat(scene,bossSprite.x,bossSprite.y-90,"👻 Modo Anónimo!","#9090ff");
+      scene.time.delayedCall(1400,()=>{
+        if(!bossSprite?.active)return;
+        const nx=ANON_SPOTS[Math.floor(Math.random()*ANON_SPOTS.length)];
+        bossSprite.setPosition(nx,300);
+        bossSprite.body.enable=true;
+        scene.tweens.add({targets:bossSprite,alpha:1,duration:250});
+        scene.cameras.main.shake(100,0.005);
+        vbSay("Não te escondas! A internet não é um esconderijo! 👻","wrong",2200);
+        bossAnon=false;
+      });
+    }}));
+
+    setTimeout(()=>vbSay("Apanha os 3 dispositivos SEGUROS 💻 — salta-lhe em cima para o atordoar, mas atenção: ele esconde-se de vez em quando! 👻","wrong",6000),900);
   }
 
   // ── Funções partilhadas pelos 3 bosses ──────────────────────
@@ -2800,7 +2893,11 @@ window.addEventListener("DOMContentLoaded", () => {
     player.setVelocity(0,0);player.setPosition(L.spawn.x,L.spawn.y);
     booksCollected=0;_updateBossHUD();
     if(bossProjectiles)bossProjectiles.clear(true,true);
-    _spawnBossItems(scene,_bossItemKey(L),L);
+    if(L.bossStaticItems){
+      bossShields.forEach(s=>{s.setData("charge",0);s.setData("active",false);s.setAlpha(0.55);s.setScale(1);s.clearTint();});
+    }else{
+      _spawnBossItems(scene,_bossItemKey(L),L);
+    }
     const flash=scene.add.rectangle(480,270,960,540,0xff0000,0.40).setDepth(20);
     scene.tweens.add({targets:flash,alpha:0,duration:450,onComplete:()=>flash.destroy()});
     showFloat(scene,480,240,"💀 Recomeças do zero!","#ff4444");
@@ -2835,7 +2932,7 @@ window.addEventListener("DOMContentLoaded", () => {
     if(booksCollected>=BOSS_BOOKS_NEEDED){_bossDefeated(scene,L);}
     else{
       vbSay(restam===2?"Boa! 1 apanhado — faltam "+restam+"! Não morras agora! 💪":"Incrível! Só falta 1! Cuidado com os projéteis! ⭐","good",2800);
-      scene.time.delayedCall(500,()=>_spawnBossItems(scene,_bossItemKey(L),L));
+      if(!L.bossStaticItems)scene.time.delayedCall(500,()=>_spawnBossItems(scene,_bossItemKey(L),L));
     }
   }
 
@@ -2858,6 +2955,14 @@ window.addEventListener("DOMContentLoaded", () => {
     SFX.starMelody?.();
     score+=300;scoreText?.setText("🌟 Pontos: "+score);
     showFloat(scene,480,280,"🏆 +300 Boss Derrotado!","#ffd700");
+    // Recompensa própria do boss — distinta do álbum de artefactos dos níveis normais,
+    // porque vencer um boss não corresponde a nenhum ARTEFACTS[] específico.
+    const direitoDefendido={
+      ignorancia:{emoji:"📚",label:"Direito à Educação"},
+      violencia:{emoji:"🛡️",label:"Direito à Proteção"},
+      ciberbullying:{emoji:"🌍",label:"Todos os Direitos da Criança"},
+    }[L.bossKey||"ignorancia"];
+    if(direitoDefendido)scene.time.delayedCall(700,()=>showFloat(scene,480,200,direitoDefendido.emoji+" Direito Defendido: "+direitoDefendido.label,"#7CFFB2"));
     scene.time.delayedCall(900,()=>robotDance(scene,()=>nextLevel(scene)));
   }
 
