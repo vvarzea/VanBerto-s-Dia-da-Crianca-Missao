@@ -850,6 +850,20 @@ window.addEventListener("DOMContentLoaded", () => {
   let balloons=[], critters=[], enemyTimers=[];
   const BOSS_BOOKS_NEEDED=3;
   let bossSprite=null,booksCollected=0,bossProjectiles=null,bossBooks=null,bossTimers=[],_bossActive=false;
+  // _bossActiveSince NÃO é reposto quando se perde uma vida — é o que dá a escalada
+  // de dificuldade persistente (o boss fica mais difícil com o tempo, mesmo morrendo).
+  let _bossStunned=false,_bossActiveSince=0,_lastBossItemIdx=-1;
+  // Pontos de spawn dos itens por boss (só preenchido para "ignorancia" por agora).
+  // Pontos em plataformas elevadas obrigam a saltar; ativa-se via L.bossStagger.
+  const BOSS_ITEM_POINTS={
+    ignorancia:[
+      {x:180,y:345},  // sobre a plataforma esquerda
+      {x:480,y:255},  // sobre a plataforma central alta
+      {x:780,y:345},  // sobre a plataforma direita
+      {x:330,y:460},  // chão, perto do centro-esquerda
+      {x:630,y:460},  // chão, perto do centro-direita
+    ],
+  };
   let movingPlatforms=[], trampolines=[], secretDoors=[], hazards=[];
   let player, platforms, itemsGroup, malwareGroup, door, doorOverlap=null;
   let cursors, keySpace;
@@ -2549,7 +2563,7 @@ window.addEventListener("DOMContentLoaded", () => {
     if(!bossBooks)bossBooks=scene.physics.add.staticGroup();
     else bossBooks.clear(true,true);
 
-    booksCollected=0;_bossActive=false;
+    booksCollected=0;_bossActive=false;_bossStunned=false;_lastBossItemIdx=-1;
     awaitingQuiz=true;invuln=false;clearPower(scene);clearDoubleJump(scene);clearStarPower(scene);
     livesLostThisLevel=0;
     scene.physics.pause();
@@ -2593,18 +2607,32 @@ window.addEventListener("DOMContentLoaded", () => {
     let bossDir=1;bossSprite.setVelocityX(80);
     bossTimers.push(scene.time.addEvent({delay:50,loop:true,callback:()=>{
       if(!bossSprite?.active||!_bossActive)return;
+      if(_bossStunned){bossSprite.setVelocityX(0);return;} // atordoado — não se move
       if(bossSprite.x>L.worldW-110)bossDir=-1;
       if(bossSprite.x<110)bossDir=1;
-      bossSprite.setVelocityX((80+booksCollected*45)*bossDir);
+      // Fator de tempo: sobe lentamente desde o início da luta e NÃO reinicia ao morrer,
+      // por isso o combate fica genuinamente mais intenso quanto mais se arrasta.
+      const elapsedSec=(scene.time.now-_bossActiveSince)/1000;
+      const timeFactor=Math.min(elapsedSec/45,1)*0.7; // até +70% depois de ~45s
+      const speed=(80+booksCollected*35)*(1+timeFactor);
+      bossSprite.setVelocityX(speed*bossDir);
       bossSprite.setFlipX(bossDir<0);
     }}));
 
-    scene.physics.add.overlap(player,bossSprite,()=>{if(!_bossActive||invuln)return;_bossPlayerHit(scene,L);},null,scene);
+    scene.physics.add.overlap(player,bossSprite,(p,b)=>{
+      if(!_bossActive||invuln)return;
+      if(_bossStunned)return; // atordoado — zona segura, sem dano
+      const bossTop=b.y-(b.displayHeight/2);
+      const isStomp=p.body.velocity.y>30&&p.y<bossTop+30;
+      if(isStomp){_bossStomp(scene,L);return;}
+      _bossPlayerHit(scene,L);
+    },null,scene);
 
     let _lastShot=0;
     bossTimers.push(scene.time.addEvent({delay:100,loop:true,callback:()=>{
-      if(!bossSprite?.active||!_bossActive)return;
-      const now=scene.time.now,cadencia=2200-booksCollected*300;
+      if(!bossSprite?.active||!_bossActive||_bossStunned)return;
+      const now=scene.time.now,elapsedSec=(now-_bossActiveSince)/1000;
+      const cadencia=Math.max(900,2200-booksCollected*250-elapsedSec*12);
       if(now-_lastShot<cadencia)return;_lastShot=now;
       const proj=bossProjectiles.create(bossSprite.x,bossSprite.y-50,"boss_book_closed");
       proj.setDisplaySize(36,28).setDepth(4);
@@ -2619,7 +2647,7 @@ window.addEventListener("DOMContentLoaded", () => {
     _spawnBossItems(scene,"boss_book_open",L);
     scene.physics.add.overlap(player,bossBooks,(p,book)=>{if(!_bossActive||book.getData("collected"))return;book.setData("collected",true);scene.tweens.add({targets:book,y:book.y-50,alpha:0,scaleX:1.8,scaleY:1.8,duration:380,onComplete:()=>book.destroy()});SFX.coin();_bossItemCollected(scene,L);},null,scene);
 
-    setTimeout(()=>vbSay("Apanha os 3 livros ABERTOS 📖 sem morrer para derrotar o Monstro da Ignorância!","wrong",5000),900);
+    setTimeout(()=>vbSay("Apanha os 3 livros ABERTOS 📖 sem morrer! Salta-lhe em cima da cabeça para o atordoar! 💫","wrong",5000),900);
   }
 
   // ── Boss 2: Gigante da Violência ────────────────────────────
@@ -2717,15 +2745,50 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   // ── Funções partilhadas pelos 3 bosses ──────────────────────
+  function _bossBaseTint(L){
+    const k=L.bossKey||"ignorancia";
+    return k==="violencia"?0x2a0040:k==="ciberbullying"?0x001a40:0x660000;
+  }
+
   function _spawnBossItems(scene,texKey,L){
     if(bossBooks)bossBooks.clear(true,true);
-    [[180,480],[480,480],[760,480]].forEach(([x,y])=>{
+    const pool=BOSS_ITEM_POINTS[L.bossKey];
+    let points;
+    if(L.bossStagger&&pool?.length){
+      // Um item de cada vez, num ponto aleatório (nunca repete o ponto anterior) —
+      // obriga a navegar a arena (incluindo plataformas elevadas) durante toda a luta.
+      let idx=Math.floor(Math.random()*pool.length);
+      if(pool.length>1)while(idx===_lastBossItemIdx)idx=Math.floor(Math.random()*pool.length);
+      _lastBossItemIdx=idx;
+      points=[[pool[idx].x,pool[idx].y]];
+    }else{
+      points=[[180,480],[480,480],[760,480]];
+    }
+    points.forEach(([x,y])=>{
       const b=bossBooks.create(x,y,texKey);
       b.setDisplaySize(46,38).setDepth(2);
       b.setData("collected",false);b.refreshBody();
       scene.tweens.add({targets:b,y:y-12,duration:850+Math.random()*300,yoyo:true,repeat:-1,ease:"Sine.easeInOut"});
       scene.tweens.add({targets:b,alpha:{from:0.75,to:1},scaleX:{from:0.94,to:1.06},duration:550,yoyo:true,repeat:-1});
     });
+  }
+
+  // Saltar em cima da cabeça do boss atordoa-o por um tempo: zona segura para
+  // apanhar o próximo item sem risco. Não conta como vida perdida nem reinicia o progresso.
+  function _bossStomp(scene,L){
+    _bossStunned=true;
+    if(bossSprite?.active){
+      bossSprite.setVelocityX(0);
+      scene.tweens.add({targets:bossSprite,angle:{from:-6,to:6},duration:90,yoyo:true,repeat:8});
+      bossSprite.setTint(0xffffff);
+      scene.time.delayedCall(160,()=>{if(bossSprite?.active)bossSprite.setTint(_bossBaseTint(L));});
+    }
+    player.setVelocityY(-280);
+    scene.cameras.main.shake(120,0.006);
+    SFX.hit();
+    showFloat(scene,bossSprite?.x||480,(bossSprite?.y||370)-100,"💫 Atordoado!","#ffe000");
+    vbSay("Boa! Saltaste-lhe em cima! Aproveita para avançar em segurança! 💫","good",2200);
+    scene.time.delayedCall(2200,()=>{_bossStunned=false;});
   }
 
   function _bossPlayerHit(scene,L){
@@ -2759,8 +2822,7 @@ window.addEventListener("DOMContentLoaded", () => {
       bossSprite.setTint(0xffffff);
       scene.time.delayedCall(160,()=>{
         if(!bossSprite?.active)return;
-        const k=L.bossKey||"ignorancia";
-        bossSprite.setTint(k==="violencia"?0x2a0040:k==="ciberbullying"?0x001a40:0x660000);
+        bossSprite.setTint(_bossBaseTint(L));
       });
     }
     SFX.hit();
@@ -2830,7 +2892,12 @@ window.addEventListener("DOMContentLoaded", () => {
 
   function _hideBossHUD(){const hud=document.getElementById("bossHUD");if(hud)hud.style.display="none";}
 
-  function _startBossIfNeeded(){if(LEVELS[currentLevel]?.isBoss&&!_bossActive){booksCollected=0;_bossActive=true;}}
+  function _startBossIfNeeded(){
+    if(LEVELS[currentLevel]?.isBoss&&!_bossActive){
+      booksCollected=0;_bossActive=true;_bossStunned=false;
+      _bossActiveSince=sceneRef?.time?.now||0; // marca o início — não se repõe ao morrer
+    }
+  }
 
   function updateHUD(L) {
     hudText.setText(`${L.name}  (${currentLevel+1}/${LEVELS.length})`);
