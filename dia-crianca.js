@@ -746,18 +746,19 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // Avalia todas as conquistas com critérios cumulativos (chamado após eventos relevantes)
   function checkAchievements() {
+    const normalLevelCount = LEVELS.filter(L => !L.isBoss).length;
     if (mapProgress.levelsCompleted.length >= 1) unlockAchievement("primeiros_passos");
     if (historiesReadCount >= 10) unlockAchievement("curioso");
     if (correctAnswersTotal >= 25) unlockAchievement("sabio");
-    if (mapProgress.levelsCompleted.length >= LEVELS.length) unlockAchievement("guardiao");
+    if (mapProgress.levelsCompleted.length >= normalLevelCount) unlockAchievement("guardiao");
 
     // Mestre VanBerto's — todas as perguntas respondidas à primeira tentativa (não há perguntas erradas)
-    const allFirstTry = LEVELS.every((_, i) => levelStars[i] && levelStars[i].firstTry);
-    if (mapProgress.levelsCompleted.length >= LEVELS.length && allFirstTry) unlockAchievement("mestre");
+    const allFirstTry = LEVELS.every((L, i) => L.isBoss || (levelStars[i] && levelStars[i].firstTry));
+    if (mapProgress.levelsCompleted.length >= normalLevelCount && allFirstTry) unlockAchievement("mestre");
 
-    // Lenda dos Direitos — 100%: todos os níveis concluídos com as 3 estrelas
-    const allThreeStars = LEVELS.every((_, i) => starsForLevel(i) === 3);
-    if (mapProgress.levelsCompleted.length >= LEVELS.length && allThreeStars) unlockAchievement("lenda");
+    // Lenda dos Direitos — 100%: todos os níveis normais concluídos com as 3 estrelas
+    const allThreeStars = LEVELS.every((L, i) => L.isBoss || starsForLevel(i) === 3);
+    if (mapProgress.levelsCompleted.length >= normalLevelCount && allThreeStars) unlockAchievement("lenda");
   }
 
   // Chamado a cada segredo encontrado (de updateSecrets)
@@ -810,8 +811,11 @@ window.addEventListener("DOMContentLoaded", () => {
     if (!grid) return;
     grid.innerHTML = "";
     let unlockedCount = 0;
-    LEVELS.forEach((L, idx) => {
-      const entry = HISTORY[idx];
+    // Só níveis normais (não bosses) têm artefactos e entradas em HISTORY
+    const normalLevels = LEVELS.map((L, idx) => ({ L, idx })).filter(({ L }) => !L.isBoss);
+    normalLevels.forEach(({ L, idx }) => {
+      const artIdx = (L.artIdx != null) ? L.artIdx : idx;
+      const entry = HISTORY[artIdx];
       const unlocked = mapProgress.levelsCompleted.includes(idx);
       if (unlocked) unlockedCount += 1;
       const card = document.createElement("div");
@@ -838,7 +842,7 @@ window.addEventListener("DOMContentLoaded", () => {
       }
       grid.appendChild(card);
     });
-    const pct = Math.round((unlockedCount / LEVELS.length) * 100);
+    const pct = Math.round((unlockedCount / normalLevels.length) * 100);
     const pctEl = document.getElementById("albumProgressPct");
     const fillEl = document.getElementById("albumProgressFill");
     if (pctEl) pctEl.textContent = `${pct}%`;
@@ -1241,9 +1245,8 @@ window.addEventListener("DOMContentLoaded", () => {
       if (el("pauseProgress")) el("pauseProgress").textContent = `${lvl} / ${total}`;
       // Dica contextual: priorizar dicas dos níveis especiais
       let tipIdx;
-      if (currentLevel === 3)  tipIdx = 8;  // nível trampolins
-      else if (currentLevel === 13) tipIdx = 9;  // nível lava
-      else if (currentLevel === 17) tipIdx = 10; // nível esteira
+      if (currentLevel === 4)  tipIdx = 8;  // nível trampolins (Direito ao Brincar)
+      else if (currentLevel === 19) tipIdx = 10; // nível esteira (Direito à Inclusão)
       else { _pauseTipIdx = (_pauseTipIdx + 1) % 8; tipIdx = _pauseTipIdx; }
       if (el("pauseTip")) el("pauseTip").innerHTML = PAUSE_TIPS[tipIdx];
       overlay.classList.remove("hidden");
@@ -2969,7 +2972,11 @@ window.addEventListener("DOMContentLoaded", () => {
       ciberbullying:{emoji:"🌍",label:"Todos os Direitos da Criança"},
     }[L.bossKey||"ignorancia"];
     if(direitoDefendido)scene.time.delayedCall(700,()=>showFloat(scene,480,200,direitoDefendido.emoji+" Direito Defendido: "+direitoDefendido.label,"#7CFFB2"));
-    scene.time.delayedCall(900,()=>robotDance(scene,()=>nextLevel(scene)));
+    scene.time.delayedCall(900,()=>robotDance(scene,()=>{
+      finalizeLevelStars(currentLevel);
+      markLevelCompleted(currentLevel);
+      nextLevel(scene);
+    }));
   }
 
   function _showBossHUD(L){
@@ -3273,6 +3280,7 @@ window.addEventListener("DOMContentLoaded", () => {
                         if(ok){
                           ensureAudio();
                           if(currentLevel===LEVELS.length-1) SFX.finalWin(); else SFX.win();
+                          finalizeLevelStars(currentLevel);
                           markLevelCompleted(currentLevel);
                           showRightRecovered(currentLevel);
                           nextLevel(scene);
@@ -3358,7 +3366,17 @@ window.addEventListener("DOMContentLoaded", () => {
     elTitle.style.color  = textCol;
     elTitle.textContent  = nextL.name.replace(/^Nível \d+\s*[—–-]\s*/, "");
     elPhrase.style.color = subCol;
-    elPhrase.textContent = LEVEL_ENTRY_PHRASES[nextIdx] || "Vai em frente! 🎈";
+    // Bosses têm frases próprias — LEVEL_ENTRY_PHRASES descreve itens do nível e não faz sentido num boss
+    if (nextL.isBoss) {
+      const BOSS_ENTRY_PHRASES = {
+        ignorancia: "⚔️ O Monstro da Ignorância espera-te! Apanha os livros!",
+        violencia:  "🛡️ O Gigante da Violência está aqui! Ativa os escudos!",
+        ciberbullying: "💻 O Ciberbullying ataca! Protege os direitos digitais!",
+      };
+      elPhrase.textContent = BOSS_ENTRY_PHRASES[nextL.bossKey] || "⚔️ Prepara-te para o combate final!";
+    } else {
+      elPhrase.textContent = LEVEL_ENTRY_PHRASES[nextIdx] || "Vai em frente! 🎈";
+    }
     elName.style.color   = nameCol;
     elName.textContent   = playerName ? `✨ Vai, ${playerName}! ✨` : "✨ Vai lá! ✨";
 
