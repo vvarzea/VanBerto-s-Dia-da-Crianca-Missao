@@ -1116,9 +1116,7 @@ window.addEventListener("DOMContentLoaded", () => {
     if (btnInGameMap) {
       btnInGameMap.onclick = () => {
         if (!sceneRef) return;
-        sceneRef.physics.pause();
-        renderMap();
-        document.getElementById("mapOverlay")?.classList.remove("hidden");
+        openOverlay("mapOverlay", renderMap);
       };
     }
 
@@ -3617,6 +3615,8 @@ window.addEventListener("DOMContentLoaded", () => {
               });
             }
             document.getElementById("reviewOverlay").classList.remove("hidden");
+            // Esconder o winOverlay enquanto revisão está aberta para não ficarem sobrepostos
+            document.getElementById("winOverlay")?.classList.add("hidden");
           };
         } else {
           btnReview.style.display = "none";
@@ -3624,7 +3624,10 @@ window.addEventListener("DOMContentLoaded", () => {
       }
       const btnCloseReview = document.getElementById("btnCloseReview");
       if (btnCloseReview) {
-        btnCloseReview.onclick = () => document.getElementById("reviewOverlay").classList.add("hidden");
+        btnCloseReview.onclick = () => {
+          document.getElementById("reviewOverlay").classList.add("hidden");
+          document.getElementById("winOverlay")?.classList.remove("hidden");
+        };
       }
     }); // fim robotDance
   }); // fim showArtefactGallery
@@ -6281,9 +6284,9 @@ window.addEventListener("DOMContentLoaded", () => {
       const el = document.getElementById(id); if (el) el.onclick = handleClick;
     });
   })();
-  btnHow.onclick = () => { pauseForOverlay(); howOverlay.classList.remove("hidden"); };
-  btnCloseHow.onclick = () => { howOverlay.classList.add("hidden"); resumeAfterOverlay(); };
-  window.__vb_openHow = () => { pauseForOverlay(); howOverlay.classList.remove("hidden"); };
+  btnHow.onclick = () => { openOverlay("howOverlay"); };
+  btnCloseHow.onclick = () => { closeOverlay("howOverlay"); };
+  window.__vb_openHow = () => { openOverlay("howOverlay"); };
 
   // ===== Ecrã todo =====
   const isIOS=/iP(hone|ad|od)/.test(navigator.userAgent);
@@ -6398,23 +6401,10 @@ window.addEventListener("DOMContentLoaded", () => {
   // ===== Menu Principal / In-game — botão Mapa =====
   document.getElementById("btnOpenMap")?.addEventListener("click", () => {
     ensureAudio(); SFX.coin();
-    // Se o jogo já está a correr, pausar a física enquanto o mapa está aberto
-    if (sceneRef && startOverlay.classList.contains("hidden")) {
-      sceneRef.physics.pause();
-    }
-    renderMap();
-    document.getElementById("mapOverlay")?.classList.remove("hidden");
+    openOverlay("mapOverlay", renderMap);
   });
   document.getElementById("btnCloseMap")?.addEventListener("click", () => {
-    document.getElementById("mapOverlay")?.classList.add("hidden");
-    // Retomar a física ao fechar — só se o jogo está a correr e não há outro motivo de pausa
-    if (!sceneRef) return;
-    if (!startOverlay.classList.contains("hidden")) return; // ainda no menu inicial
-    if (!pausedByTeacher && !awaitingQuiz && !awaitingStory
-        && quizOverlay.classList.contains("hidden")
-        && historyOverlay.classList.contains("hidden")) {
-      sceneRef.physics.resume();
-    }
+    closeOverlay("mapOverlay");
   });
 
   // =====================================================
@@ -6474,6 +6464,36 @@ window.addEventListener("DOMContentLoaded", () => {
   // ===== UTILITÁRIO: pausar/retomar física ao abrir overlays =====
   // Qualquer ecrã que abre por cima do jogo deve pausar a física.
   // =====================================================
+
+  // IDs dos overlays secundários (não o jogo nem o quiz/história que têm fluxo próprio)
+  const SECONDARY_OVERLAYS = [
+    "mapOverlay", "achievementsOverlay", "albumOverlay",
+    "statsOverlay", "optionsOverlay", "howOverlay",
+    "reviewOverlay", "artefactGalleryOverlay", "certificateOverlay",
+    "winOverlay", "gameOverOverlay",
+  ];
+
+  // Fecha todos os overlays secundários antes de abrir um novo — evita sobreposições
+  function closeAllSecondaryOverlays() {
+    SECONDARY_OVERLAYS.forEach(id => {
+      document.getElementById(id)?.classList.add("hidden");
+    });
+  }
+
+  // Abre um overlay secundário garantindo que os outros estão fechados
+  function openOverlay(id, beforeOpen) {
+    closeAllSecondaryOverlays();
+    pauseForOverlay();
+    beforeOpen?.();
+    document.getElementById(id)?.classList.remove("hidden");
+  }
+
+  // Fecha um overlay secundário e retoma a física
+  function closeOverlay(id) {
+    document.getElementById(id)?.classList.add("hidden");
+    resumeAfterOverlay();
+  }
+
   function pauseForOverlay() {
     if (sceneRef && startOverlay.classList.contains("hidden")) {
       _overlayPaused = true;
@@ -6496,15 +6516,12 @@ window.addEventListener("DOMContentLoaded", () => {
   // =====================================================
   function openAchievementsScreen() {
     ensureAudio(); SFX.coin();
-    pauseForOverlay();
-    renderAchievements();
-    document.getElementById("achievementsOverlay")?.classList.remove("hidden");
+    openOverlay("achievementsOverlay", renderAchievements);
   }
   window.__vb_openAchievements = openAchievementsScreen;
   document.getElementById("btnAchievements")?.addEventListener("click", openAchievementsScreen);
   document.getElementById("btnCloseAchievements")?.addEventListener("click", () => {
-    document.getElementById("achievementsOverlay")?.classList.add("hidden");
-    resumeAfterOverlay();
+    closeOverlay("achievementsOverlay");
   });
 
   // =====================================================
@@ -6512,15 +6529,12 @@ window.addEventListener("DOMContentLoaded", () => {
   // =====================================================
   function openAlbumScreen() {
     ensureAudio(); SFX.coin();
-    pauseForOverlay();
-    renderAlbum();
-    document.getElementById("albumOverlay")?.classList.remove("hidden");
+    openOverlay("albumOverlay", renderAlbum);
   }
   window.__vb_openAlbum = openAlbumScreen;
   document.getElementById("btnAlbum")?.addEventListener("click", openAlbumScreen);
   document.getElementById("btnCloseAlbum")?.addEventListener("click", () => {
-    document.getElementById("albumOverlay")?.classList.add("hidden");
-    resumeAfterOverlay();
+    closeOverlay("albumOverlay");
   });
 
   // =====================================================
@@ -6650,15 +6664,12 @@ window.addEventListener("DOMContentLoaded", () => {
 
   function openStatsScreen() {
     ensureAudio(); SFX.coin();
-    pauseForOverlay();
-    renderStats();
-    document.getElementById("statsOverlay")?.classList.remove("hidden");
+    openOverlay("statsOverlay", renderStats);
   }
   window.__vb_openStats = openStatsScreen;
   document.getElementById("btnStats")?.addEventListener("click", openStatsScreen);
   document.getElementById("btnCloseStats")?.addEventListener("click", () => {
-    document.getElementById("statsOverlay")?.classList.add("hidden");
-    resumeAfterOverlay();
+    closeOverlay("statsOverlay");
   });
   document.getElementById("btnResetStats")?.addEventListener("click", () => {
     if (!confirm("⚠️ Apagar todas as estatísticas, conquistas, estrelas e progresso?\nEsta ação não pode ser desfeita.")) return;
@@ -6707,15 +6718,12 @@ window.addEventListener("DOMContentLoaded", () => {
 
   function openOptionsScreen() {
     ensureAudio(); SFX.coin();
-    pauseForOverlay();
-    syncOptionsUI();
-    document.getElementById("optionsOverlay")?.classList.remove("hidden");
+    openOverlay("optionsOverlay", syncOptionsUI);
   }
   window.__vb_openOptions = openOptionsScreen;
   document.getElementById("btnOptions")?.addEventListener("click", openOptionsScreen);
   document.getElementById("btnCloseOptions")?.addEventListener("click", () => {
-    document.getElementById("optionsOverlay")?.classList.add("hidden");
-    resumeAfterOverlay();
+    closeOverlay("optionsOverlay");
   });
 
   // Botões dentro de Opções
@@ -6781,7 +6789,7 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   document.getElementById("btnWinCertificate")?.addEventListener("click", () => {
-    document.getElementById("winOverlay")?.classList.add("hidden");
+    closeAllSecondaryOverlays();
     showCertificate();
   });
 
