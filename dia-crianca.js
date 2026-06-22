@@ -2236,8 +2236,9 @@ window.addEventListener("DOMContentLoaded", () => {
     enemyTimers.forEach(t=>{try{t.remove(false);}catch{}}); enemyTimers=[];
     bossTimers.forEach(t=>{try{t.remove(false);}catch{}}); bossTimers=[];
     if(bossSprite){try{bossSprite.destroy();}catch{}bossSprite=null;}
-    if(bossProjectiles)bossProjectiles.clear(true,true);
-    if(bossBooks)bossBooks.clear(true,true);
+    if(bossProjectiles){bossProjectiles.destroy(true);bossProjectiles=null;}
+    if(bossBooks){bossBooks.destroy(true);bossBooks=null;}
+    bossShields.forEach(s=>{try{s.destroy();}catch{}});bossShields=[];
     _bossActive=false;booksCollected=0;_hideBossHUD();
     platforms.clear(true,true);itemsGroup.clear(true,true);
     malwareGroup.clear(true,true);
@@ -2581,10 +2582,14 @@ window.addEventListener("DOMContentLoaded", () => {
     platforms.clear(true,true);itemsGroup.clear(true,true);malwareGroup.clear(true,true);
     if(door)door.destroy();
     if(_doorWatchdogTimer){try{_doorWatchdogTimer.remove(false);}catch{}_doorWatchdogTimer=null;}
-    if(!bossProjectiles)bossProjectiles=scene.physics.add.group();
-    else bossProjectiles.clear(true,true);
-    if(!bossBooks)bossBooks=scene.physics.add.staticGroup();
-    else bossBooks.clear(true,true);
+    // Destruir e recriar os grupos em vez de só limpar — se fizermos apenas .clear(),
+    // os callbacks de overlap registados no boss anterior (que referenciam o mesmo objecto
+    // de grupo) continuam activos e disparam quando o novo boss adiciona sprites ao grupo.
+    // Ao destruir e recriar, os overlaps antigos ficam órfãos e nunca mais disparam.
+    if(bossProjectiles){bossProjectiles.destroy(true);bossProjectiles=null;}
+    bossProjectiles=scene.physics.add.group();
+    if(bossBooks){bossBooks.destroy(true);bossBooks=null;}
+    bossBooks=scene.physics.add.staticGroup();
     bossShields.forEach(s=>{try{s.destroy();}catch{}});bossShields=[];
 
     booksCollected=0;_bossActive=false;_bossStunned=false;_lastBossItemIdx=-1;
@@ -2844,7 +2849,8 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   function _spawnBossItems(scene,texKey,L){
-    if(bossBooks)bossBooks.clear(true,true);
+    if(!bossBooks)return; // grupo destruído/não criado ainda — não spawna
+    bossBooks.clear(true,true);
     const pool=BOSS_ITEM_POINTS[L.bossKey];
     let points;
     if(L.bossStagger&&pool?.length){
