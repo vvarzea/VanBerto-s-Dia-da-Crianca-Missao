@@ -1339,31 +1339,34 @@ window.addEventListener("DOMContentLoaded", () => {
       || !document.getElementById("gameOverOverlay").classList.contains("hidden")
       || !document.getElementById("winOverlay").classList.contains("hidden");
     if (_overlayOpen) {
-      // Watchdog anti-bloqueio: se awaitingQuiz=true mas nenhum overlay está
-      // visível e não há transição a decorrer, desbloquear automaticamente.
-      // Cobre casos em que loadLevel() corre DEPOIS de showHistory() já ter fechado.
-      if (awaitingQuiz && !awaitingStory && !_overlayPaused
-          && historyOverlay.classList.contains("hidden")
-          && quizOverlay.classList.contains("hidden")
-          && startOverlay.classList.contains("hidden")
-          && document.getElementById("gameOverOverlay").classList.contains("hidden")
-          && document.getElementById("winOverlay").classList.contains("hidden")
-          && document.getElementById("levelTransitionOverlay")?.style.display === "none"
-          && !document.getElementById("artefactRevealOverlay")?.classList.contains("show")) {
-        if (!sceneRef._awaitingQuizWatchdog) sceneRef._awaitingQuizWatchdog = 0;
-        sceneRef._awaitingQuizWatchdog += sceneRef.sys.game.loop.delta;
-        if (sceneRef._awaitingQuizWatchdog > 800) { // 800ms sem overlay → desbloquear
-          sceneRef._awaitingQuizWatchdog = 0;
+      // ── Watchdog anti-bloqueio ──────────────────────────────────────────────
+      // Se awaitingQuiz=true mas nenhum overlay HTML está visível e não há
+      // transição de nível a decorrer, o jogo está bloqueado sem razão.
+      // Desbloquear automaticamente após 1 segundo nessa situação.
+      const _noVisibleOverlay =
+            historyOverlay.classList.contains("hidden")
+         && quizOverlay.classList.contains("hidden")
+         && startOverlay.classList.contains("hidden")
+         && document.getElementById("gameOverOverlay").classList.contains("hidden")
+         && document.getElementById("winOverlay").classList.contains("hidden")
+         && (document.getElementById("levelTransitionOverlay")?.style.display || "none") === "none"
+         && !document.getElementById("artefactRevealOverlay")?.classList.contains("show");
+      if (awaitingQuiz && !awaitingStory && !_overlayPaused && _noVisibleOverlay) {
+        if (!sceneRef._wdStart) sceneRef._wdStart = Date.now();
+        if (Date.now() - sceneRef._wdStart > 1000) {
+          // 1 segundo sem overlay visível — desbloquear
+          sceneRef._wdStart = 0;
           awaitingQuiz = false;
           awaitingStory = false;
           if (!pausedByTeacher) sceneRef.physics.resume();
         }
       } else {
-        sceneRef._awaitingQuizWatchdog = 0;
+        sceneRef._wdStart = 0;
       }
+      // ───────────────────────────────────────────────────────────────────────
       player.setVelocityX(0); applyVanBertoTexture(sceneRef); updateShadow(); return;
     }
-    sceneRef._awaitingQuizWatchdog = 0;
+    sceneRef._wdStart = 0;
     // Watchdog: retomar física só se não houver nenhuma razão legítima de pausa
     if (!pausedByTeacher && !awaitingStory && !awaitingQuiz && !_overlayPaused
         && sceneRef.physics.world.isPaused) {
@@ -2085,7 +2088,6 @@ window.addEventListener("DOMContentLoaded", () => {
     });
 
     if (lives <= 0) return;
-    // Repor itens (mesmo comportamento do hit normal)
     collectedItemIndices.clear();
     itemsCollected = 0;
     itemCountText.setText(`⭐ Itens: ${itemsCollected}/${itemsTotal}`);
@@ -3422,9 +3424,9 @@ window.addEventListener("DOMContentLoaded", () => {
     ov.style.cursor    = "pointer";
     requestAnimationFrame(()=>{ ov.style.opacity = "1"; });
 
-    // Carregar o nível a meio da transição (invisível).
-    // runMidpoint() garante que onMidpoint corre UMA VEZ e SEMPRE antes
-    // de onComplete — mesmo que o utilizador clique antes dos 350 ms.
+    // Carregar o nível a meio da transição — runMidpoint() garante que
+    // onMidpoint corre sempre UMA VEZ e ANTES de onComplete, mesmo que o
+    // utilizador clique no painel antes dos 350 ms.
     let midpointDone = false;
     function runMidpoint() {
       if (midpointDone) return;
@@ -3439,7 +3441,7 @@ window.addEventListener("DOMContentLoaded", () => {
     function hidePanel() {
       if (hidden) return;
       hidden = true;
-      runMidpoint(); // garante que loadLevel() já correu antes de showHistory()
+      runMidpoint(); // garante loadLevel() antes de showHistory()
       ov.style.cursor = "";
       ov.removeEventListener("click", hidePanel);
       ov.style.opacity = "0";
