@@ -955,21 +955,27 @@ window.addEventListener("DOMContentLoaded", () => {
     shadowGfx = this.add.graphics().setDepth(1);
     powerHaloGfx = this.add.graphics().setDepth(2);
 
-    // HUD
-    hudText      = this.add.text(14, 10, "", { fontSize:"16px", fontStyle:"900", color:"#fff5e0", stroke:"#200040", strokeThickness:4 }).setScrollFactor(0).setDepth(100);
-    scoreText    = this.add.text(14, 32, "", { fontSize:"14px", fontStyle:"900", color:"#ffd700", stroke:"#200040", strokeThickness:3 }).setScrollFactor(0).setDepth(100);
+    // HUD — tamanhos escalados proporcionalmente ao canvas real (evita HUD gigante em ecrãs pequenos)
+    const _cw = this.scale.width || 960; // largura real do canvas Phaser
+    const _sf = Math.min(1, _cw / 960);  // fator de escala: 1 em desktop, <1 em mobile
+    const _fs = (px) => Math.round(px * _sf) + "px";
+    const _pos = (x, y) => ({ x: Math.round(x * _sf), y: Math.round(y * _sf) });
+
+    hudText      = this.add.text(_pos(14,10).x, _pos(14,10).y, "", { fontSize:_fs(16), fontStyle:"900", color:"#fff5e0", stroke:"#200040", strokeThickness:Math.max(2,4*_sf) }).setScrollFactor(0).setDepth(100);
+    scoreText    = this.add.text(_pos(14,32).x, _pos(14,32).y, "", { fontSize:_fs(14), fontStyle:"900", color:"#ffd700", stroke:"#200040", strokeThickness:Math.max(2,3*_sf) }).setScrollFactor(0).setDepth(100);
     // Nome do jogador — elemento HTML fixo (não Phaser), acima de tudo
     playerNameHUD = document.getElementById("playerNameHtml");
+    if(playerNameHUD) playerNameHUD.style.fontSize = "clamp(11px,3.5vw,17px)";
     heartsGfx    = this.add.graphics().setScrollFactor(0).setDepth(100);
-    tipText      = this.add.text(14, 74, "", { fontSize:"13px", fontStyle:"800", color:"#ff6b35", stroke:"#fff5e0", strokeThickness:3 }).setScrollFactor(0).setDepth(100);
-    itemCountText= this.add.text(14, 92, "", { fontSize:"12px", fontStyle:"800", color:"#fff5e0", stroke:"#200040", strokeThickness:2 }).setScrollFactor(0).setDepth(100);
+    tipText      = this.add.text(_pos(14,74).x, _pos(14,74).y, "", { fontSize:_fs(13), fontStyle:"800", color:"#ff6b35", stroke:"#fff5e0", strokeThickness:Math.max(2,3*_sf) }).setScrollFactor(0).setDepth(100);
+    itemCountText= this.add.text(_pos(14,92).x, _pos(14,92).y, "", { fontSize:_fs(12), fontStyle:"800", color:"#fff5e0", stroke:"#200040", strokeThickness:Math.max(1,2*_sf) }).setScrollFactor(0).setDepth(100);
 
     progressBg   = this.add.graphics().setScrollFactor(0).setDepth(100);
     progressFill = this.add.graphics().setScrollFactor(0).setDepth(100);
     progressBg.fillStyle(0x000000, 0.20);
-    progressBg.fillRoundedRect(8, 110, 230, 10, 5);
+    progressBg.fillRoundedRect(Math.round(8*_sf), Math.round(110*_sf), Math.round(230*_sf), Math.round(10*_sf), 5);
 
-    powerIndicator = this.add.text(960-14, 52, "", { fontSize:"14px", fontStyle:"900", color:"#ffd700", stroke:"#200040", strokeThickness:4 }).setScrollFactor(0).setDepth(102).setOrigin(1,0);
+    powerIndicator = this.add.text(_cw-Math.round(14*_sf), Math.round(52*_sf), "", { fontSize:_fs(14), fontStyle:"900", color:"#ffd700", stroke:"#200040", strokeThickness:Math.max(2,4*_sf) }).setScrollFactor(0).setDepth(102).setOrigin(1,0);
 
     // ── HUD de orbes dos artefactos ────────────────────────────────
     createArtOrbs(this);
@@ -2602,6 +2608,10 @@ window.addEventListener("DOMContentLoaded", () => {
     if(powerHaloGfx)powerHaloGfx.setVisible(true);
     if(shadowGfx)shadowGfx.setVisible(true);
     itemsCollected=0;itemsTotal=0;collectedItemIndices=new Set();
+    // Limpar dica do nível anterior e mostrar instrução do boss
+    const BOSS_TIPS={ignorancia:"⚔️ Apanha os 3 livros! Salta em cima do boss para o atordoar!",violencia:"🛡️ Fica junto a cada escudo para o ativar! Cuidado com os saltos!",ciberbullying:"💻 Apanha os dispositivos! Salta em cima — atenção ao modo anónimo!"};
+    currentLevelTip=BOSS_TIPS[L.bossKey||"ignorancia"]||"⚔️ Derrota o boss!";
+    if(tipText)tipText.setText(currentLevelTip);
     _hudDirty=true;updateHUD(L);
     applyBackground(scene,L.theme%THEMES.length,L.worldW,[]);
     createArtOrbs(scene);
@@ -2997,7 +3007,7 @@ window.addEventListener("DOMContentLoaded", () => {
     let hud=document.getElementById("bossHUD");
     if(!hud){
       hud=document.createElement("div");hud.id="bossHUD";
-      hud.style.cssText="position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:9000;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:5px;font-family:'Baloo 2',sans-serif;";
+      hud.style.cssText="position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:9000;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:'Baloo 2',sans-serif;";
       document.body.appendChild(hud);
     }
     const bossNames={ignorancia:"👹 Monstro da Ignorância",violencia:"💪 Gigante da Violência",ciberbullying:"💻 Senhor do Ciberbullying"};
@@ -3005,8 +3015,8 @@ window.addEventListener("DOMContentLoaded", () => {
     const nome=bossNames[L.bossKey||"ignorancia"];
     const label=itemLabels[L.bossKey||"ignorancia"];
     hud.innerHTML=`
-      <div style="font-size:15px;font-weight:900;color:#ff2200;text-shadow:0 0 10px rgba(255,34,0,0.9),1px 1px 0 #000;letter-spacing:2px;">${nome}</div>
-      <div id="bossBookCount" style="font-size:14px;font-weight:800;color:#ffe060;text-shadow:1px 1px 0 #000;">📕📕📕 0/${BOSS_BOOKS_NEEDED} ${label}</div>`;
+      <div style="font-size:clamp(10px,3vw,15px);font-weight:900;color:#ff2200;text-shadow:0 0 10px rgba(255,34,0,0.9),1px 1px 0 #000;letter-spacing:1px;">${nome}</div>
+      <div id="bossBookCount" style="font-size:clamp(9px,2.5vw,14px);font-weight:800;color:#ffe060;text-shadow:1px 1px 0 #000;">📕📕📕 0/${BOSS_BOOKS_NEEDED} ${label}</div>`;
     hud.style.display="flex";
     _updateBossHUD();
   }
@@ -3047,7 +3057,9 @@ window.addEventListener("DOMContentLoaded", () => {
   function updateProgressBar(L) {
     if(!progressFill) return;
     progressFill.clear();
-    const BAR_X=8,BAR_Y=110,BAR_W=230,BAR_H=10;
+    // Escalar coordenadas com o fator do canvas (consistente com os textos HUD)
+    const _sf=Math.min(1,(sceneRef?.scale?.width||960)/960);
+    const BAR_X=Math.round(8*_sf),BAR_Y=Math.round(110*_sf),BAR_W=Math.round(230*_sf),BAR_H=Math.round(10*_sf);
     const levelPct=currentLevel/LEVELS.length;
     const levelNextPct=(currentLevel+1)/LEVELS.length;
     progressFill.fillStyle(0x200040,0.55);
@@ -3062,16 +3074,17 @@ window.addEventListener("DOMContentLoaded", () => {
       progressFill.fillStyle(0xff6b35,0.9);
       progressFill.fillRoundedRect(segStart,BAR_Y,Math.max(3,Math.round(segW*inLevelPct)),BAR_H,5);
       const markerX=segStart+Math.round(segW*inLevelPct);
-      progressFill.fillStyle(0x200040,1); progressFill.fillCircle(markerX,BAR_Y+BAR_H/2,6);
-      progressFill.fillStyle(0xffd700,1); progressFill.fillCircle(markerX,BAR_Y+BAR_H/2,3);
-      progressFill.fillStyle(0xff6b35,1); progressFill.fillRect(segEnd-5,BAR_Y+1,8,BAR_H-2);
+      progressFill.fillStyle(0x200040,1); progressFill.fillCircle(markerX,BAR_Y+BAR_H/2,Math.round(6*_sf));
+      progressFill.fillStyle(0xffd700,1); progressFill.fillCircle(markerX,BAR_Y+BAR_H/2,Math.round(3*_sf));
+      progressFill.fillStyle(0xff6b35,1); progressFill.fillRect(segEnd-Math.round(5*_sf),BAR_Y+1,Math.round(8*_sf),BAR_H-2);
     }
   }
 
   function updateHearts(){
     if(!heartsGfx) return;
     heartsGfx.clear();
-    const startX=14,y=56,size=12,gap=17;
+    const _sf=Math.min(1,(sceneRef?.scale?.width||960)/960);
+    const startX=Math.round(14*_sf),y=Math.round(56*_sf),size=Math.round(12*_sf),gap=Math.round(17*_sf);
     for(let i=0;i<MAX_LIVES;i++){
       const x=startX+i*gap, full=i<lives;
       const r=size*0.52;
