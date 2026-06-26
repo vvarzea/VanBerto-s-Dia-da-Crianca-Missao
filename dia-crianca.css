@@ -2046,7 +2046,7 @@ body.hc-mode .ag-name { color:#ffff00 !important; }
 #vbSpeech.vb-star{--vb-border:#ffd700;--vb-bg:rgba(40,30,0,0.92);--vb-text:#fff4b0;}
 #vbSpeech.vb-intro{--vb-border:#80c8ff;--vb-bg:rgba(8,20,48,0.93);--vb-text:#c8eaff;}
 #vbSpeech.vb-perfect{--vb-border:#ffd700;--vb-bg:rgba(40,30,0,0.93);--vb-text:#fff4b0;}
-#vbSpeechAvatar{width:62px;height:62px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.5));}
+#vbSpeechAvatar{width:52px;height:52px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.5));}
 #vbSpeech.vb-show #vbSpeechAvatar{animation:vbBob 0.6s ease-out;}
 #vbSpeech.vb-hit #vbSpeechAvatar{animation:vbWobble 0.5s ease-out;}
 #vbSpeech.vb-good #vbSpeechAvatar,#vbSpeech.vb-perfect #vbSpeechAvatar{animation:vbBounce 0.55s ease-out;}
@@ -2059,11 +2059,25 @@ body.hc-mode .ag-name { color:#ffff00 !important; }
 #vbSpeechTail{position:absolute;left:-10px;bottom:14px;width:0;height:0;border-top:7px solid transparent;border-bottom:7px solid transparent;border-right:10px solid var(--vb-border,#80c8ff);}
 #vbSpeechTail::after{content:"";position:absolute;left:3px;top:-5px;width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-right:8px solid var(--vb-bg,rgba(8,20,48,0.93));}
 #vbSpeechText{margin:0;font-size:12px;font-weight:700;line-height:1.45;color:var(--vb-text,#c8eaff);}
-@media(max-width:600px){
+@media(max-width:768px){
   #vbSpeech{bottom:28px;right:6px;gap:4px;}
+  #vbSpeechAvatar{width:36px;height:36px;}
+  #vbSpeechBubble{max-width:160px;padding:6px 10px;}
+  #vbSpeechText{font-size:10px;}
+}
+/* Portrait mobile: posicionar acima dos botões tácteis (que têm ~80px + 32px bottom = ~112px) */
+@media(max-width:768px) and (orientation:portrait){
+  #vbSpeech{bottom:calc(112px + env(safe-area-inset-bottom,0px));right:8px;gap:4px;}
   #vbSpeechAvatar{width:32px;height:32px;}
-  #vbSpeechBubble{max-width:140px;padding:6px 9px;}
+  #vbSpeechBubble{max-width:150px;padding:5px 9px;}
   #vbSpeechText{font-size:9.5px;}
+}
+/* Landscape mobile: rente ao chão mas acima dos botões */
+@media(max-height:500px) and (pointer:coarse){
+  #vbSpeech{bottom:calc(72px + env(safe-area-inset-bottom,0px));right:6px;gap:3px;}
+  #vbSpeechAvatar{width:28px;height:28px;}
+  #vbSpeechBubble{max-width:130px;padding:4px 8px;}
+  #vbSpeechText{font-size:9px;}
 }
 body.hc-mode #vbSpeech{display:none!important;}
 
