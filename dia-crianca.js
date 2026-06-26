@@ -1339,8 +1339,31 @@ window.addEventListener("DOMContentLoaded", () => {
       || !document.getElementById("gameOverOverlay").classList.contains("hidden")
       || !document.getElementById("winOverlay").classList.contains("hidden");
     if (_overlayOpen) {
+      // Watchdog anti-bloqueio: se awaitingQuiz=true mas nenhum overlay está
+      // visível e não há transição a decorrer, desbloquear automaticamente.
+      // Cobre casos em que loadLevel() corre DEPOIS de showHistory() já ter fechado.
+      if (awaitingQuiz && !awaitingStory && !_overlayPaused
+          && historyOverlay.classList.contains("hidden")
+          && quizOverlay.classList.contains("hidden")
+          && startOverlay.classList.contains("hidden")
+          && document.getElementById("gameOverOverlay").classList.contains("hidden")
+          && document.getElementById("winOverlay").classList.contains("hidden")
+          && document.getElementById("levelTransitionOverlay")?.style.display === "none"
+          && !document.getElementById("artefactRevealOverlay")?.classList.contains("show")) {
+        if (!sceneRef._awaitingQuizWatchdog) sceneRef._awaitingQuizWatchdog = 0;
+        sceneRef._awaitingQuizWatchdog += sceneRef.sys.game.loop.delta;
+        if (sceneRef._awaitingQuizWatchdog > 800) { // 800ms sem overlay → desbloquear
+          sceneRef._awaitingQuizWatchdog = 0;
+          awaitingQuiz = false;
+          awaitingStory = false;
+          if (!pausedByTeacher) sceneRef.physics.resume();
+        }
+      } else {
+        sceneRef._awaitingQuizWatchdog = 0;
+      }
       player.setVelocityX(0); applyVanBertoTexture(sceneRef); updateShadow(); return;
     }
+    sceneRef._awaitingQuizWatchdog = 0;
     // Watchdog: retomar física só se não houver nenhuma razão legítima de pausa
     if (!pausedByTeacher && !awaitingStory && !awaitingQuiz && !_overlayPaused
         && sceneRef.physics.world.isPaused) {
@@ -2064,7 +2087,6 @@ window.addEventListener("DOMContentLoaded", () => {
     if (lives <= 0) return;
     // Repor itens (mesmo comportamento do hit normal)
     collectedItemIndices.clear();
-    // Todos os itens voltaram ao mapa — repor contador
     itemsCollected = 0;
     itemCountText.setText(`⭐ Itens: ${itemsCollected}/${itemsTotal}`);
     const keyMap = { estrela:"item_estrela", balao:"item_chupachupa", brinquedo:"item_brinquedo",
@@ -3921,7 +3943,6 @@ window.addEventListener("DOMContentLoaded", () => {
     );
     collectedItemIndices.clear();
     heartIndicesCollected.forEach(idx => collectedItemIndices.add(idx));
-    // Todos os itens não-coração voltaram ao mapa — repor contador
     itemsCollected = 0;
     itemCountText.setText(`⭐ Itens: ${itemsCollected}/${itemsTotal}`);
     const keyMap={
