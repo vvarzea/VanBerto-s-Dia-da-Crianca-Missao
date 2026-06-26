@@ -229,9 +229,12 @@ window.addEventListener("DOMContentLoaded", () => {
     historyText.innerHTML = `<strong class="history-title">${entry.title}</strong>\n${entry.text}`;
     historyOverlay.classList.remove("hidden");
     if (sceneRef) sceneRef.physics.pause();
-    const _historyWatchdog = setTimeout(() => { if(!historyOverlay.classList.contains("hidden")) btnHistory.onclick?.(); }, 60000);
+    // Tap no fundo escuro (fora do cartão) também fecha — evita bloqueio em mobile
+    historyOverlay.onclick = (e) => { if(e.target === historyOverlay) btnHistory.onclick?.(); };
+    const _historyWatchdog = setTimeout(() => { if(!historyOverlay.classList.contains("hidden")) btnHistory.onclick?.(); }, 15000);
     btnHistory.onclick = () => {
       clearTimeout(_historyWatchdog);
+      historyOverlay.onclick = null;
       historyOverlay.classList.add("hidden");
       awaitingStory = false;
       awaitingQuiz = false; // nível pronto a jogar — só agora desbloqueamos hits e porta
@@ -3469,11 +3472,9 @@ window.addEventListener("DOMContentLoaded", () => {
     player.setPosition(camX + scene.scale.width / 2, 455);
     player.setVelocity(0,0);
     player.setFlipX(false); player.setAngle(0); player.setScale(1);
-    // Danca mais energica — rotacao rapida + saltos + crescer
-    const t1=scene.tweens.add({targets:player,angle:{from:-22,to:22},duration:80,yoyo:true,repeat:70});
-    const t2=scene.tweens.add({targets:player,y:{from:455,to:410},duration:130,yoyo:true,repeat:46});
-    const t3=scene.tweens.add({targets:player,scaleX:{from:1,to:1.35},scaleY:{from:1,to:1.35},duration:600,yoyo:true,repeat:5,ease:"Sine.easeInOut"});
-    // Fogos de artificio Phaser — rafagas periodicas
+    const t1=scene.tweens.add({targets:player,angle:{from:-22,to:22},duration:80,yoyo:true,repeat:-1});
+    const t2=scene.tweens.add({targets:player,y:{from:455,to:410},duration:130,yoyo:true,repeat:-1});
+    const t3=scene.tweens.add({targets:player,scaleX:{from:1,to:1.35},scaleY:{from:1,to:1.35},duration:600,yoyo:true,repeat:-1,ease:"Sine.easeInOut"});
     function burst(){
       if(!scene||!scene.add) return;
       const bx=(camX+Math.random()*scene.scale.width);
@@ -3486,13 +3487,19 @@ window.addEventListener("DOMContentLoaded", () => {
       });
       scene.time.delayedCall(500,()=>p.destroy());
     }
-    // Disparar fogos a cada 400ms durante toda a danca
     const fireInterval=scene.time.addEvent({delay:400,loop:true,callback:burst});
-    burst(); // primeiro imediatamente
-    scene.time.delayedCall(9500,()=>{
+    burst();
+    let _danceDone=false;
+    function finishDance(){
+      if(_danceDone)return; _danceDone=true;
       try{t1.stop();t2.stop();t3.stop();fireInterval.remove();}catch{}
-      player.setAngle(0);player.setScale(1);player.y=455;done?.();
-    });
+      player.setAngle(0);player.setScale(1);player.y=455;
+      done?.();
+    }
+    // Dança dura 3,5s — suficiente para celebrar sem frustrar em mobile
+    const _danceTimer=scene.time.delayedCall(3500,finishDance);
+    // Toque/clique em qualquer sítio avança imediatamente
+    scene.input.once("pointerdown",finishDance);
   }
 
   function startConfetti(durationMs=5000){
