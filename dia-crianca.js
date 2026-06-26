@@ -228,9 +228,23 @@ window.addEventListener("DOMContentLoaded", () => {
     if (!entry) { awaitingQuiz=false; onDone?.(); return; }
     awaitingStory = true;
     historyText.innerHTML = `<strong class="history-title">${entry.title}</strong>\n${entry.text}`;
+    // Fechar o painel de transição de nível imediatamente — evita que fique por cima do
+    // cartão de história e bloqueie o clique do jogador (z-index 9000 vs 2000)
+    const transOv = document.getElementById("levelTransitionOverlay");
+    if (transOv && transOv.style.display !== "none") {
+      if (transOv._hideTimer) { clearTimeout(transOv._hideTimer); transOv._hideTimer = null; }
+      if (transOv._midTimer)  { clearTimeout(transOv._midTimer);  transOv._midTimer  = null; }
+      transOv.removeEventListener("click", transOv._hidePanel);
+      transOv.style.opacity = "0";
+      setTimeout(() => { transOv.style.display = "none"; }, 320);
+    }
     historyOverlay.classList.remove("hidden");
     if (sceneRef) sceneRef.physics.pause();
+    // Watchdog de segurança — se o botão não for clicado em 60s, fecha automaticamente
+    // (evita bloqueio permanente em caso de toque perdido ou sobreposição de overlays)
+    const _historyWatchdog = setTimeout(() => { if(!historyOverlay.classList.contains("hidden")) btnHistory.onclick?.(); }, 60000);
     btnHistory.onclick = () => {
+      clearTimeout(_historyWatchdog);
       historyOverlay.classList.add("hidden");
       awaitingStory = false;
       awaitingQuiz = false; // nível pronto a jogar — só agora desbloqueamos hits e porta
@@ -3433,9 +3447,10 @@ window.addEventListener("DOMContentLoaded", () => {
     const hideTimer = setTimeout(hidePanel, 3200);
     ov.addEventListener("click", hidePanel);
 
-    // Guardar timers para poder cancelar se necessário
-    ov._midTimer  = midTimer;
-    ov._hideTimer = hideTimer;
+    // Guardar timers e referência ao hidePanel para poder cancelar se necessário
+    ov._midTimer   = midTimer;
+    ov._hideTimer  = hideTimer;
+    ov._hidePanel  = hidePanel; // usado por showHistory para dispensar o painel quando o cartão aparece
   }
 
   function nextLevel(scene){
