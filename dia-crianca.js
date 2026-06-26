@@ -221,27 +221,14 @@ window.addEventListener("DOMContentLoaded", () => {
     // posição bruta na LEVELS (que inclui os bosses). Por isso resolvemos pelo
     // artIdx do nível — os bosses não têm artIdx, por isso simplesmente não mostram história.
     const Lh = LEVELS[levelIndex];
-    // Bosses nunca mostram história — têm o seu próprio fluxo de entrada
     if (Lh?.isBoss) { awaitingQuiz=false; onDone?.(); return; }
     const histIdx = (Lh && Lh.artIdx != null) ? Lh.artIdx : levelIndex;
     const entry = HISTORY[histIdx] || null;
     if (!entry) { awaitingQuiz=false; onDone?.(); return; }
     awaitingStory = true;
     historyText.innerHTML = `<strong class="history-title">${entry.title}</strong>\n${entry.text}`;
-    // Fechar o painel de transição de nível imediatamente — evita que fique por cima do
-    // cartão de história e bloqueie o clique do jogador (z-index 9000 vs 2000)
-    const transOv = document.getElementById("levelTransitionOverlay");
-    if (transOv && transOv.style.display !== "none") {
-      if (transOv._hideTimer) { clearTimeout(transOv._hideTimer); transOv._hideTimer = null; }
-      if (transOv._midTimer)  { clearTimeout(transOv._midTimer);  transOv._midTimer  = null; }
-      transOv.removeEventListener("click", transOv._hidePanel);
-      transOv.style.opacity = "0";
-      setTimeout(() => { transOv.style.display = "none"; }, 320);
-    }
     historyOverlay.classList.remove("hidden");
     if (sceneRef) sceneRef.physics.pause();
-    // Watchdog de segurança — se o botão não for clicado em 60s, fecha automaticamente
-    // (evita bloqueio permanente em caso de toque perdido ou sobreposição de overlays)
     const _historyWatchdog = setTimeout(() => { if(!historyOverlay.classList.contains("hidden")) btnHistory.onclick?.(); }, 60000);
     btnHistory.onclick = () => {
       clearTimeout(_historyWatchdog);
@@ -373,11 +360,10 @@ window.addEventListener("DOMContentLoaded", () => {
     document.body.classList.add("game-started");
     const begin = () => {
       currentLevel = idx;
-      playLevelTransition(sceneRef, idx, () => {
-        loadLevel(sceneRef, idx);
-        showHistory(idx, () => { if (!pausedByTeacher) sceneRef.physics.resume(); });
-        saveGame();
-      });
+      playLevelTransition(sceneRef, idx,
+        () => { loadLevel(sceneRef, idx); saveGame(); },
+        () => { showHistory(idx, () => { if (!pausedByTeacher) sceneRef.physics.resume(); }); }
+      );
     };
     if (!window.__dc_game) {
       initPhaser();
@@ -969,27 +955,21 @@ window.addEventListener("DOMContentLoaded", () => {
     shadowGfx = this.add.graphics().setDepth(1);
     powerHaloGfx = this.add.graphics().setDepth(2);
 
-    // HUD — tamanhos escalados proporcionalmente ao canvas real (evita HUD gigante em ecrãs pequenos)
-    const _cw = this.scale.width || 960; // largura real do canvas Phaser
-    const _sf = Math.min(1, _cw / 960);  // fator de escala: 1 em desktop, <1 em mobile
-    const _fs = (px) => Math.round(px * _sf) + "px";
-    const _pos = (x, y) => ({ x: Math.round(x * _sf), y: Math.round(y * _sf) });
-
-    hudText      = this.add.text(_pos(14,10).x, _pos(14,10).y, "", { fontSize:_fs(16), fontStyle:"900", color:"#fff5e0", stroke:"#200040", strokeThickness:Math.max(2,4*_sf) }).setScrollFactor(0).setDepth(100);
-    scoreText    = this.add.text(_pos(14,32).x, _pos(14,32).y, "", { fontSize:_fs(14), fontStyle:"900", color:"#ffd700", stroke:"#200040", strokeThickness:Math.max(2,3*_sf) }).setScrollFactor(0).setDepth(100);
+    // HUD
+    hudText      = this.add.text(14, 10, "", { fontSize:"16px", fontStyle:"900", color:"#fff5e0", stroke:"#200040", strokeThickness:4 }).setScrollFactor(0).setDepth(100);
+    scoreText    = this.add.text(14, 32, "", { fontSize:"14px", fontStyle:"900", color:"#ffd700", stroke:"#200040", strokeThickness:3 }).setScrollFactor(0).setDepth(100);
     // Nome do jogador — elemento HTML fixo (não Phaser), acima de tudo
     playerNameHUD = document.getElementById("playerNameHtml");
-    if(playerNameHUD) playerNameHUD.style.fontSize = "clamp(11px,3.5vw,17px)";
     heartsGfx    = this.add.graphics().setScrollFactor(0).setDepth(100);
-    tipText      = this.add.text(_pos(14,74).x, _pos(14,74).y, "", { fontSize:_fs(13), fontStyle:"800", color:"#ff6b35", stroke:"#fff5e0", strokeThickness:Math.max(2,3*_sf) }).setScrollFactor(0).setDepth(100);
-    itemCountText= this.add.text(_pos(14,92).x, _pos(14,92).y, "", { fontSize:_fs(12), fontStyle:"800", color:"#fff5e0", stroke:"#200040", strokeThickness:Math.max(1,2*_sf) }).setScrollFactor(0).setDepth(100);
+    tipText      = this.add.text(14, 74, "", { fontSize:"13px", fontStyle:"800", color:"#ff6b35", stroke:"#fff5e0", strokeThickness:3 }).setScrollFactor(0).setDepth(100);
+    itemCountText= this.add.text(14, 92, "", { fontSize:"12px", fontStyle:"800", color:"#fff5e0", stroke:"#200040", strokeThickness:2 }).setScrollFactor(0).setDepth(100);
 
     progressBg   = this.add.graphics().setScrollFactor(0).setDepth(100);
     progressFill = this.add.graphics().setScrollFactor(0).setDepth(100);
     progressBg.fillStyle(0x000000, 0.20);
-    progressBg.fillRoundedRect(Math.round(8*_sf), Math.round(110*_sf), Math.round(230*_sf), Math.round(10*_sf), 5);
+    progressBg.fillRoundedRect(8, 110, 230, 10, 5);
 
-    powerIndicator = this.add.text(_cw-Math.round(14*_sf), Math.round(52*_sf), "", { fontSize:_fs(14), fontStyle:"900", color:"#ffd700", stroke:"#200040", strokeThickness:Math.max(2,4*_sf) }).setScrollFactor(0).setDepth(102).setOrigin(1,0);
+    powerIndicator = this.add.text(960-14, 52, "", { fontSize:"14px", fontStyle:"900", color:"#ffd700", stroke:"#200040", strokeThickness:4 }).setScrollFactor(0).setDepth(102).setOrigin(1,0);
 
     // ── HUD de orbes dos artefactos ────────────────────────────────
     createArtOrbs(this);
@@ -1124,11 +1104,10 @@ window.addEventListener("DOMContentLoaded", () => {
         touch.left=touch.right=touch.jump=false;
         livesLostThisLevel=0;
         sceneRef.physics.resume();
-        playLevelTransition(sceneRef, idx, () => {
-          loadLevel(sceneRef, idx);
-          showHistory(idx, () => { if(!pausedByTeacher) sceneRef.physics.resume(); });
-          saveGame();
-        });
+        playLevelTransition(sceneRef, idx,
+          () => { loadLevel(sceneRef, idx); saveGame(); },
+          () => { showHistory(idx, () => { if(!pausedByTeacher) sceneRef.physics.resume(); }); }
+        );
       };
     }
 
@@ -2622,7 +2601,6 @@ window.addEventListener("DOMContentLoaded", () => {
     if(powerHaloGfx)powerHaloGfx.setVisible(true);
     if(shadowGfx)shadowGfx.setVisible(true);
     itemsCollected=0;itemsTotal=0;collectedItemIndices=new Set();
-    // Limpar dica do nível anterior e mostrar instrução do boss
     const BOSS_TIPS={ignorancia:"⚔️ Apanha os 3 livros! Salta em cima do boss para o atordoar!",violencia:"🛡️ Fica junto a cada escudo para o ativar! Cuidado com os saltos!",ciberbullying:"💻 Apanha os dispositivos! Salta em cima — atenção ao modo anónimo!"};
     currentLevelTip=BOSS_TIPS[L.bossKey||"ignorancia"]||"⚔️ Derrota o boss!";
     if(tipText)tipText.setText(currentLevelTip);
@@ -2730,14 +2708,7 @@ window.addEventListener("DOMContentLoaded", () => {
       if(bossSprite.body.blocked.down)bossSprite.setVelocityY(-500);
     }}));
 
-    scene.physics.add.overlap(player,bossSprite,(p,b)=>{
-      if(!_bossActive||invuln)return;
-      // Se o jogador cair de cima, dá um bounce seguro (sem dano) — o Gigante não tem stomp,
-      // mas também não deve punir quem salta por cima para se desviar.
-      const bossTop=b.y-(b.displayHeight/2);
-      if(p.body.velocity.y>30&&p.y<bossTop+30){player.setVelocityY(-260);return;}
-      _bossPlayerHit(scene,L);
-    },null,scene);
+    scene.physics.add.overlap(player,bossSprite,(p,b)=>{if(!_bossActive||invuln)return;const bossTop=b.y-(b.displayHeight/2);if(p.body.velocity.y>30&&p.y<bossTop+30){player.setVelocityY(-260);return;}_bossPlayerHit(scene,L);},null,scene);
 
     // Projéteis: ondas de choque
     let _lastShot=0;
@@ -2921,7 +2892,6 @@ window.addEventListener("DOMContentLoaded", () => {
     SFX.hit();
     showFloat(scene,bossSprite?.x||480,(bossSprite?.y||370)-100,"💫 Atordoado!","#ffe000");
     vbSay("Boa! Saltaste-lhe em cima! Aproveita para avançar em segurança! 💫","good",2200);
-    // Guardado em bossTimers para ser cancelado se o boss for derrotado ou o jogador morrer
     bossTimers.push(scene.time.delayedCall(2200,()=>{_bossStunned=false;}));
   }
 
@@ -2930,12 +2900,8 @@ window.addEventListener("DOMContentLoaded", () => {
     lives-=1;updateHearts();_hudDirty=true;
     if(heartsGfx&&scene)scene.tweens.add({targets:heartsGfx,x:{from:-4,to:4},duration:60,yoyo:true,repeat:3,ease:"Sine.easeInOut",onComplete:()=>{if(heartsGfx)heartsGfx.x=0;}});
     if(lives<=0){showGameOver();return;}
-    // Resetar estados de stun e anonimato — o boss volta ao normal quando o jogador renasce
     _bossStunned=false;
-    if(_bossAnon){
-      _bossAnon=false;
-      if(bossSprite?.active){bossSprite.body.enable=true;bossSprite.setAlpha(1);}
-    }
+    if(_bossAnon){_bossAnon=false;if(bossSprite?.active){bossSprite.body.enable=true;bossSprite.setAlpha(1);}}
     setInvuln(scene,1800);
     player.setVelocity(0,0);player.setPosition(L.spawn.x,L.spawn.y);
     booksCollected=0;_updateBossHUD();
@@ -3021,7 +2987,7 @@ window.addEventListener("DOMContentLoaded", () => {
     let hud=document.getElementById("bossHUD");
     if(!hud){
       hud=document.createElement("div");hud.id="bossHUD";
-      hud.style.cssText="position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:9000;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:'Baloo 2',sans-serif;";
+      hud.style.cssText="position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:9000;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:5px;font-family:'Baloo 2',sans-serif;";
       document.body.appendChild(hud);
     }
     const bossNames={ignorancia:"👹 Monstro da Ignorância",violencia:"💪 Gigante da Violência",ciberbullying:"💻 Senhor do Ciberbullying"};
@@ -3029,8 +2995,8 @@ window.addEventListener("DOMContentLoaded", () => {
     const nome=bossNames[L.bossKey||"ignorancia"];
     const label=itemLabels[L.bossKey||"ignorancia"];
     hud.innerHTML=`
-      <div style="font-size:clamp(10px,3vw,15px);font-weight:900;color:#ff2200;text-shadow:0 0 10px rgba(255,34,0,0.9),1px 1px 0 #000;letter-spacing:1px;">${nome}</div>
-      <div id="bossBookCount" style="font-size:clamp(9px,2.5vw,14px);font-weight:800;color:#ffe060;text-shadow:1px 1px 0 #000;">📕📕📕 0/${BOSS_BOOKS_NEEDED} ${label}</div>`;
+      <div style="font-size:15px;font-weight:900;color:#ff2200;text-shadow:0 0 10px rgba(255,34,0,0.9),1px 1px 0 #000;letter-spacing:2px;">${nome}</div>
+      <div id="bossBookCount" style="font-size:14px;font-weight:800;color:#ffe060;text-shadow:1px 1px 0 #000;">📕📕📕 0/${BOSS_BOOKS_NEEDED} ${label}</div>`;
     hud.style.display="flex";
     _updateBossHUD();
   }
@@ -3071,9 +3037,7 @@ window.addEventListener("DOMContentLoaded", () => {
   function updateProgressBar(L) {
     if(!progressFill) return;
     progressFill.clear();
-    // Escalar coordenadas com o fator do canvas (consistente com os textos HUD)
-    const _sf=Math.min(1,(sceneRef?.scale?.width||960)/960);
-    const BAR_X=Math.round(8*_sf),BAR_Y=Math.round(110*_sf),BAR_W=Math.round(230*_sf),BAR_H=Math.round(10*_sf);
+    const BAR_X=8,BAR_Y=110,BAR_W=230,BAR_H=10;
     const levelPct=currentLevel/LEVELS.length;
     const levelNextPct=(currentLevel+1)/LEVELS.length;
     progressFill.fillStyle(0x200040,0.55);
@@ -3088,17 +3052,16 @@ window.addEventListener("DOMContentLoaded", () => {
       progressFill.fillStyle(0xff6b35,0.9);
       progressFill.fillRoundedRect(segStart,BAR_Y,Math.max(3,Math.round(segW*inLevelPct)),BAR_H,5);
       const markerX=segStart+Math.round(segW*inLevelPct);
-      progressFill.fillStyle(0x200040,1); progressFill.fillCircle(markerX,BAR_Y+BAR_H/2,Math.round(6*_sf));
-      progressFill.fillStyle(0xffd700,1); progressFill.fillCircle(markerX,BAR_Y+BAR_H/2,Math.round(3*_sf));
-      progressFill.fillStyle(0xff6b35,1); progressFill.fillRect(segEnd-Math.round(5*_sf),BAR_Y+1,Math.round(8*_sf),BAR_H-2);
+      progressFill.fillStyle(0x200040,1); progressFill.fillCircle(markerX,BAR_Y+BAR_H/2,6);
+      progressFill.fillStyle(0xffd700,1); progressFill.fillCircle(markerX,BAR_Y+BAR_H/2,3);
+      progressFill.fillStyle(0xff6b35,1); progressFill.fillRect(segEnd-5,BAR_Y+1,8,BAR_H-2);
     }
   }
 
   function updateHearts(){
     if(!heartsGfx) return;
     heartsGfx.clear();
-    const _sf=Math.min(1,(sceneRef?.scale?.width||960)/960);
-    const startX=Math.round(14*_sf),y=Math.round(56*_sf),size=Math.round(12*_sf),gap=Math.round(17*_sf);
+    const startX=14,y=56,size=12,gap=17;
     for(let i=0;i<MAX_LIVES;i++){
       const x=startX+i*gap, full=i<lives;
       const r=size*0.52;
@@ -3365,9 +3328,9 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // Frases motivacionais por nível — mostradas na transição de entrada
 
-  function playLevelTransition(scene, nextIdx, onMidpoint){
+  function playLevelTransition(scene, nextIdx, onMidpoint, onComplete){
     const nextL = LEVELS[nextIdx];
-    if(!nextL){ onMidpoint?.(); return; }
+    if(!nextL){ onMidpoint?.(); onComplete?.(); return; }
 
     const ov    = document.getElementById("levelTransitionOverlay");
     const panel = document.getElementById("levelTransitionPanel");
@@ -3375,7 +3338,7 @@ window.addEventListener("DOMContentLoaded", () => {
     const elTitle  = document.getElementById("ltTitle");
     const elPhrase = document.getElementById("ltPhrase");
     const elName   = document.getElementById("ltName");
-    if(!ov){ onMidpoint?.(); return; }
+    if(!ov){ onMidpoint?.(); onComplete?.(); return; }
 
     // Cor do céu do nível seguinte
     const T      = THEMES[nextL.theme] || THEMES[0];
@@ -3439,18 +3402,15 @@ window.addEventListener("DOMContentLoaded", () => {
       ov.style.cursor = "";
       ov.removeEventListener("click", hidePanel);
       ov.style.opacity = "0";
-      setTimeout(()=>{ ov.style.display = "none"; }, 320);
+      setTimeout(()=>{ ov.style.display = "none"; onComplete?.(); }, 320);
     }
 
-    // Manter visível 3,2 s — tempo suficiente para uma criança ler
-    // Toque/clique em qualquer sítio do painel avança imediatamente
+    // Manter visível 3,2 s; clique/toque avança imediatamente
     const hideTimer = setTimeout(hidePanel, 3200);
     ov.addEventListener("click", hidePanel);
 
-    // Guardar timers e referência ao hidePanel para poder cancelar se necessário
-    ov._midTimer   = midTimer;
-    ov._hideTimer  = hideTimer;
-    ov._hidePanel  = hidePanel; // usado por showHistory para dispensar o painel quando o cartão aparece
+    ov._midTimer  = midTimer;
+    ov._hideTimer = hideTimer;
   }
 
   function nextLevel(scene){
@@ -3458,7 +3418,6 @@ window.addEventListener("DOMContentLoaded", () => {
     // Cancelar timers da porta antes da transição — evita watchdog disparar no nível seguinte
     if(_doorWatchdogTimer){ try{_doorWatchdogTimer.remove(false);}catch{} _doorWatchdogTimer=null; }
     if(_landingCheckTimer){ try{_landingCheckTimer.remove(false);}catch{} _landingCheckTimer=null; }
-    // Fechar imediatamente overlays de artefacto/bónus que possam estar abertos — evita janelas sobrepostas
     document.getElementById("artefactRevealOverlay")?.classList.remove("show");
     document.getElementById("setBonusOverlay")?.classList.remove("show");
     // Garantir robot invisível ANTES de fechar o quiz overlay
@@ -3482,13 +3441,13 @@ window.addEventListener("DOMContentLoaded", () => {
     setTimeout(()=>{
       if(next>=LEVELS.length){scene.physics.resume();showVictoryScreen(scene);return;}
       score+=100; scoreText.setText(`🌟 Pontos: ${score}`); _hudDirty=true;
-      playLevelTransition(scene,next,()=>{
-        loadLevel(scene,next);
-        showHistory(next,()=>{
+      playLevelTransition(scene,next,
+        ()=>{ loadLevel(scene,next); },
+        ()=>{ showHistory(next,()=>{
           if(!pausedByTeacher) scene.physics.resume();
           _startBossIfNeeded();
-        });
-      });
+        }); }
+      );
       saveGame();
     },750);
   }
@@ -3497,7 +3456,6 @@ window.addEventListener("DOMContentLoaded", () => {
     try{sceneRef.physics.pause();}catch{}
     awaitingQuiz=true; touch.left=touch.right=touch.jump=false;
     try{player.setVelocity(0,0);}catch{}
-    // Limpar HUD e overlays do boss ao fazer game over
     _hideBossHUD();
     document.getElementById("artefactRevealOverlay")?.classList.remove("show");
     document.getElementById("setBonusOverlay")?.classList.remove("show");
@@ -6410,27 +6368,25 @@ window.addEventListener("DOMContentLoaded", () => {
               playerNameHUD.textContent = playerName ? `⭐ ${playerName}` : "";
               playerNameHUD.style.display = playerName ? "block" : "none";
             }
-            playLevelTransition(sceneRef, 0, () => {
-              loadLevel(sceneRef, 0);
-              showHistory(0, () => {
+            playLevelTransition(sceneRef, 0,
+              () => { loadLevel(sceneRef, 0); saveGame(); },
+              () => { showHistory(0, () => {
                 if(!pausedByTeacher) sceneRef.physics.resume();
                 _startBossIfNeeded();
                 setTimeout(()=>vbSay(VB_LEVEL_INTRO[0],"intro",4000),800);
-              });
-              saveGame();
-            });
+              }); }
+            );
           }
         }, 50);
       } else if (sceneRef) {
-        playLevelTransition(sceneRef, 0, () => {
-          loadLevel(sceneRef, 0);
-          showHistory(0, () => {
+        playLevelTransition(sceneRef, 0,
+          () => { loadLevel(sceneRef, 0); saveGame(); },
+          () => { showHistory(0, () => {
             if(!pausedByTeacher) sceneRef.physics.resume();
             _startBossIfNeeded();
             setTimeout(()=>vbSay(VB_LEVEL_INTRO[0],"intro",4000),800);
-          });
-          saveGame();
-        });
+          }); }
+        );
       }
     };
 
