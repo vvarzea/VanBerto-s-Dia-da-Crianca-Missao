@@ -221,6 +221,8 @@ window.addEventListener("DOMContentLoaded", () => {
     // posição bruta na LEVELS (que inclui os bosses). Por isso resolvemos pelo
     // artIdx do nível — os bosses não têm artIdx, por isso simplesmente não mostram história.
     const Lh = LEVELS[levelIndex];
+    // Bosses nunca mostram história — têm o seu próprio fluxo de entrada
+    if (Lh?.isBoss) { awaitingQuiz=false; onDone?.(); return; }
     const histIdx = (Lh && Lh.artIdx != null) ? Lh.artIdx : levelIndex;
     const entry = HISTORY[histIdx] || null;
     if (!entry) { awaitingQuiz=false; onDone?.(); return; }
@@ -866,7 +868,7 @@ window.addEventListener("DOMContentLoaded", () => {
   let bossSprite=null,booksCollected=0,bossProjectiles=null,bossBooks=null,bossTimers=[],_bossActive=false;
   // _bossActiveSince NÃO é reposto quando se perde uma vida — é o que dá a escalada
   // de dificuldade persistente (o boss fica mais difícil com o tempo, mesmo morrendo).
-  let _bossStunned=false,_bossActiveSince=0,_lastBossItemIdx=-1;
+  let _bossStunned=false,_bossActiveSince=0,_lastBossItemIdx=-1,_bossAnon=false;
   // Pontos de spawn dos itens por boss. Pontos em plataformas elevadas obrigam
   // a saltar; ativa-se via L.bossStagger (um item de cada vez, sem repetir o último).
   const BOSS_ITEM_POINTS={
@@ -2593,7 +2595,7 @@ window.addEventListener("DOMContentLoaded", () => {
     bossBooks=scene.physics.add.staticGroup();
     bossShields.forEach(s=>{try{s.destroy();}catch{}});bossShields=[];
 
-    booksCollected=0;_bossActive=false;_bossStunned=false;_lastBossItemIdx=-1;
+    booksCollected=0;_bossActive=false;_bossStunned=false;_bossAnon=false;_lastBossItemIdx=-1;
     awaitingQuiz=true;invuln=false;clearPower(scene);clearDoubleJump(scene);clearStarPower(scene);
     livesLostThisLevel=0;
     scene.physics.pause();
@@ -2677,7 +2679,7 @@ window.addEventListener("DOMContentLoaded", () => {
     _spawnBossItems(scene,"boss_book_open",L);
     scene.physics.add.overlap(player,bossBooks,(p,book)=>{if(!_bossActive||book.getData("collected"))return;book.setData("collected",true);scene.tweens.add({targets:book,y:book.y-50,alpha:0,scaleX:1.8,scaleY:1.8,duration:380,onComplete:()=>book.destroy()});SFX.coin();_bossItemCollected(scene,L);},null,scene);
 
-    setTimeout(()=>vbSay("Apanha os 3 livros ABERTOS 📖 sem morrer! Salta-lhe em cima da cabeça para o atordoar! 💫","wrong",5000),900);
+    bossTimers.push(scene.time.delayedCall(900,()=>vbSay("Apanha os 3 livros ABERTOS 📖 sem morrer! Salta-lhe em cima da cabeça para o atordoar! 💫","wrong",5000)));
   }
 
   // ── Boss 2: Gigante da Violência ────────────────────────────
@@ -2704,7 +2706,14 @@ window.addEventListener("DOMContentLoaded", () => {
       if(bossSprite.body.blocked.down)bossSprite.setVelocityY(-500);
     }}));
 
-    scene.physics.add.overlap(player,bossSprite,()=>{if(!_bossActive||invuln)return;_bossPlayerHit(scene,L);},null,scene);
+    scene.physics.add.overlap(player,bossSprite,(p,b)=>{
+      if(!_bossActive||invuln)return;
+      // Se o jogador cair de cima, dá um bounce seguro (sem dano) — o Gigante não tem stomp,
+      // mas também não deve punir quem salta por cima para se desviar.
+      const bossTop=b.y-(b.displayHeight/2);
+      if(p.body.velocity.y>30&&p.y<bossTop+30){player.setVelocityY(-260);return;}
+      _bossPlayerHit(scene,L);
+    },null,scene);
 
     // Projéteis: ondas de choque
     let _lastShot=0;
@@ -2757,7 +2766,7 @@ window.addEventListener("DOMContentLoaded", () => {
       });
     }}));
 
-    setTimeout(()=>vbSay("Fica parado junto a cada escudo 🛡️ para o ativar! Cuidado com os saltos dele!","wrong",5500),900);
+    bossTimers.push(scene.time.delayedCall(900,()=>vbSay("Fica parado junto a cada escudo 🛡️ para o ativar! Cuidado com os saltos dele!","wrong",5500)));
   }
 
   // ── Boss 3: Senhor do Ciberbullying ─────────────────────────
@@ -2770,10 +2779,10 @@ window.addEventListener("DOMContentLoaded", () => {
     scene.tweens.add({targets:bossSprite,x:{from:bossSprite.x-4,to:bossSprite.x+4},duration:80,yoyo:true,repeat:-1,ease:"Sine.easeInOut"});
     scene.tweens.add({targets:bossSprite,scaleX:{from:1,to:1.05},scaleY:{from:1.05,to:1},duration:400,yoyo:true,repeat:-1});
 
-    let bossDir=1,bossAnon=false;bossSprite.setVelocityX(70);
+    let bossDir=1;_bossAnon=false;bossSprite.setVelocityX(70);
     bossTimers.push(scene.time.addEvent({delay:50,loop:true,callback:()=>{
       if(!bossSprite?.active||!_bossActive)return;
-      if(_bossStunned||bossAnon){bossSprite.setVelocityX(0);return;}
+      if(_bossStunned||_bossAnon){bossSprite.setVelocityX(0);return;}
       if(bossSprite.x>L.worldW-115)bossDir=-1;
       if(bossSprite.x<115)bossDir=1;
       // Boss final — também tem a escalada persistente de dificuldade do Boss 1.
@@ -2823,8 +2832,8 @@ window.addEventListener("DOMContentLoaded", () => {
     // está anónimo, mas continua perigoso (os projéteis não param).
     const ANON_SPOTS=[150,300,480,660,810];
     bossTimers.push(scene.time.addEvent({delay:7000,startAt:3000,loop:true,callback:()=>{
-      if(!bossSprite?.active||!_bossActive||_bossStunned||bossAnon)return;
-      bossAnon=true;
+      if(!bossSprite?.active||!_bossActive||_bossStunned||_bossAnon)return;
+      _bossAnon=true;
       scene.tweens.add({targets:bossSprite,alpha:0.12,duration:300});
       bossSprite.body.enable=false;
       showFloat(scene,bossSprite.x,bossSprite.y-90,"👻 Modo Anónimo!","#9090ff");
@@ -2836,11 +2845,11 @@ window.addEventListener("DOMContentLoaded", () => {
         scene.tweens.add({targets:bossSprite,alpha:1,duration:250});
         scene.cameras.main.shake(100,0.005);
         vbSay("Não te escondas! A internet não é um esconderijo! 👻","wrong",2200);
-        bossAnon=false;
+        _bossAnon=false;
       });
     }}));
 
-    setTimeout(()=>vbSay("Apanha os 3 dispositivos SEGUROS 💻 — salta-lhe em cima para o atordoar, mas atenção: ele esconde-se de vez em quando! 👻","wrong",6000),900);
+    bossTimers.push(scene.time.delayedCall(900,()=>vbSay("Apanha os 3 dispositivos SEGUROS 💻 — salta-lhe em cima para o atordoar, mas atenção: ele esconde-se de vez em quando! 👻","wrong",6000)));
   }
 
   // ── Funções partilhadas pelos 3 bosses ──────────────────────
@@ -2888,7 +2897,8 @@ window.addEventListener("DOMContentLoaded", () => {
     SFX.hit();
     showFloat(scene,bossSprite?.x||480,(bossSprite?.y||370)-100,"💫 Atordoado!","#ffe000");
     vbSay("Boa! Saltaste-lhe em cima! Aproveita para avançar em segurança! 💫","good",2200);
-    scene.time.delayedCall(2200,()=>{_bossStunned=false;});
+    // Guardado em bossTimers para ser cancelado se o boss for derrotado ou o jogador morrer
+    bossTimers.push(scene.time.delayedCall(2200,()=>{_bossStunned=false;}));
   }
 
   function _bossPlayerHit(scene,L){
@@ -2896,6 +2906,12 @@ window.addEventListener("DOMContentLoaded", () => {
     lives-=1;updateHearts();_hudDirty=true;
     if(heartsGfx&&scene)scene.tweens.add({targets:heartsGfx,x:{from:-4,to:4},duration:60,yoyo:true,repeat:3,ease:"Sine.easeInOut",onComplete:()=>{if(heartsGfx)heartsGfx.x=0;}});
     if(lives<=0){showGameOver();return;}
+    // Resetar estados de stun e anonimato — o boss volta ao normal quando o jogador renasce
+    _bossStunned=false;
+    if(_bossAnon){
+      _bossAnon=false;
+      if(bossSprite?.active){bossSprite.body.enable=true;bossSprite.setAlpha(1);}
+    }
     setInvuln(scene,1800);
     player.setVelocity(0,0);player.setPosition(L.spawn.x,L.spawn.y);
     booksCollected=0;_updateBossHUD();
@@ -3414,6 +3430,9 @@ window.addEventListener("DOMContentLoaded", () => {
     // Cancelar timers da porta antes da transição — evita watchdog disparar no nível seguinte
     if(_doorWatchdogTimer){ try{_doorWatchdogTimer.remove(false);}catch{} _doorWatchdogTimer=null; }
     if(_landingCheckTimer){ try{_landingCheckTimer.remove(false);}catch{} _landingCheckTimer=null; }
+    // Fechar imediatamente overlays de artefacto/bónus que possam estar abertos — evita janelas sobrepostas
+    document.getElementById("artefactRevealOverlay")?.classList.remove("show");
+    document.getElementById("setBonusOverlay")?.classList.remove("show");
     // Garantir robot invisível ANTES de fechar o quiz overlay
     scene.tweens.killTweensOf(player);
     player.setAlpha(0);
@@ -3450,6 +3469,10 @@ window.addEventListener("DOMContentLoaded", () => {
     try{sceneRef.physics.pause();}catch{}
     awaitingQuiz=true; touch.left=touch.right=touch.jump=false;
     try{player.setVelocity(0,0);}catch{}
+    // Limpar HUD e overlays do boss ao fazer game over
+    _hideBossHUD();
+    document.getElementById("artefactRevealOverlay")?.classList.remove("show");
+    document.getElementById("setBonusOverlay")?.classList.remove("show");
     ensureAudio(); SFX.gameOver();
     document.getElementById("gameOverOverlay").classList.remove("hidden");
   }
