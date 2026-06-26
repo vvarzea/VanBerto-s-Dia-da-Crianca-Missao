@@ -2247,7 +2247,7 @@ window.addEventListener("DOMContentLoaded", () => {
     _bossActive=false;booksCollected=0;_hideBossHUD();
     platforms.clear(true,true);itemsGroup.clear(true,true);
     malwareGroup.clear(true,true);
-    if(door) door.destroy();
+    if(door){door.destroy();door=null;}
 
     // Recriar HUD de orbes (profundidade sobrevive ao clear das plataformas)
     createArtOrbs(scene);
@@ -2585,7 +2585,7 @@ window.addEventListener("DOMContentLoaded", () => {
     bossTimers.forEach(t=>{try{t.remove(false);}catch{}});bossTimers=[];
     if(bossSprite){try{bossSprite.destroy();}catch{}bossSprite=null;}
     platforms.clear(true,true);itemsGroup.clear(true,true);malwareGroup.clear(true,true);
-    if(door)door.destroy();
+    if(door){door.destroy();door=null;}
     if(_doorWatchdogTimer){try{_doorWatchdogTimer.remove(false);}catch{}_doorWatchdogTimer=null;}
     // Destruir e recriar os grupos em vez de só limpar — se fizermos apenas .clear(),
     // os callbacks de overlap registados no boss anterior (que referenciam o mesmo objecto
@@ -3427,7 +3427,7 @@ window.addEventListener("DOMContentLoaded", () => {
     scene.tweens.killTweensOf(player);
     player.setAlpha(0);
     player.setVelocity(0,0);
-    if(door) door.setAlpha(0);
+    if(door?.active) door.setAlpha(0);
     quizOverlay.classList.add("hidden"); btnCloseQuiz.classList.add("hidden");
     // Manter awaitingQuiz=true durante TODA a transição — o loadLevel trata de o resetar.
     // Se fosse false aqui, havia uma janela de ~750ms em que o jogador (invisível mas com
