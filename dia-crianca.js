@@ -3394,14 +3394,24 @@ window.addEventListener("DOMContentLoaded", () => {
     ov.style.cursor    = "pointer";
     requestAnimationFrame(()=>{ ov.style.opacity = "1"; });
 
-    // Carregar o nível a meio da transição (invisível) — acontece rapidamente
-    const midTimer = setTimeout(()=>{ onMidpoint?.(); }, 350);
+    // Carregar o nível a meio da transição (invisível).
+    // runMidpoint() garante que onMidpoint corre UMA VEZ e SEMPRE antes
+    // de onComplete — mesmo que o utilizador clique antes dos 350 ms.
+    let midpointDone = false;
+    function runMidpoint() {
+      if (midpointDone) return;
+      midpointDone = true;
+      clearTimeout(midTimer);
+      onMidpoint?.();
+    }
+    const midTimer = setTimeout(runMidpoint, 350);
 
     // Função que esconde o painel (partilhada entre timeout e clique)
     let hidden = false;
     function hidePanel() {
       if (hidden) return;
       hidden = true;
+      runMidpoint(); // garante que loadLevel() já correu antes de showHistory()
       ov.style.cursor = "";
       ov.removeEventListener("click", hidePanel);
       ov.style.opacity = "0";
