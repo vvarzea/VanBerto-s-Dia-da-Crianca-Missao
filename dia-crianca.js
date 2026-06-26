@@ -1340,9 +1340,9 @@ window.addEventListener("DOMContentLoaded", () => {
       || !document.getElementById("winOverlay").classList.contains("hidden");
     if (_overlayOpen) {
       // ── Watchdog anti-bloqueio ──────────────────────────────────────────────
-      // Se awaitingQuiz=true mas nenhum overlay HTML está visível e não há
-      // transição de nível a decorrer, o jogo está bloqueado sem razão.
-      // Desbloquear automaticamente após 1 segundo nessa situação.
+      // Deteta awaitingQuiz=true sem nenhum overlay visível E sem transição de
+      // nível a decorrer. O threshold é 3000ms — acima do tempo máximo da
+      // animação da porta (≈1640ms) mas abaixo de qualquer bloqueio real.
       const _noVisibleOverlay =
             historyOverlay.classList.contains("hidden")
          && quizOverlay.classList.contains("hidden")
@@ -1353,8 +1353,7 @@ window.addEventListener("DOMContentLoaded", () => {
          && !document.getElementById("artefactRevealOverlay")?.classList.contains("show");
       if (awaitingQuiz && !awaitingStory && !_overlayPaused && _noVisibleOverlay) {
         if (!sceneRef._wdStart) sceneRef._wdStart = Date.now();
-        if (Date.now() - sceneRef._wdStart > 1000) {
-          // 1 segundo sem overlay visível — desbloquear
+        if (Date.now() - sceneRef._wdStart > 3000) {
           sceneRef._wdStart = 0;
           awaitingQuiz = false;
           awaitingStory = false;
@@ -3424,9 +3423,6 @@ window.addEventListener("DOMContentLoaded", () => {
     ov.style.cursor    = "pointer";
     requestAnimationFrame(()=>{ ov.style.opacity = "1"; });
 
-    // Carregar o nível a meio da transição — runMidpoint() garante que
-    // onMidpoint corre sempre UMA VEZ e ANTES de onComplete, mesmo que o
-    // utilizador clique no painel antes dos 350 ms.
     let midpointDone = false;
     function runMidpoint() {
       if (midpointDone) return;
@@ -3436,12 +3432,11 @@ window.addEventListener("DOMContentLoaded", () => {
     }
     const midTimer = setTimeout(runMidpoint, 350);
 
-    // Função que esconde o painel (partilhada entre timeout e clique)
     let hidden = false;
     function hidePanel() {
       if (hidden) return;
       hidden = true;
-      runMidpoint(); // garante loadLevel() antes de showHistory()
+      runMidpoint();
       ov.style.cursor = "";
       ov.removeEventListener("click", hidePanel);
       ov.style.opacity = "0";
