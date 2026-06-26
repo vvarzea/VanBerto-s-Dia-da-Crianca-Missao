@@ -2064,6 +2064,9 @@ window.addEventListener("DOMContentLoaded", () => {
     if (lives <= 0) return;
     // Repor itens (mesmo comportamento do hit normal)
     collectedItemIndices.clear();
+    // Todos os itens voltaram ao mapa — repor contador
+    itemsCollected = 0;
+    itemCountText.setText(`⭐ Itens: ${itemsCollected}/${itemsTotal}`);
     const keyMap = { estrela:"item_estrela", balao:"item_chupachupa", brinquedo:"item_brinquedo",
                      medalha:"item_medalha", heart:"item_heart", duplosalto:"item_duplosalto" };
     LEVELS[currentLevel].items.forEach((it, idx) => {
@@ -2247,7 +2250,7 @@ window.addEventListener("DOMContentLoaded", () => {
     _bossActive=false;booksCollected=0;_hideBossHUD();
     platforms.clear(true,true);itemsGroup.clear(true,true);
     malwareGroup.clear(true,true);
-    if(door){door.destroy();door=null;}
+    if(door) door.destroy();
 
     // Recriar HUD de orbes (profundidade sobrevive ao clear das plataformas)
     createArtOrbs(scene);
@@ -2585,7 +2588,7 @@ window.addEventListener("DOMContentLoaded", () => {
     bossTimers.forEach(t=>{try{t.remove(false);}catch{}});bossTimers=[];
     if(bossSprite){try{bossSprite.destroy();}catch{}bossSprite=null;}
     platforms.clear(true,true);itemsGroup.clear(true,true);malwareGroup.clear(true,true);
-    if(door){door.destroy();door=null;}
+    if(door)door.destroy();
     if(_doorWatchdogTimer){try{_doorWatchdogTimer.remove(false);}catch{}_doorWatchdogTimer=null;}
     // Destruir e recriar os grupos em vez de só limpar — se fizermos apenas .clear(),
     // os callbacks de overlap registados no boss anterior (que referenciam o mesmo objecto
@@ -3394,24 +3397,14 @@ window.addEventListener("DOMContentLoaded", () => {
     ov.style.cursor    = "pointer";
     requestAnimationFrame(()=>{ ov.style.opacity = "1"; });
 
-    // Carregar o nível a meio da transição (invisível).
-    // runMidpoint() garante que onMidpoint corre UMA VEZ e SEMPRE antes
-    // de onComplete — mesmo que o utilizador clique antes dos 350 ms.
-    let midpointDone = false;
-    function runMidpoint() {
-      if (midpointDone) return;
-      midpointDone = true;
-      clearTimeout(midTimer);
-      onMidpoint?.();
-    }
-    const midTimer = setTimeout(runMidpoint, 350);
+    // Carregar o nível a meio da transição (invisível) — acontece rapidamente
+    const midTimer = setTimeout(()=>{ onMidpoint?.(); }, 350);
 
     // Função que esconde o painel (partilhada entre timeout e clique)
     let hidden = false;
     function hidePanel() {
       if (hidden) return;
       hidden = true;
-      runMidpoint(); // garante que loadLevel() já correu antes de showHistory()
       ov.style.cursor = "";
       ov.removeEventListener("click", hidePanel);
       ov.style.opacity = "0";
@@ -3437,7 +3430,7 @@ window.addEventListener("DOMContentLoaded", () => {
     scene.tweens.killTweensOf(player);
     player.setAlpha(0);
     player.setVelocity(0,0);
-    if(door?.active) door.setAlpha(0);
+    if(door) door.setAlpha(0);
     quizOverlay.classList.add("hidden"); btnCloseQuiz.classList.add("hidden");
     // Manter awaitingQuiz=true durante TODA a transição — o loadLevel trata de o resetar.
     // Se fosse false aqui, havia uma janela de ~750ms em que o jogador (invisível mas com
@@ -3915,6 +3908,9 @@ window.addEventListener("DOMContentLoaded", () => {
     );
     collectedItemIndices.clear();
     heartIndicesCollected.forEach(idx => collectedItemIndices.add(idx));
+    // Todos os itens não-coração voltaram ao mapa — repor contador
+    itemsCollected = 0;
+    itemCountText.setText(`⭐ Itens: ${itemsCollected}/${itemsTotal}`);
     const keyMap={
       estrela:"item_estrela",
       balao:"item_chupachupa",
