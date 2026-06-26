@@ -2250,7 +2250,7 @@ window.addEventListener("DOMContentLoaded", () => {
     _bossActive=false;booksCollected=0;_hideBossHUD();
     platforms.clear(true,true);itemsGroup.clear(true,true);
     malwareGroup.clear(true,true);
-    if(door) door.destroy();
+    if(door){door.destroy();door=null;}
 
     // Recriar HUD de orbes (profundidade sobrevive ao clear das plataformas)
     createArtOrbs(scene);
@@ -2588,7 +2588,7 @@ window.addEventListener("DOMContentLoaded", () => {
     bossTimers.forEach(t=>{try{t.remove(false);}catch{}});bossTimers=[];
     if(bossSprite){try{bossSprite.destroy();}catch{}bossSprite=null;}
     platforms.clear(true,true);itemsGroup.clear(true,true);malwareGroup.clear(true,true);
-    if(door)door.destroy();
+    if(door){door.destroy();door=null;}
     if(_doorWatchdogTimer){try{_doorWatchdogTimer.remove(false);}catch{}_doorWatchdogTimer=null;}
     // Destruir e recriar os grupos em vez de só limpar — se fizermos apenas .clear(),
     // os callbacks de overlap registados no boss anterior (que referenciam o mesmo objecto
@@ -2606,7 +2606,7 @@ window.addEventListener("DOMContentLoaded", () => {
     scene.physics.pause();
     if(powerHaloGfx)powerHaloGfx.setVisible(true);
     if(shadowGfx)shadowGfx.setVisible(true);
-    itemsCollected=0;itemsTotal=0;collectedItemIndices=new Set();
+    itemsCollected=0;itemsTotal=BOSS_BOOKS_NEEDED;collectedItemIndices=new Set();
     const BOSS_TIPS={ignorancia:"⚔️ Apanha os 3 livros! Salta em cima do boss para o atordoar!",violencia:"🛡️ Fica junto a cada escudo para o ativar! Cuidado com os saltos!",ciberbullying:"💻 Apanha os dispositivos! Salta em cima — atenção ao modo anónimo!"};
     currentLevelTip=BOSS_TIPS[L.bossKey||"ignorancia"]||"⚔️ Derrota o boss!";
     if(tipText)tipText.setText(currentLevelTip);
@@ -2910,7 +2910,8 @@ window.addEventListener("DOMContentLoaded", () => {
     if(_bossAnon){_bossAnon=false;if(bossSprite?.active){bossSprite.body.enable=true;bossSprite.setAlpha(1);}}
     setInvuln(scene,1800);
     player.setVelocity(0,0);player.setPosition(L.spawn.x,L.spawn.y);
-    booksCollected=0;_updateBossHUD();
+    booksCollected=0;itemsCollected=0;_updateBossHUD();
+    if(itemCountText) itemCountText.setText(`⭐ Itens: 0/${itemsTotal}`);
     if(bossProjectiles)bossProjectiles.clear(true,true);
     if(L.bossStaticItems){
       bossShields.forEach(s=>{s.setData("charge",0);s.setData("active",false);s.setAlpha(0.55);s.setScale(1);s.clearTint();});
@@ -2932,6 +2933,8 @@ window.addEventListener("DOMContentLoaded", () => {
 
   function _bossItemCollected(scene,L){
     booksCollected++;_updateBossHUD();
+    itemsCollected=booksCollected;
+    if(itemCountText) itemCountText.setText(`⭐ Itens: ${itemsCollected}/${itemsTotal}`);
     scene.cameras.main.shake(150,0.008);
     if(bossSprite?.active){
       scene.tweens.add({targets:bossSprite,x:{from:bossSprite.x+20,to:bossSprite.x-20},duration:50,yoyo:true,repeat:2});
@@ -3397,14 +3400,24 @@ window.addEventListener("DOMContentLoaded", () => {
     ov.style.cursor    = "pointer";
     requestAnimationFrame(()=>{ ov.style.opacity = "1"; });
 
-    // Carregar o nível a meio da transição (invisível) — acontece rapidamente
-    const midTimer = setTimeout(()=>{ onMidpoint?.(); }, 350);
+    // Carregar o nível a meio da transição (invisível).
+    // runMidpoint() garante que onMidpoint corre UMA VEZ e SEMPRE antes
+    // de onComplete — mesmo que o utilizador clique antes dos 350 ms.
+    let midpointDone = false;
+    function runMidpoint() {
+      if (midpointDone) return;
+      midpointDone = true;
+      clearTimeout(midTimer);
+      onMidpoint?.();
+    }
+    const midTimer = setTimeout(runMidpoint, 350);
 
     // Função que esconde o painel (partilhada entre timeout e clique)
     let hidden = false;
     function hidePanel() {
       if (hidden) return;
       hidden = true;
+      runMidpoint(); // garante que loadLevel() já correu antes de showHistory()
       ov.style.cursor = "";
       ov.removeEventListener("click", hidePanel);
       ov.style.opacity = "0";
@@ -3430,7 +3443,7 @@ window.addEventListener("DOMContentLoaded", () => {
     scene.tweens.killTweensOf(player);
     player.setAlpha(0);
     player.setVelocity(0,0);
-    if(door) door.setAlpha(0);
+    if(door?.active) door.setAlpha(0);
     quizOverlay.classList.add("hidden"); btnCloseQuiz.classList.add("hidden");
     // Manter awaitingQuiz=true durante TODA a transição — o loadLevel trata de o resetar.
     // Se fosse false aqui, havia uma janela de ~750ms em que o jogador (invisível mas com
@@ -3792,7 +3805,7 @@ window.addEventListener("DOMContentLoaded", () => {
     itemObj.destroy();
     const totalPoints = 10 + secretBonus;
     score += totalPoints; scoreText.setText(`🌟 Pontos: ${score}`); _hudDirty=true;
-    if(kind!=="heart"&&kind!=="medalha"){ itemsCollected=Math.min(itemsCollected+1,itemsTotal); itemCountText.setText(`⭐ Itens: ${itemsCollected}/${itemsTotal}`); }
+    if(kind!=="heart"){ itemsCollected=Math.min(itemsCollected+1,itemsTotal); itemCountText.setText(`⭐ Itens: ${itemsCollected}/${itemsTotal}`); }
     const lbl=ITEM_LABELS[kind]||{label:"+10 ⭐",color:"#ff6b35"};
     showFloat(sceneRef,playerObj.x,playerObj.y-68,lbl.label,lbl.color);
     if(Math.random()<0.35) showFloat(sceneRef,playerObj.x,playerObj.y-100,pickPraise(),"#ffd700");
