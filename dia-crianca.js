@@ -2656,6 +2656,20 @@ window.addEventListener("DOMContentLoaded", () => {
     });
     scene.physics.add.collider(player,platforms);
 
+    // Inicializar plataformas móveis da arena do boss (ex: boss direitos)
+    movingPlatforms.forEach(mp=>{try{if(mp.gfx&&mp.gfx.active)mp.gfx.destroy();}catch{}});
+    movingPlatforms=[];
+    if(L.movingPlatforms&&L.movingPlatforms.length){
+      const themeIdx=L.theme%THEMES.length,platKey="platform_t"+themeIdx;
+      if(!scene.textures.exists(platKey))makePlatformTextureThemed(scene,platKey,themeIdx);
+      L.movingPlatforms.forEach(def=>{
+        const gfx=scene.add.image(def.x,def.y,platKey).setDepth(1);
+        gfx.displayWidth=def.w;gfx.displayHeight=def.h;
+        movingPlatforms.push({gfx,x:def.x,y:def.y,w:def.w,h:def.h,
+          rangeX:def.rangeX||0,rangeY:def.rangeY||0,speed:def.speed||80,t:0});
+      });
+    }
+
     player.setAlpha(1);player.setPosition(L.spawn.x,L.spawn.y);
     player.setVelocity(0,0);player.setFlipX(false);player.setAngle(0);player.setScale(1);
     scene.cameras.main.startFollow(player,true,0.08,0.08);
@@ -2665,6 +2679,7 @@ window.addEventListener("DOMContentLoaded", () => {
     if(bossKey==="ignorancia") _setupBossIgnorancia(scene,L);
     else if(bossKey==="violencia") _setupBossViolencia(scene,L);
     else if(bossKey==="ciberbullying") _setupBossCiberbullying(scene,L);
+    else if(bossKey==="direitos") _setupBossDireitos(scene,L);
 
     _showBossHUD(L);
 

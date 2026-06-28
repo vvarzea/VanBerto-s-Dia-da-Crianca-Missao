@@ -530,15 +530,13 @@ export const LEVELS = [
     isBoss:true, bossKey:"direitos", bossStagger:true,
     theme:19, quizTheme:"digital",
     worldW:960, spawn:{x:100,y:420}, doorX:-999,
-    // Arena com plataformas móveis — mais dinâmica e desafiante
     platforms:[
-      {x:480,y:510,w:960,h:28},      // chão
-      {x:480,y:260,w:220,h:22},      // plataforma central alta
-    ],
-    movingPlatforms:[
-      {x:160,y:380,w:170,h:22,rangeX:80,rangeY:0,speed:70},   // esquerda — move horizontal
-      {x:800,y:380,w:170,h:22,rangeX:80,rangeY:0,speed:70},   // direita — move horizontal
-      {x:480,y:430,w:140,h:22,rangeX:0,rangeY:60,speed:55},   // centro baixo — sobe/desce
+      {x:480,y:510,w:960,h:28},   // chão
+      {x:480,y:270,w:220,h:22},   // plataforma central alta
+      {x:160,y:390,w:180,h:22},   // plataforma esquerda
+      {x:800,y:390,w:180,h:22},   // plataforma direita
+      {x:320,y:450,w:140,h:22},   // plataforma baixa esquerda
+      {x:640,y:450,w:140,h:22},   // plataforma baixa direita
     ],
     items:[], malwares:[],
   }
