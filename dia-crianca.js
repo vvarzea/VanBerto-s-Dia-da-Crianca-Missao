@@ -890,16 +890,16 @@ window.addEventListener("DOMContentLoaded", () => {
       {x:300,y:395},
       {x:660,y:395},
     ],
-    // Boss Final — 7 pontos espalhados pela arena renovada
-    // (só 5 são usados de cada vez, sem repetir o anterior)
+    // Boss Final — pontos alinhados com as plataformas reais da arena:
+    // chão (y≈490), plataformas laterais (y≈340), topo (y≈180), móvel (y≈310)
     direitos:[
-      {x:480,y:140},  // plataforma do topo — o mais difícil!
-      {x:165,y:240},  // plataforma alta esquerda
-      {x:795,y:240},  // plataforma alta direita
-      {x:125,y:355},  // plataforma baixa esquerda
-      {x:835,y:355},  // plataforma baixa direita
-      {x:350,y:375},  // central esquerda
-      {x:610,y:375},  // central direita
+      {x:480,y:170},  // topo central — o mais difícil!
+      {x:160,y:330},  // plataforma lateral esquerda
+      {x:800,y:330},  // plataforma lateral direita
+      {x:200,y:480},  // chão esquerdo
+      {x:760,y:480},  // chão direito
+      {x:380,y:480},  // chão central-esquerdo
+      {x:580,y:480},  // chão central-direito
     ],
   };
   let bossShields=[]; // sprites estáticos do boss da Violência (mecânica própria, ver _setupBossViolencia)
@@ -3944,9 +3944,10 @@ window.addEventListener("DOMContentLoaded", () => {
     awaitingQuiz=true;
     touch.left=touch.right=touch.jump=false;
     ensureAudio(); SFX.finalWin(); startConfetti(28000);
-    // Mostrar galeria de artefactos primeiro, depois o ecrã de vitória normal
+    // Mostrar galeria de artefactos primeiro, depois o ecrã de vitória normal.
+    // Nota: não chamar robotDance aqui — o boss final já dançou em _bossDefeated
+    // e o player está invisível; um segundo robotDance nunca chamaria o callback.
     showArtefactGallery(() => {
-      robotDance(scene,()=>{
       const pct=quizStats.total?Math.round((quizStats.correct/quizStats.total)*100):0;
       let medal="🥉 Bronze — missão concluída!";
       if(pct>=70) medal="🥈 Prata — muito bem!";
@@ -4059,8 +4060,7 @@ window.addEventListener("DOMContentLoaded", () => {
           document.getElementById("winOverlay")?.classList.remove("hidden");
         };
       }
-    }); // fim robotDance
-  }); // fim showArtefactGallery
+    }); // fim showArtefactGallery
   }
 
   function showQuiz(quiz,done,isRetry){

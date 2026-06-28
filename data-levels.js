@@ -531,17 +531,16 @@ export const LEVELS = [
     theme:19, quizTheme:"digital",
     worldW:960, spawn:{x:80,y:430}, doorX:-999,
     platforms:[
-      // ── Chão contínuo — sem vão no meio, fácil de correr e esquivar ──
-      {x:480,y:510,w:960,h:28},   // chão completo
-      // ── Nível médio: apenas 2 plataformas laterais ──
-      {x:160,y:360,w:180,h:22},   // esquerda
-      {x:800,y:360,w:180,h:22},   // direita
+      // ── Chão contínuo ──
+      {x:480,y:510,w:960,h:28},
+      // ── Nível médio: 2 plataformas laterais ──
+      {x:160,y:360,w:180,h:22},
+      {x:800,y:360,w:180,h:22},
       // ── Topo: plataforma central onde o boss spawna ──
-      {x:480,y:210,w:220,h:22},   // trono do Destruidor
+      {x:480,y:200,w:220,h:22},
     ],
-    // Uma plataforma móvel central — ajuda a chegar ao topo mas sem sobrelotação
     movingPlatforms:[
-      {x:480,y:340,w:160,h:22,rangeX:140,rangeY:0,speed:80},  // ponte oscilante para o topo
+      {x:480,y:330,w:160,h:22,rangeX:140,rangeY:0,speed:80},
     ],
     trampolines:[],
     hazards:[],
