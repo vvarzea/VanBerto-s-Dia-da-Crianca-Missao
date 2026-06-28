@@ -1248,8 +1248,9 @@ window.addEventListener("DOMContentLoaded", () => {
       if (el("pauseProgress")) el("pauseProgress").textContent = `${lvl} / ${total}`;
       // Dica contextual: priorizar dicas dos níveis especiais
       let tipIdx;
-      if (currentLevel === 4)  tipIdx = 8;  // nível trampolins (Direito ao Brincar)
-      else if (currentLevel === 19) tipIdx = 10; // nível esteira (Direito à Inclusão)
+      const _pauseArtIdx = LEVELS[currentLevel]?.artIdx ?? currentLevel;
+      if (_pauseArtIdx === 3)  tipIdx = 8;  // nível trampolins (Direito ao Brincar)
+      else if (_pauseArtIdx === 17) tipIdx = 10; // nível esteira (Direito à Inclusão)
       else { _pauseTipIdx = (_pauseTipIdx + 1) % 8; tipIdx = _pauseTipIdx; }
       if (el("pauseTip")) el("pauseTip").innerHTML = PAUSE_TIPS[tipIdx];
       overlay.classList.remove("hidden");
@@ -2455,7 +2456,9 @@ window.addEventListener("DOMContentLoaded", () => {
       "🌱 O planeta precisa de ti — cuida do ambiente!",
       "💻 Os teus direitos existem também no mundo digital!"
     ];
-    currentLevelTip = (TIPS[currentLevel] || TIPS[0]) + (currentLevel >= 6 ? " ⚠️ Cuidado!" : "");
+    // Usar artIdx para indexar TIPS — currentLevel inclui bosses e desfasa os índices
+    const _tipIdx = (LEVELS[currentLevel]?.artIdx ?? currentLevel);
+    currentLevelTip = (TIPS[_tipIdx] || TIPS[0]) + (_tipIdx >= 6 ? " ⚠️ Cuidado!" : "");
     tipText.setText(currentLevelTip);
     ensureAudio(); SFX.door(); saveGame();
   }
