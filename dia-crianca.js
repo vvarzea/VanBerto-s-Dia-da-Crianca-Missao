@@ -13,7 +13,8 @@ import { HISTORY, QUIZ_TIPS, QUIZ_ARTICLE, QUIZ_BY_THEME } from "./data-quiz.js"
 import { THEMES, LEVELS } from "./data-levels.js";
 import { MAP_REGIONS, ARTEFACTS, ARTEFACT_SETS, SET_REACTIONS, ACHIEVEMENTS_DEFS } from "./data-progression.js";
 import { PRAISE, PAUSE_TIPS, LEVEL_ENTRY_PHRASES, DYNAMIC_MSGS_CORRECT, DYNAMIC_MSGS_WRONG,
-         VB_LEVEL_INTRO, VB_HIT, VB_QUIZ_CORRECT, VB_QUIZ_WRONG, VB_STAR_POWER, VB_PERFECT_LEVEL } from "./data-flavor.js";
+         VB_LEVEL_INTRO, VB_HIT, VB_QUIZ_CORRECT, VB_QUIZ_WRONG, VB_STAR_POWER, VB_PERFECT_LEVEL,
+         VB_BOSS_FINAL_INTRO, VB_BOSS_FINAL_PHASE2, VB_BOSS_FINAL_PHASE3, VB_BOSS_FINAL_LAST_RIGHT } from "./data-flavor.js";
 
 window.addEventListener("DOMContentLoaded", () => {
 
@@ -889,13 +890,16 @@ window.addEventListener("DOMContentLoaded", () => {
       {x:300,y:395},
       {x:660,y:395},
     ],
-    // Boss Final — 5 pontos em posições variadas pela arena
+    // Boss Final — 7 pontos espalhados pela arena renovada
+    // (só 5 são usados de cada vez, sem repetir o anterior)
     direitos:[
-      {x:480,y:215},  // topo da plataforma central
-      {x:140,y:330},  // zona esquerda (plataforma móvel)
-      {x:820,y:330},  // zona direita (plataforma móvel)
-      {x:300,y:460},  // chão esquerdo
-      {x:660,y:460},  // chão direito
+      {x:480,y:140},  // plataforma do topo — o mais difícil!
+      {x:165,y:240},  // plataforma alta esquerda
+      {x:795,y:240},  // plataforma alta direita
+      {x:125,y:355},  // plataforma baixa esquerda
+      {x:835,y:355},  // plataforma baixa direita
+      {x:350,y:375},  // central esquerda
+      {x:610,y:375},  // central direita
     ],
   };
   let bossShields=[]; // sprites estáticos do boss da Violência (mecânica própria, ver _setupBossViolencia)
@@ -2922,7 +2926,7 @@ window.addEventListener("DOMContentLoaded", () => {
   // plataformas móveis na arena, mensagens ligadas aos direitos.
   // ══════════════════════════════════════════════════════════════
   function _setupBossDireitos(scene,L){
-    // Os direitos que o boss roubou — exibidos nas mensagens
+    // ── Textos dos 5 direitos roubados ──────────────────────────────
     const DIREITOS_ROUBADOS=[
       "📚 Direito à Educação",
       "🛡️ Direito à Proteção",
@@ -2931,32 +2935,50 @@ window.addEventListener("DOMContentLoaded", () => {
       "🌍 Direito à Igualdade",
     ];
 
-    // Boss maior e mais ameaçador — roxo escuro
-    bossSprite=scene.physics.add.sprite(L.worldW/2,300,"vilao_bug");
-    bossSprite.setDisplaySize(220,220).body.setSize(180,180,true);
-    bossSprite.setCollideWorldBounds(true).setDepth(3).setTint(0x9900cc); // roxo vibrante — visível em qualquer fundo
+    // ── Fase 1: 0-1 direitos ·  Fase 2: 2-3 ·  Fase 3 (final): 4+ ────
+    function _bossPhase(){ return booksCollected>=4?3:booksCollected>=2?2:1; }
+
+    // ── Spawn no TOPO — o boss desce da plataforma alta dramaticamente ──
+    bossSprite=scene.physics.add.sprite(L.worldW/2,170,"vilao_bug");
+    bossSprite.setDisplaySize(230,230).body.setSize(190,190,true);
+    bossSprite.setCollideWorldBounds(true).setDepth(3).setTint(0x9900cc);
     scene.physics.add.collider(bossSprite,platforms);
 
-    // Animação de ameaça — pulsa e treme
-    scene.tweens.add({targets:bossSprite,scaleX:{from:1,to:1.08},scaleY:{from:1.08,to:1},duration:500,yoyo:true,repeat:-1,ease:"Sine.easeInOut"});
-    scene.tweens.add({targets:bossSprite,angle:{from:-3,to:3},duration:200,yoyo:true,repeat:-1});
+    // Animação de entrada — cai do topo com tremor
+    bossSprite.setVelocityY(0);
+    scene.time.delayedCall(300,()=>{
+      if(!bossSprite?.active)return;
+      scene.cameras.main.shake(300,0.014);
+      showFloat(scene,480,180,"💀 O DESTRUIDOR DOS DIREITOS DESPERTA!","#ff0066");
+      vbSay("Tremei! Sou o Destruidor dos Direitos — nenhuma criança escapará! 💀","wrong",5000);
+    });
 
-    // Movimento — fica mais rápido a cada direito recuperado (Fase 2 a partir do 3º)
+    // Pulsar contínuo + tremor de raiva
+    scene.tweens.add({targets:bossSprite,scaleX:{from:1,to:1.10},scaleY:{from:1.10,to:1},duration:450,yoyo:true,repeat:-1,ease:"Sine.easeInOut"});
+    scene.tweens.add({targets:bossSprite,angle:{from:-4,to:4},duration:180,yoyo:true,repeat:-1});
+
+    // ── Movimento — acelera com cada fase ──────────────────────────
     let bossDir=1;
     bossTimers.push(scene.time.addEvent({delay:50,loop:true,callback:()=>{
       if(!bossSprite?.active||!_bossActive||_bossStunned||_bossAnon)return;
-      if(bossSprite.x>L.worldW-120)bossDir=-1;
-      if(bossSprite.x<120)bossDir=1;
+      if(bossSprite.x>L.worldW-110)bossDir=-1;
+      if(bossSprite.x<110)bossDir=1;
       const elapsedSec=(scene.time.now-_bossActiveSince)/1000;
-      const timeFactor=Math.min(elapsedSec/60,1)*0.6;
-      // Fase 2 (3+ direitos): muito mais rápido
-      const faseBonus=booksCollected>=3?1.6:1.0;
-      const speed=(65+booksCollected*35)*(1+timeFactor)*faseBonus;
+      const timeFactor=Math.min(elapsedSec/70,1)*0.5;
+      // Fase 1: lento ameaçador; Fase 2: rápido; Fase 3: frenético
+      const phaseSpeed=[0,70,130,200][_bossPhase()];
+      const itemBonus=booksCollected*28;
+      const speed=(phaseSpeed+itemBonus)*(1+timeFactor);
       bossSprite.setVelocityX(speed*bossDir);
       bossSprite.setFlipX(bossDir<0);
+      // Fase 3: o boss salta aleatoriamente (comportamento caótico)
+      if(_bossPhase()===3&&bossSprite.body.blocked.down&&Math.random()<0.008){
+        bossSprite.setVelocityY(-520);
+        showFloat(scene,bossSprite.x,bossSprite.y-60,"💀 SALTO DE RAIVA!","#ff0066");
+      }
     }}));
 
-    // Stomp para atordoar
+    // ── Stomp ──────────────────────────────────────────────────────
     scene.physics.add.overlap(player,bossSprite,(p,b)=>{
       if(!_bossActive||invuln||_overlayPaused||pausedByTeacher)return;
       if(_bossStunned)return;
@@ -2966,98 +2988,163 @@ window.addEventListener("DOMContentLoaded", () => {
       _bossPlayerHit(scene,L);
     },null,scene);
 
-    // Projéteis — Fase 1: direcionados; Fase 2: leque de 3
+    // ── Projéteis — 3 modos conforme a fase ───────────────────────
     let _lastShot=0;
-    bossTimers.push(scene.time.addEvent({delay:100,loop:true,callback:()=>{
-      if(!bossSprite?.active||!_bossActive||_bossStunned)return;
+    bossTimers.push(scene.time.addEvent({delay:80,loop:true,callback:()=>{
+      if(!bossSprite?.active||!_bossActive||_bossStunned||_bossAnon)return;
       const now=scene.time.now,elapsedSec=(now-_bossActiveSince)/1000;
-      // Fase 2 cadência mais rápida
-      const cadenciaBase=booksCollected>=3?800:1400;
-      const cadencia=Math.max(500,cadenciaBase-booksCollected*100-elapsedSec*8);
+      const phase=_bossPhase();
+      // Cadência base por fase
+      const cadenciaBase=[0,1600,950,600][phase];
+      const cadencia=Math.max(380,cadenciaBase-booksCollected*80-elapsedSec*6);
       if(now-_lastShot<cadencia)return;_lastShot=now;
 
-      if(booksCollected>=3){
-        // Fase 2: leque de 3 projéteis — cada um de uma cor de direito
-        const coresLeque=[0xff6b35,0xffd700,0x40d0ff];
-        const angles=[-30,0,30];
+      const coresLeque=[0xff6b35,0xffd700,0x40d0ff,0xff80c0,0xa0e860];
+
+      if(phase===1){
+        // FASE 1 — projétil único dirigido ao jogador
+        const cor=coresLeque[Math.floor(Math.random()*coresLeque.length)];
+        const proj=bossProjectiles.create(bossSprite.x,bossSprite.y-50,"boss_book_closed");
+        proj.setDisplaySize(32,26).setDepth(4).setTint(cor);
+        const dx=player.x-bossSprite.x,dy=player.y-bossSprite.y,len=Math.sqrt(dx*dx+dy*dy)||1;
+        proj.setVelocity((dx/len)*210,(dy/len)*210-50);
+        scene.tweens.add({targets:proj,angle:{from:0,to:360},duration:500,repeat:-1});
+        scene.time.delayedCall(3000,()=>{if(proj.active)proj.destroy();});
+
+      }else if(phase===2){
+        // FASE 2 — leque de 3 projéteis coloridos
+        const angles=[-28,0,28];
         angles.forEach((ang,ai)=>{
           const rad=ang*Math.PI/180;
-          const dx=(player.x-bossSprite.x);
-          const dy=180;
+          const dx=player.x-bossSprite.x,dy=180;
           const len=Math.sqrt(dx*dx+dy*dy)||1;
           const proj=bossProjectiles.create(bossSprite.x,bossSprite.y-50,"boss_book_closed");
           proj.setDisplaySize(30,24).setDepth(4).setTint(coresLeque[ai]);
-          const spd=260;
+          const spd=255;
           proj.setVelocity(
             Math.cos(rad)*(dx/len)*spd - Math.sin(rad)*(dy/len)*spd,
             Math.sin(rad)*(dx/len)*spd + Math.cos(rad)*(dy/len)*spd
           );
-          scene.tweens.add({targets:proj,angle:{from:0,to:360},duration:400,repeat:-1});
-          scene.time.delayedCall(2500,()=>{if(proj.active)proj.destroy();});
+          scene.tweens.add({targets:proj,angle:{from:0,to:360},duration:380,repeat:-1});
+          scene.time.delayedCall(2400,()=>{if(proj.active)proj.destroy();});
         });
-      } else {
-        // Fase 1: projétil simples direcionado — cor aleatória dos direitos
-        const corsDireitos=[0xff6b35,0xffd700,0x40d0ff,0xff80c0,0xa0ff80,0xff4444,0x80ffff];
-        const corProj=corsDireitos[Math.floor(Math.random()*corsDireitos.length)];
-        const proj=bossProjectiles.create(bossSprite.x,bossSprite.y-50,"boss_book_closed");
-        proj.setDisplaySize(34,26).setDepth(4).setTint(corProj);
-        const dx=player.x-bossSprite.x,dy=player.y-bossSprite.y,len=Math.sqrt(dx*dx+dy*dy)||1;
-        proj.setVelocity((dx/len)*220,(dy/len)*220-60);
-        scene.tweens.add({targets:proj,angle:{from:0,to:360},duration:500,repeat:-1});
-        scene.time.delayedCall(3000,()=>{if(proj.active)proj.destroy();});
+
+      }else{
+        // FASE 3 (CAOS) — leque de 5 projéteis + projétil vertical descendente
+        const angles5=[-40,-20,0,20,40];
+        angles5.forEach((ang,ai)=>{
+          const rad=ang*Math.PI/180;
+          const dx=player.x-bossSprite.x,dy=200;
+          const len=Math.sqrt(dx*dx+dy*dy)||1;
+          const proj=bossProjectiles.create(bossSprite.x,bossSprite.y-50,"boss_book_closed");
+          proj.setDisplaySize(28,22).setDepth(4).setTint(coresLeque[ai%coresLeque.length]);
+          const spd=290;
+          proj.setVelocity(
+            Math.cos(rad)*(dx/len)*spd - Math.sin(rad)*(dy/len)*spd,
+            Math.sin(rad)*(dx/len)*spd + Math.cos(rad)*(dy/len)*spd
+          );
+          scene.tweens.add({targets:proj,angle:{from:0,to:360},duration:300,repeat:-1});
+          scene.time.delayedCall(2000,()=>{if(proj.active)proj.destroy();});
+        });
+        // Projétil extra que cai do topo em direção ao jogador (bomba de direito negado)
+        scene.time.delayedCall(200,()=>{
+          if(!bossSprite?.active||!_bossActive)return;
+          const bomb=bossProjectiles.create(player.x+Math.random()*80-40,80,"boss_book_closed");
+          bomb.setDisplaySize(36,30).setDepth(4).setTint(0xff0000);
+          bomb.setVelocity(0,340);
+          scene.tweens.add({targets:bomb,angle:{from:0,to:360},duration:250,repeat:-1});
+          scene.time.delayedCall(2000,()=>{if(bomb.active)bomb.destroy();});
+        });
       }
     }}));
 
-    scene.physics.add.collider(bossProjectiles,platforms,(proj)=>{scene.time.delayedCall(400,()=>{if(proj.active)proj.destroy();});});
-    scene.physics.add.overlap(player,bossProjectiles,(p,proj)=>{if(!_bossActive||invuln||_overlayPaused||pausedByTeacher)return;proj.destroy();_bossPlayerHit(scene,L);},null,scene);
+    scene.physics.add.collider(bossProjectiles,platforms,(proj)=>{
+      scene.time.delayedCall(350,()=>{if(proj.active)proj.destroy();});
+    });
+    scene.physics.add.overlap(player,bossProjectiles,(p,proj)=>{
+      if(!_bossActive||invuln||_overlayPaused||pausedByTeacher)return;
+      proj.destroy();_bossPlayerHit(scene,L);
+    },null,scene);
 
-    // Direitos como colectáveis — um de cada vez
+    // ── Coleta dos direitos ────────────────────────────────────────
     _spawnBossItems(scene,"boss_book_open",L);
     scene.physics.add.overlap(player,bossBooks,(p,book)=>{
       if(!_bossActive||book.getData("collected"))return;
       book.setData("collected",true);
-      scene.tweens.add({targets:book,y:book.y-60,alpha:0,scaleX:2,scaleY:2,duration:400,onComplete:()=>book.destroy()});
+      scene.tweens.add({targets:book,y:book.y-70,alpha:0,scaleX:2.2,scaleY:2.2,duration:420,onComplete:()=>book.destroy()});
       SFX.coin();
-      // Mensagem do VanBerto com o direito recuperado
       const dirMsg=DIREITOS_ROUBADOS[booksCollected]||"⭐ Direito recuperado!";
-      vbSay("RECUPERASTE o "+dirMsg+"! 🌟 Faltam "+(4-booksCollected)+"!","good",3000);
+      const restam=4-booksCollected;
+      const vbMsg=restam>0
+        ?`RECUPERASTE o ${dirMsg}! ⭐ ${restam>1?`Faltam ${restam}!`:"Só falta 1 — vai a tudo!"}`
+        :"TODOS OS DIREITOS RECUPERADOS! Dá-lhe o golpe final! 🏆";
+      vbSay(vbMsg,"good",3200);
       _bossItemCollected(scene,L);
-      // Na Fase 2, o boss fica furioso visualmente
-      if(booksCollected===3){
-        scene.cameras.main.shake(400,0.018);
-        bossSprite.setTint(0xff0066); // vermelho-rosa furioso
-        showFloat(scene,480,200,"💀 FASE 2 — O Destruidor está FURIOSO!","#ff0040");
-        vbSay("Cuidado! Agora tem projéteis em LEQUE! Fica atento! 💀","hit",4000);
+
+      // ── Transições de fase com efeitos dramáticos ──
+      if(booksCollected===2){
+        // Entrada na Fase 2
+        scene.cameras.main.shake(500,0.020);
+        bossSprite.setTint(0xcc0066);
+        scene.tweens.add({targets:bossSprite,scaleX:{from:1.4,to:1.1},scaleY:{from:1.4,to:1.1},duration:350});
+        showFloat(scene,480,200,"⚠️ FASE 2 — LEQUE DE PROJÉTEIS!","#ff3300");
+        vbSay(VB_BOSS_FINAL_PHASE2[Math.floor(Math.random()*VB_BOSS_FINAL_PHASE2.length)],"hit",4500);
+        // Flash de cor na arena
+        const f2=scene.add.rectangle(480,270,960,540,0xcc0033,0.30).setDepth(20);
+        scene.tweens.add({targets:f2,alpha:0,duration:700,onComplete:()=>f2.destroy()});
+
+      }else if(booksCollected===4){
+        // Entrada na Fase 3 — a mais dramática
+        scene.cameras.main.shake(800,0.030);
+        bossSprite.setTint(0xff0000);
+        scene.tweens.add({targets:bossSprite,scaleX:{from:1.6,to:1.15},scaleY:{from:1.6,to:1.15},duration:450});
+        showFloat(scene,480,180,"💀 FASE FINAL — O DESTRUIDOR ENLOUQUECEU!","#ff0000");
+        vbSay(VB_BOSS_FINAL_PHASE3[Math.floor(Math.random()*VB_BOSS_FINAL_PHASE3.length)],"hit",5500);
+        // Flash vermelho intenso
+        const f3=scene.add.rectangle(480,270,960,540,0xff0000,0.45).setDepth(20);
+        scene.tweens.add({targets:f3,alpha:0,duration:900,onComplete:()=>f3.destroy()});
+        // Tremer o boss de raiva
+        scene.tweens.add({targets:bossSprite,angle:{from:-10,to:10},duration:60,yoyo:true,repeat:12,
+          onComplete:()=>{if(bossSprite?.active)scene.tweens.add({targets:bossSprite,angle:{from:-4,to:4},duration:180,yoyo:true,repeat:-1});}
+        });
+      }else if(booksCollected===3){
+        // Aviso do último direito
+        vbSay(VB_BOSS_FINAL_LAST_RIGHT[Math.floor(Math.random()*VB_BOSS_FINAL_LAST_RIGHT.length)],"good",3500);
       }
     },null,scene);
 
-    // Modo Anónimo — desaparece e reaparece (Fase 2: mais frequente)
-    const ANON_SPOTS=[130,280,480,660,830];
-    bossTimers.push(scene.time.addEvent({delay:8000,startAt:4000,loop:true,callback:()=>{
+    // ── Modo Anónimo — desaparece e reaparece (mais caótico com as fases) ──
+    const ANON_SPOTS=[110,250,480,710,850];
+    bossTimers.push(scene.time.addEvent({delay:7000,startAt:5000,loop:true,callback:()=>{
       if(!bossSprite?.active||!_bossActive||_bossStunned||_bossAnon)return;
-      // Fase 2: modo anónimo mais frequente
-      if(booksCollected>=3&&Math.random()<0.4)return; // às vezes salta na fase 2
+      const phase=_bossPhase();
+      // Fase 1: 80% de chance; Fase 2: sempre; Fase 3: sempre com duração menor
+      if(phase===1&&Math.random()<0.20)return;
       _bossAnon=true;
-      scene.tweens.add({targets:bossSprite,alpha:0.08,duration:250});
+      bossSprite.setAlpha(0.06);
       bossSprite.body.enable=false;
-      showFloat(scene,bossSprite.x,bossSprite.y-100,"💀 Desapareceu!","#aa00ff");
-      const anonDur=booksCollected>=3?900:1400;
-      scene.time.delayedCall(anonDur,()=>{
+      showFloat(scene,bossSprite.x,bossSprite.y-90,"👻 Desapareceu!","#aa00ff");
+      const dur=phase===3?700:phase===2?1100:1500;
+      scene.time.delayedCall(dur,()=>{
         if(!bossSprite?.active)return;
-        const nx=ANON_SPOTS[Math.floor(Math.random()*ANON_SPOTS.length)];
-        bossSprite.setPosition(nx,280);
+        // Fase 3: reaparece aleatoriamente em QUALQUER ponto, incluindo perto do jogador
+        const spots=phase===3?[player.x-120,player.x+120,...ANON_SPOTS]:ANON_SPOTS;
+        const nx=Math.max(60,Math.min(900,spots[Math.floor(Math.random()*spots.length)]));
+        // Y dinâmico: fase 3 pode aparecer nas plataformas altas
+        const ny=phase===3&&Math.random()<0.4?200:320;
+        bossSprite.setPosition(nx,ny);
         bossSprite.body.enable=true;
-        scene.tweens.add({targets:bossSprite,alpha:1,duration:200});
-        scene.cameras.main.shake(120,0.007);
-        vbSay("Apareceu! Cuidado com os projéteis! ⚡","wrong",2000);
+        bossSprite.setAlpha(1);
+        scene.cameras.main.shake(150,0.009);
+        vbSay(phase===3?"APARECEU! CUIDADO COM AS BOMBAS! 💥":"Apareceu! Esquiva-te dos projéteis! ⚡","wrong",2000);
         _bossAnon=false;
       });
     }}));
 
-    // Mensagem inicial
-    bossTimers.push(scene.time.delayedCall(800,()=>vbSay(
-      "O Destruidor roubou TODOS os direitos! 💀 Recupera os 5 direitos — salta-lhe em cima para o atordoar! Cuidado: fica FURIOSO a partir do 3.º!",
-      "wrong",7000
+    // ── Mensagem de abertura épica ────────────────────────────────
+    bossTimers.push(scene.time.delayedCall(900,()=>vbSay(
+      VB_BOSS_FINAL_INTRO[Math.floor(Math.random()*VB_BOSS_FINAL_INTRO.length)],
+      "wrong",8000
     )));
   }
 
@@ -3096,18 +3183,27 @@ window.addEventListener("DOMContentLoaded", () => {
   // apanhar o próximo item sem risco. Não conta como vida perdida nem reinicia o progresso.
   function _bossStomp(scene,L){
     _bossStunned=true;
+    const isFinal=L.bossKey==="direitos";
     if(bossSprite?.active){
       bossSprite.setVelocityX(0);
-      scene.tweens.add({targets:bossSprite,angle:{from:-6,to:6},duration:90,yoyo:true,repeat:8});
+      scene.tweens.add({targets:bossSprite,angle:{from:-8,to:8},duration:70,yoyo:true,repeat:isFinal?12:8});
       bossSprite.setTint(0xffffff);
-      scene.time.delayedCall(160,()=>{if(bossSprite?.active)bossSprite.setTint(_bossBaseTint(L));});
+      scene.time.delayedCall(200,()=>{if(bossSprite?.active)bossSprite.setTint(_bossBaseTint(L));});
     }
-    player.setVelocityY(-280);
-    scene.cameras.main.shake(120,0.006);
+    player.setVelocityY(isFinal?-320:-280);
+    scene.cameras.main.shake(isFinal?200:120,isFinal?0.010:0.006);
     SFX.hit();
-    showFloat(scene,bossSprite?.x||480,(bossSprite?.y||370)-100,"💫 Atordoado!","#ffe000");
-    vbSay("Boa! Saltaste-lhe em cima! Aproveita para avançar em segurança! 💫","good",2200);
-    bossTimers.push(scene.time.delayedCall(2200,()=>{_bossStunned=false;}));
+    const stunMsg=isFinal
+      ?["💫 ATORDOADO! Aproveita agora! ⚡","💥 Golpe certeiro! Corre para o direito! 🌟","✨ Atordoado! Tens alguns segundos! 💪"][Math.floor(Math.random()*3)]
+      :"💫 Atordoado!";
+    showFloat(scene,bossSprite?.x||480,(bossSprite?.y||370)-110,stunMsg,"#ffe000");
+    const vbMsgs=isFinal
+      ?["Boa! Saltaste-lhe na cabeça! Aproveita para apanhar o direito — tens 2 segundos! 💫","Magnífico! Ele está atordoado! Corre! ⭐","Isso mesmo! Golpe perfeito! Vai buscar o direito! 🏆"]
+      :["Boa! Saltaste-lhe em cima! Aproveita para avançar em segurança! 💫"];
+    vbSay(vbMsgs[Math.floor(Math.random()*vbMsgs.length)],"good",isFinal?2600:2200);
+    // Boss final: atordoa por menos tempo (mais difícil)
+    const stunDur=isFinal?1900:2200;
+    bossTimers.push(scene.time.delayedCall(stunDur,()=>{_bossStunned=false;}));
   }
 
   function _bossPlayerHit(scene,L){
@@ -3185,29 +3281,49 @@ window.addEventListener("DOMContentLoaded", () => {
     if(bossProjectiles)bossProjectiles.clear(true,true);
     scene.cameras.main.shake(500,0.022);
     const colors=[0xffd700,0xff6b35,0xff80c0,0x80d0ff,0xffffff];
-    for(let i=0;i<4;i++){scene.time.delayedCall(i*160,()=>{
-      if(!scene?.add)return;
-      const p=scene.add.particles(0,0,"spark_item",{x:bossSprite?.x||480,y:bossSprite?.y||370,speed:{min:120,max:320},lifespan:750,quantity:35,scale:{start:1.5,end:0},gravityY:80,angle:{min:0,max:360},tint:colors});
-      scene.time.delayedCall(700,()=>p.destroy());
-    });}
-    scene.tweens.add({targets:bossSprite,alpha:0,scaleX:2.5,scaleY:2.5,duration:600,ease:"Quad.easeOut",onComplete:()=>{bossSprite?.destroy();bossSprite=null;}});
+    const isFinal=L.bossKey==="direitos";
+    // Boss final: 3 vagas de partículas; outros: 1 vaga
+    const nWaves=isFinal?3:1;
+    for(let i=0;i<nWaves;i++){
+      for(let j=0;j<4;j++){scene.time.delayedCall(i*400+j*160,()=>{
+        if(!scene?.add)return;
+        const bx=bossSprite?.x||480,by=bossSprite?.y||370;
+        const p=scene.add.particles(0,0,"spark_item",{
+          x:bx+(Math.random()-0.5)*120,y:by+(Math.random()-0.5)*80,
+          speed:{min:140,max:360},lifespan:850,quantity:isFinal?45:35,
+          scale:{start:isFinal?1.8:1.5,end:0},gravityY:80,
+          angle:{min:0,max:360},tint:colors
+        });
+        scene.time.delayedCall(800,()=>p.destroy());
+      });}
+    }
+    // Para o boss final: flash branco de vitória + câmara de zoom
+    if(isFinal){
+      scene.cameras.main.shake(900,0.035);
+      const flash=scene.add.rectangle(480,270,960,540,0xffffff,0.7).setDepth(30);
+      scene.tweens.add({targets:flash,alpha:0,duration:1200,onComplete:()=>flash.destroy()});
+      scene.time.delayedCall(200,()=>{
+        scene.cameras.main.zoomTo(1.3,600,"Linear",true);
+        scene.time.delayedCall(900,()=>scene.cameras.main.zoomTo(1,500));
+      });
+    }
+    scene.tweens.add({targets:bossSprite,alpha:0,scaleX:isFinal?3:2.5,scaleY:isFinal?3:2.5,duration:700,ease:"Quad.easeOut",onComplete:()=>{bossSprite?.destroy();bossSprite=null;}});
     _hideBossHUD();
     const bossNames={ignorancia:"Monstro da Ignorância",violencia:"Gigante da Violência",ciberbullying:"Senhor do Ciberbullying",direitos:"Destruidor dos Direitos"};
     const nome=bossNames[L.bossKey||"ignorancia"]||"Boss";
-    vbSay("LENDÁRIO! Derrotaste o "+nome+"! 🏆","perfect",4000);
+    vbSay(isFinal?"🏆 LENDÁRIO! Derrotaste o "+nome+" e recuperaste TODOS os direitos das crianças! O mundo está mais justo graças a ti! 🌍":"LENDÁRIO! Derrotaste o "+nome+"! 🏆","perfect",isFinal?6000:4000);
     SFX.starMelody?.();
-    score+=300;scoreText?.setText("🌟 Pontos: "+score);
-    showFloat(scene,480,280,"🏆 +300 Boss Derrotado!","#ffd700");
-    // Recompensa própria do boss — distinta do álbum de artefactos dos níveis normais,
-    // porque vencer um boss não corresponde a nenhum ARTEFACTS[] específico.
+    if(isFinal)setTimeout(()=>SFX.finalWin?.(),1800);
+    score+=isFinal?500:300;scoreText?.setText("🌟 Pontos: "+score);
+    showFloat(scene,480,280,isFinal?"🏆 +500 BOSS FINAL DERROTADO!":"🏆 +300 Boss Derrotado!","#ffd700");
     const direitoDefendido={
       ignorancia:{emoji:"📚",label:"Direito à Educação"},
       violencia:{emoji:"🛡️",label:"Direito à Proteção"},
       ciberbullying:{emoji:"🌍",label:"Todos os Direitos da Criança"},
       direitos:{emoji:"🌟",label:"TODOS os Direitos das Crianças"},
     }[L.bossKey||"ignorancia"];
-    if(direitoDefendido)scene.time.delayedCall(700,()=>showFloat(scene,480,200,direitoDefendido.emoji+" Direito Defendido: "+direitoDefendido.label,"#7CFFB2"));
-    scene.time.delayedCall(900,()=>robotDance(scene,()=>{
+    if(direitoDefendido)scene.time.delayedCall(isFinal?1200:700,()=>showFloat(scene,480,200,direitoDefendido.emoji+" Direito Defendido: "+direitoDefendido.label,"#7CFFB2"));
+    scene.time.delayedCall(isFinal?1400:900,()=>robotDance(scene,()=>{
       finalizeLevelStars(currentLevel);
       markLevelCompleted(currentLevel);
       _bossNextLevel(scene);
@@ -3254,16 +3370,25 @@ window.addEventListener("DOMContentLoaded", () => {
     let hud=document.getElementById("bossHUD");
     if(!hud){
       hud=document.createElement("div");hud.id="bossHUD";
-      hud.style.cssText="position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:9000;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:5px;font-family:'Baloo 2',sans-serif;";
+      hud.style.cssText="position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:9000;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:4px;font-family:'Baloo 2',sans-serif;";
       document.body.appendChild(hud);
     }
     const bossNames={ignorancia:"👹 Monstro da Ignorância",violencia:"💪 Gigante da Violência",ciberbullying:"💻 Senhor do Ciberbullying",direitos:"💀 Destruidor dos Direitos"};
     const itemLabels={ignorancia:"livros abertos",violencia:"escudos",ciberbullying:"dispositivos seguros",direitos:"direitos recuperados"};
     const nome=bossNames[L.bossKey||"ignorancia"];
     const label=itemLabels[L.bossKey||"ignorancia"];
+    // Boss final tem HUD especial com indicador de fases
+    const isDireitos=L.bossKey==="direitos";
     hud.innerHTML=`
       <div style="font-size:15px;font-weight:900;color:#ff2200;text-shadow:0 0 10px rgba(255,34,0,0.9),1px 1px 0 #000;letter-spacing:2px;">${nome}</div>
-      <div id="bossBookCount" style="font-size:14px;font-weight:800;color:#ffe060;text-shadow:1px 1px 0 #000;">📕📕📕 0/${itemsTotal} ${label}</div>`;
+      <div id="bossBookCount" style="font-size:14px;font-weight:800;color:#ffe060;text-shadow:1px 1px 0 #000;">📕📕📕 0/${itemsTotal} ${label}</div>
+      ${isDireitos?`<div id="bossPhaseBar" style="display:flex;gap:6px;align-items:center;font-size:12px;font-weight:700;margin-top:2px;">
+        <span id="bossPhase1" style="padding:1px 7px;border-radius:8px;background:#9900cc;color:#fff;text-shadow:1px 1px 0 #000;">FASE 1</span>
+        <span style="color:#555;">›</span>
+        <span id="bossPhase2" style="padding:1px 7px;border-radius:8px;background:#333;color:#888;">FASE 2</span>
+        <span style="color:#555;">›</span>
+        <span id="bossPhase3" style="padding:1px 7px;border-radius:8px;background:#333;color:#888;">FASE FINAL</span>
+      </div>`:""}`;
     hud.style.display="flex";
     _updateBossHUD();
   }
@@ -3277,6 +3402,24 @@ window.addEventListener("DOMContentLoaded", () => {
     const [on,off]=icons[k]||["📖","📕"];
     const label={ignorancia:"livros abertos",violencia:"escudos",ciberbullying:"dispositivos seguros",direitos:"direitos recuperados"}[k]||"itens";
     cnt.textContent=on.repeat(booksCollected)+off.repeat(itemsTotal-booksCollected)+" "+booksCollected+"/"+itemsTotal+" "+label;
+
+    // Atualizar indicador de fases do boss final
+    if(k==="direitos"){
+      const p1=document.getElementById("bossPhase1");
+      const p2=document.getElementById("bossPhase2");
+      const p3=document.getElementById("bossPhase3");
+      const phase=booksCollected>=4?3:booksCollected>=2?2:1;
+      if(p1){p1.style.background=phase===1?"#9900cc":"#3a0055";p1.style.color=phase===1?"#fff":"#bb88dd";}
+      if(p2){p2.style.background=phase===2?"#cc0044":"#333";p2.style.color=phase===2?"#fff":"#888";
+        if(phase>=2)p2.style.boxShadow=phase===2?"0 0 8px #ff0066":"none";}
+      if(p3){p3.style.background=phase===3?"#ff0000":"#333";p3.style.color=phase===3?"#fff":"#888";
+        if(phase===3){p3.style.animation="blink 0.5s infinite alternate";
+          const st=document.getElementById("bossPhase3Style")||document.createElement("style");
+          st.id="bossPhase3Style";st.textContent="@keyframes blink{from{box-shadow:0 0 6px #ff0000}to{box-shadow:0 0 18px #ff6600}}";
+          document.head.appendChild(st);
+        }
+      }
+    }
   }
 
   function _hideBossHUD(){const hud=document.getElementById("bossHUD");if(hud)hud.style.display="none";}

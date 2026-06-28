@@ -529,15 +529,33 @@ export const LEVELS = [
     name:"Boss Final — Destruidor dos Direitos",
     isBoss:true, bossKey:"direitos", bossStagger:true,
     theme:19, quizTheme:"digital",
-    worldW:960, spawn:{x:100,y:420}, doorX:-999,
+    worldW:960, spawn:{x:80,y:430}, doorX:-999,
     platforms:[
-      {x:480,y:510,w:960,h:28},   // chão
-      {x:480,y:270,w:220,h:22},   // plataforma central alta
-      {x:160,y:390,w:180,h:22},   // plataforma esquerda
-      {x:800,y:390,w:180,h:22},   // plataforma direita
-      {x:320,y:450,w:140,h:22},   // plataforma baixa esquerda
-      {x:640,y:450,w:140,h:22},   // plataforma baixa direita
+      // ── Chão da arena (dividido em 3 secções — vão no meio obriga a usar trampolim)
+      {x:220,y:510,w:440,h:28},   // chão esquerdo
+      {x:740,y:510,w:440,h:28},   // chão direito
+      // ── Nível 2: plataformas médias laterais ──
+      {x:130,y:390,w:180,h:22},   // esquerda baixa
+      {x:830,y:390,w:180,h:22},   // direita baixa
+      {x:360,y:410,w:150,h:22},   // esquerda central
+      {x:600,y:410,w:150,h:22},   // direita central
+      // ── Nível 3: plataformas altas laterais ──
+      {x:180,y:270,w:160,h:22},   // esquerda alta
+      {x:780,y:270,w:160,h:22},   // direita alta
+      // ── Plataforma do topo ── (boss spawna aqui)
+      {x:480,y:190,w:240,h:22},   // topo central — o trono do Destruidor
     ],
+    // Plataformas móveis — tornam a arena mais caótica na fase 2/3
+    movingPlatforms:[
+      {x:480,y:340,w:160,h:22,rangeX:160,rangeY:0,speed:90},  // plataforma central oscilante
+      {x:300,y:310,w:120,h:22,rangeX:0,rangeY:70,speed:70},   // elevador esquerdo
+      {x:660,y:310,w:120,h:22,rangeX:0,rangeY:70,speed:75},   // elevador direito
+    ],
+    // Trampolim no vão central — obriga a usar estratégia
+    trampolines:[{x:480,y:500}],
+    // Zona de perigo — lava no vão central (decorativa, sem dano na arena do boss
+    // pois o dano é gerido pelo bossPlayerHit; a "lava" é visual para criar tensão)
+    hazards:[{x:480,y:515,w:100,h:16,kind:"lava"}],
     items:[], malwares:[],
   }
 ];
