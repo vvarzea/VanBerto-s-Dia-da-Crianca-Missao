@@ -221,8 +221,7 @@ window.addEventListener("DOMContentLoaded", () => {
     // posição bruta na LEVELS (que inclui os bosses). Por isso resolvemos pelo
     // artIdx do nível — os bosses não têm artIdx, por isso simplesmente não mostram história.
     const Lh = LEVELS[levelIndex];
-    // Boss não tem história — chamar onDone imediatamente sem tocar no estado
-    if (Lh?.isBoss) { onDone?.(); return; }
+    if (Lh?.isBoss) { awaitingQuiz=false; onDone?.(); return; }
     const histIdx = (Lh && Lh.artIdx != null) ? Lh.artIdx : levelIndex;
     const entry = HISTORY[histIdx] || null;
     if (!entry) { awaitingQuiz=false; onDone?.(); return; }
@@ -1248,9 +1247,8 @@ window.addEventListener("DOMContentLoaded", () => {
       if (el("pauseProgress")) el("pauseProgress").textContent = `${lvl} / ${total}`;
       // Dica contextual: priorizar dicas dos níveis especiais
       let tipIdx;
-      const _pauseArtIdx = LEVELS[currentLevel]?.artIdx ?? currentLevel;
-      if (_pauseArtIdx === 3)  tipIdx = 8;  // nível trampolins (Direito ao Brincar)
-      else if (_pauseArtIdx === 17) tipIdx = 10; // nível esteira (Direito à Inclusão)
+      if (currentLevel === 4)  tipIdx = 8;  // nível trampolins (Direito ao Brincar)
+      else if (currentLevel === 19) tipIdx = 10; // nível esteira (Direito à Inclusão)
       else { _pauseTipIdx = (_pauseTipIdx + 1) % 8; tipIdx = _pauseTipIdx; }
       if (el("pauseTip")) el("pauseTip").innerHTML = PAUSE_TIPS[tipIdx];
       overlay.classList.remove("hidden");
@@ -1353,7 +1351,6 @@ window.addEventListener("DOMContentLoaded", () => {
          && document.getElementById("winOverlay").classList.contains("hidden")
          && (document.getElementById("levelTransitionOverlay")?.style.display || "none") === "none"
          && !document.getElementById("artefactRevealOverlay")?.classList.contains("show");
-      // Watchdog cobre awaitingQuiz E awaitingStory presos sem overlay visível
       if ((awaitingQuiz || awaitingStory) && !_overlayPaused && _noVisibleOverlay) {
         if (!sceneRef._wdStart) sceneRef._wdStart = Date.now();
         if (Date.now() - sceneRef._wdStart > 3000) {
@@ -2456,9 +2453,7 @@ window.addEventListener("DOMContentLoaded", () => {
       "🌱 O planeta precisa de ti — cuida do ambiente!",
       "💻 Os teus direitos existem também no mundo digital!"
     ];
-    // Usar artIdx para indexar TIPS — currentLevel inclui bosses e desfasa os índices
-    const _tipIdx = (LEVELS[currentLevel]?.artIdx ?? currentLevel);
-    currentLevelTip = (TIPS[_tipIdx] || TIPS[0]) + (_tipIdx >= 6 ? " ⚠️ Cuidado!" : "");
+    currentLevelTip = (TIPS[currentLevel] || TIPS[0]) + (currentLevel >= 6 ? " ⚠️ Cuidado!" : "");
     tipText.setText(currentLevelTip);
     ensureAudio(); SFX.door(); saveGame();
   }
@@ -2663,13 +2658,11 @@ window.addEventListener("DOMContentLoaded", () => {
 
     _showBossHUD(L);
 
-    // Ativar boss — feito aqui para não depender de callbacks externos
+    // Ativar boss de forma autónoma — não depende de callbacks externos
     booksCollected=0; _bossActive=true; _bossStunned=false;
     _bossActiveSince=scene.time?.now||0;
-    // Aguardar 1 frame para garantir que o setup do Phaser está completo
-    scene.time.delayedCall(50, ()=>{
+    scene.time.delayedCall(50,()=>{
       awaitingQuiz=false;
-      awaitingStory=false;
       if(!pausedByTeacher) scene.physics.resume();
     });
   }
@@ -3030,11 +3023,9 @@ window.addEventListener("DOMContentLoaded", () => {
     }));
   }
 
-  // Transição direta boss → nível seguinte, sem showHistory nem playLevelTransition.
-  // Evita todas as race conditions que bloqueavam o jogo após o boss.
+  // Transição direta boss → nível seguinte sem showHistory/playLevelTransition
   function _bossNextLevel(scene){
     const next=currentLevel+1;
-    // Limpar estado
     awaitingQuiz=true;
     awaitingStory=false;
     scene.tweens.killTweensOf(player);
@@ -3045,37 +3036,27 @@ window.addEventListener("DOMContentLoaded", () => {
     document.getElementById("artefactRevealOverlay")?.classList.remove("show");
     document.getElementById("setBonusOverlay")?.classList.remove("show");
     scene.physics.pause();
-
-    // Bónus nível perfeito
     if(livesLostThisLevel===0){
       score+=50; bonusStars.textContent="⭐⭐⭐\n+50 Nível Perfeito!";
       bonusStars.classList.add("show"); setTimeout(()=>bonusStars.classList.remove("show"),2000);
     }
     livesLostThisLevel=0;
-
     setTimeout(()=>{
-      // Vitória final
       if(next>=LEVELS.length){ scene.physics.resume(); showVictoryScreen(scene); return; }
-
       score+=100; scoreText.setText("🌟 Pontos: "+score); _hudDirty=true;
-
-      // Carregar diretamente o nível seguinte
-      loadLevel(scene, next);
-
-      // Após o loadLevel (que pausa tudo), retomar e mostrar história num momento seguro
-      scene.time.delayedCall(200, ()=>{
+      loadLevel(scene,next);
+      scene.time.delayedCall(200,()=>{
         awaitingQuiz=false;
         awaitingStory=false;
         if(!pausedByTeacher) scene.physics.resume();
-        // Mostrar história do nível como popup não-bloqueante (só informativo)
-        showHistory(next, ()=>{
+        showHistory(next,()=>{
           awaitingQuiz=false;
           awaitingStory=false;
           if(!pausedByTeacher) scene.physics.resume();
         });
         saveGame();
       });
-    }, 800);
+    },800);
   }
 
   function _showBossHUD(L){
