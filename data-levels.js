@@ -30,36 +30,87 @@ export const LEVELS = [
     name: "Nível 1 — O Dia da Criança",
     artIdx:0, theme:0, quizTheme:"historia", worldW:2600,
     spawn:{x:480,y:460}, doorX:2100,
+    // Tutorial suave: escada com 1 trampolim de introdução
     platforms:[
-      {x:450,y:520,w:900,h:28},{x:1040,y:450,w:300,h:22},{x:1380,y:380,w:270,h:22},
-      {x:1700,y:310,w:240,h:22},{x:2050,y:520,w:900,h:28}
+      {x:450,y:520,w:900,h:28},
+      {x:1040,y:460,w:280,h:22},
+      {x:1360,y:390,w:260,h:22},
+      {x:1680,y:320,w:240,h:22},
+      {x:2050,y:520,w:900,h:28}
     ],
-    items:[{x:1040,y:400,kind:"estrela"},{x:1380,y:330,kind:"medalha"},{x:1700,y:260,kind:"brinquedo"}],
-    malwares:[{x:1240,y:480,vx:0,pattern:"mini"},{x:1960,y:480,vx:-150,pattern:"patrol"}]
+    trampolines:[{x:870,y:490}],
+    items:[
+      {x:1040,y:410,kind:"estrela"},
+      {x:1360,y:340,kind:"medalha"},
+      {x:1680,y:270,kind:"brinquedo"},
+      {x:560,y:470,kind:"heart"}
+    ],
+    malwares:[
+      {x:1200,y:480,vx:0,pattern:"mini"},
+      {x:1920,y:480,vx:-140,pattern:"patrol"}
+    ],
+    secrets:[{x:1680,y:270,kind:"estrela",points:15}]
   },
   {
     name: "Nível 2 — A Declaração de 1959",
     artIdx:1, theme:1, quizTheme:"declaracao", worldW:2800,
     spawn:{x:480,y:460}, doorX:2350,
+    // Introdução à plataforma móvel + vão ligeiramente maior
     platforms:[
-      {x:520,y:520,w:980,h:28},{x:900,y:450,w:240,h:22},{x:1180,y:380,w:240,h:22},
-      {x:1460,y:310,w:240,h:22},{x:1740,y:380,w:240,h:22},{x:2020,y:450,w:240,h:22},
+      {x:520,y:520,w:980,h:28},
+      {x:900,y:450,w:220,h:22},
+      {x:1180,y:370,w:200,h:22},
+      {x:1660,y:320,w:200,h:22},
+      {x:1940,y:400,w:200,h:22},
       {x:2380,y:520,w:980,h:28}
     ],
-    items:[{x:900,y:400,kind:"balao"},{x:1460,y:260,kind:"medalha"},{x:1740,y:330,kind:"estrela"}],
-    malwares:[{x:1320,y:480,vx:0,pattern:"mini"},{x:2140,y:480,vx:-155,pattern:"patrol"}]
+    movingPlatforms:[
+      {x:1420,y:390,w:180,h:22,rangeX:120,rangeY:0,speed:50}
+    ],
+    items:[
+      {x:900,y:400,kind:"balao"},
+      {x:1180,y:320,kind:"estrela"},
+      {x:1940,y:350,kind:"medalha"},
+      {x:560,y:470,kind:"heart"}
+    ],
+    malwares:[
+      {x:1050,y:480,vx:0,pattern:"mini"},
+      {x:1820,y:480,vx:-155,pattern:"patrol"},
+      {x:2200,y:480,vx:150,pattern:"patrol"}
+    ],
+    secrets:[{x:1420,y:345,kind:"estrela",points:20}]
   },
   {
     name: "Nível 3 — A Convenção de 1989",
     artIdx:2, theme:2, quizTheme:"convencao", worldW:2900,
     spawn:{x:480,y:460}, doorX:2500,
+    // Layout em W: alto-baixo-alto-baixo — alternância de altitude
     platforms:[
-      {x:520,y:520,w:1040,h:28},{x:840,y:460,w:240,h:22},{x:1180,y:390,w:240,h:22},
-      {x:1520,y:320,w:240,h:22},{x:1860,y:390,w:240,h:22},{x:2200,y:460,w:240,h:22},
-      {x:2480,y:520,w:1040,h:28}
+      {x:520,y:520,w:960,h:28},
+      {x:840,y:340,w:200,h:22},   // alto
+      {x:1080,y:450,w:180,h:22},  // baixo
+      {x:1300,y:340,w:180,h:22},  // alto
+      {x:1520,y:460,w:160,h:22},  // baixo
+      {x:1760,y:330,w:200,h:22},  // alto
+      {x:2000,y:450,w:180,h:22},  // baixo
+      {x:2240,y:340,w:200,h:22},  // alto
+      {x:2490,y:520,w:960,h:28}
     ],
-    items:[{x:840,y:220,kind:"estrela"},{x:1520,y:270,kind:"medalha"},{x:2200,y:410,kind:"brinquedo"},{x:560,y:470,kind:"heart"}],
-    malwares:[{x:1000,y:480,vx:0,pattern:"mini"},{x:1700,y:480,vx:-160,pattern:"patrol"},{x:2350,y:480,vx:155,pattern:"patrol"}]
+    trampolines:[{x:1180,y:490}],
+    items:[
+      {x:840,y:290,kind:"estrela"},
+      {x:1300,y:290,kind:"balao"},
+      {x:1760,y:280,kind:"medalha"},
+      {x:2240,y:290,kind:"brinquedo"},
+      {x:560,y:470,kind:"heart"}
+    ],
+    malwares:[
+      {x:960,y:480,vx:0,pattern:"mini"},
+      {x:1640,y:480,vx:-162,pattern:"patrol"},
+      {x:2100,y:480,vx:158,pattern:"patrol"},
+      {x:2360,y:480,vx:-155,pattern:"patrol"}
+    ],
+    secrets:[{x:1080,y:405,kind:"estrela",points:20}]
   },
   {
     name: "Nível 4 — O Direito ao Brincar",
@@ -103,37 +154,77 @@ export const LEVELS = [
     name: "Nível 5 — O Direito à Educação",
     artIdx:4, theme:4, quizTheme:"educacao", worldW:3100,
     spawn:{x:480,y:460}, doorX:2950,
+    // Picos e vales irregulares + 2 plataformas móveis
     platforms:[
-      {x:520,y:520,w:1000,h:28},{x:880,y:450,w:220,h:22},{x:1160,y:380,w:220,h:22},
-      {x:1460,y:310,w:220,h:22},{x:1760,y:380,w:220,h:22},{x:2060,y:450,w:220,h:22},
-      {x:2360,y:380,w:220,h:22},{x:2660,y:520,w:1000,h:28}
+      {x:520,y:520,w:960,h:28},
+      {x:860,y:420,w:180,h:22},
+      {x:1080,y:310,w:160,h:22},   // pico alto
+      {x:1300,y:430,w:160,h:22},   // vale
+      {x:1520,y:340,w:160,h:22},
+      {x:1780,y:260,w:170,h:22},   // pico mais alto
+      {x:2040,y:390,w:160,h:22},
+      {x:2280,y:460,w:160,h:22},   // vale
+      {x:2520,y:350,w:160,h:22},
+      {x:2700,y:520,w:960,h:28}
     ],
-    items:[{x:880,y:230,kind:"estrela"},{x:1460,y:260,kind:"brinquedo"},{x:2060,y:400,kind:"balao"},{x:2360,y:330,kind:"medalha"}],
-    malwares:[{x:1020,y:480,vx:165},{x:1620,y:480,vx:-170},{x:2220,y:480,vx:165},{x:2820,y:480,vx:-160}],
-    trampolines:[{x:1310,y:462},{x:2210,y:462}],
-    secrets:[{x:740,y:470,kind:"estrela",points:20}]
+    movingPlatforms:[
+      {x:1420,y:370,w:140,h:22,rangeX:0,rangeY:80,speed:60},
+      {x:2160,y:410,w:130,h:22,rangeX:130,rangeY:0,speed:70}
+    ],
+    trampolines:[{x:1200,y:490},{x:2380,y:490}],
+    items:[
+      {x:860,y:370,kind:"estrela"},
+      {x:1080,y:260,kind:"duplosalto"},
+      {x:1780,y:210,kind:"medalha"},
+      {x:2520,y:300,kind:"brinquedo"},
+      {x:560,y:470,kind:"heart"}
+    ],
+    malwares:[
+      {x:990,y:480,vx:168,pattern:"patrol"},
+      {x:1650,y:480,vx:-172,pattern:"jumper"},
+      {x:2180,y:480,vx:168,pattern:"patrol"},
+      {x:2600,y:480,vx:-165,pattern:"jumper"}
+    ],
+    secrets:[{x:740,y:470,kind:"estrela",points:20},{x:1780,y:210,kind:"balao"}]
   },
   {
     name: "Nível 6 — O Direito à Saúde",
-    artIdx:5, theme:5, quizTheme:"saude", worldW:3100,
-    spawn:{x:480,y:460}, doorX:2700,
-    // Layout: ilhas a alturas variadas — umas altas, outras baixas, sem padrão regular
+    artIdx:5, theme:5, quizTheme:"saude", worldW:3200,
+    spawn:{x:480,y:460}, doorX:2800,
+    // Ilhas irregulares + vilões em cima de plataformas + 1 móvel
     platforms:[
       {x:520,y:520,w:960,h:28},
-      {x:860,y:430,w:180,h:22},
-      {x:1100,y:340,w:220,h:22},
-      {x:1340,y:460,w:160,h:22},
-      {x:1560,y:310,w:200,h:22},
-      {x:1800,y:410,w:180,h:22},
-      {x:2050,y:340,w:160,h:22},
-      {x:2260,y:450,w:190,h:22},
-      {x:2500,y:370,w:170,h:22},
-      {x:2720,y:520,w:960,h:28}
+      {x:860,y:420,w:170,h:22},
+      {x:1100,y:330,w:200,h:22},
+      {x:1360,y:450,w:150,h:22},
+      {x:1580,y:300,w:190,h:22},
+      {x:1840,y:400,w:170,h:22},
+      {x:2080,y:330,w:150,h:22},
+      {x:2300,y:440,w:180,h:22},
+      {x:2540,y:350,w:160,h:22},
+      {x:2830,y:520,w:960,h:28}
     ],
-    items:[{x:860,y:380,kind:"medalha"},{x:1100,y:290,kind:"duplosalto"},{x:1560,y:260,kind:"estrela"},{x:2050,y:290,kind:"brinquedo"},{x:560,y:470,kind:"heart"}],
-    malwares:[{x:1010,y:480,vx:170},{x:1480,y:480,vx:-170},{x:1940,y:480,vx:172},{x:2400,y:480,vx:-168},{x:2720,y:480,vx:165}],
-    trampolines:[{x:1220,y:462}],
-    secrets:[{x:2160,y:355,kind:"estrela",points:20}]
+    movingPlatforms:[
+      {x:1720,y:360,w:130,h:22,rangeX:0,rangeY:90,speed:65}
+    ],
+    trampolines:[{x:1230,y:490}],
+    items:[
+      {x:860,y:370,kind:"medalha"},
+      {x:1100,y:280,kind:"duplosalto"},
+      {x:1580,y:250,kind:"estrela"},
+      {x:2080,y:280,kind:"brinquedo"},
+      {x:2540,y:300,kind:"balao"},
+      {x:560,y:470,kind:"heart"}
+    ],
+    malwares:[
+      {x:1010,y:480,vx:172,pattern:"patrol"},
+      {x:1100,y:308,vx:-150,pattern:"patrol"},  // em cima da plataforma
+      {x:1840,y:480,vx:-174,pattern:"jumper"},
+      {x:2080,y:308,vx:148,pattern:"mini"},      // em cima da plataforma
+      {x:2420,y:480,vx:170,pattern:"patrol"},
+      {x:2700,y:480,vx:-168,pattern:"jumper"}
+    ],
+    secrets:[{x:2300,y:395,kind:"estrela",points:25}]
   },
   {
     name: "Nível 7 — O Direito à Proteção",
@@ -206,20 +297,41 @@ export const LEVELS = [
     name: "Nível 10 — A UNICEF e os Direitos",
     artIdx:9, theme:9, quizTheme:"unicef", worldW:3500,
     spawn:{x:480,y:460}, doorX:3100,
+    // Todos jumpers + 3 plataformas móveis — exige atenção constante
     platforms:[
-      {x:520,y:520,w:1000,h:28},{x:920,y:442,w:185,h:22},{x:1200,y:368,w:185,h:22},
-      {x:1480,y:298,w:185,h:22},{x:1760,y:368,w:185,h:22},{x:2040,y:442,w:185,h:22},
-      {x:2320,y:368,w:185,h:22},{x:2600,y:442,w:185,h:22},
-      {x:3150,y:520,w:1100,h:28}
+      {x:520,y:520,w:960,h:28},
+      {x:880,y:430,w:170,h:22},
+      {x:1120,y:340,w:160,h:22},
+      {x:1380,y:260,w:160,h:22},   // pico alto
+      {x:1660,y:350,w:160,h:22},
+      {x:1920,y:440,w:160,h:22},
+      {x:2200,y:340,w:160,h:22},
+      {x:2460,y:260,w:160,h:22},   // 2º pico
+      {x:2740,y:380,w:160,h:22},
+      {x:3140,y:520,w:960,h:28}
     ],
-    items:[{x:920,y:342,kind:"estrela"},{x:1480,y:248,kind:"medalha"},{x:2040,y:392,kind:"balao"},{x:2600,y:392,kind:"brinquedo"},{x:560,y:470,kind:"heart"}],
-    malwares:[{x:1060,y:480,vx:190,pattern:"jumper"},{x:1660,y:480,vx:-195,pattern:"jumper"},{x:2260,y:480,vx:190,pattern:"jumper"},{x:2860,y:480,vx:-185,pattern:"jumper"},{x:3200,y:480,vx:188,pattern:"jumper"}],
     movingPlatforms:[
-      {x:1640,y:360,w:140,h:22,rangeX:200,rangeY:0,speed:90},
-      {x:2760,y:310,w:130,h:22,rangeX:0,rangeY:80,speed:60}
+      {x:1530,y:300,w:130,h:22,rangeX:150,rangeY:0,speed:85},
+      {x:2050,y:380,w:120,h:22,rangeX:0,rangeY:100,speed:70},
+      {x:2600,y:310,w:130,h:22,rangeX:140,rangeY:0,speed:95}
     ],
-    trampolines:[{x:2180,y:462}],
-    secrets:[{x:1150,y:430,kind:"heart"}]
+    trampolines:[{x:1250,y:462},{x:2860,y:462}],
+    items:[
+      {x:880,y:380,kind:"estrela"},
+      {x:1380,y:210,kind:"duplosalto"},
+      {x:1920,y:390,kind:"balao"},
+      {x:2460,y:210,kind:"medalha"},
+      {x:2740,y:330,kind:"brinquedo"},
+      {x:560,y:470,kind:"heart"}
+    ],
+    malwares:[
+      {x:1000,y:480,vx:192,pattern:"jumper"},
+      {x:1520,y:480,vx:-196,pattern:"jumper"},
+      {x:2040,y:480,vx:192,pattern:"jumper"},
+      {x:2560,y:480,vx:-188,pattern:"jumper"},
+      {x:2960,y:480,vx:190,pattern:"jumper"}
+    ],
+    secrets:[{x:1150,y:430,kind:"heart"},{x:2460,y:210,kind:"estrela",points:30}]
   },
   {
     name: "Nível 11 — O Direito à Identidade",
@@ -302,38 +414,47 @@ export const LEVELS = [
     name: "Nível 14 — Contra o Trabalho Infantil",
     artIdx:13, theme:13, quizTheme:"trabalho", worldW:3750,
     spawn:{x:480,y:460}, doorX:3350,
+    // Layout assimétrico: 3 zonas distintas — escada, plataformas saltadas, reta final
     platforms:[
       {x:520,y:520,w:960,h:28},
-      {x:880,y:440,w:200,h:22},
-      {x:1140,y:360,w:180,h:22},
-      {x:1400,y:440,w:200,h:22},
-      {x:1660,y:350,w:180,h:22},
-      {x:1920,y:440,w:200,h:22},
-      {x:2180,y:360,w:180,h:22},
-      {x:2440,y:440,w:200,h:22},
-      {x:2700,y:350,w:180,h:22},
-      {x:2960,y:440,w:200,h:22},
+      // Zona 1: escada rápida
+      {x:860,y:430,w:170,h:22},
+      {x:1080,y:340,w:160,h:22},
+      {x:1300,y:260,w:160,h:22},
+      // Zona 2: ilhas salteadas com vãos
+      {x:1580,y:380,w:145,h:22},
+      {x:1800,y:290,w:145,h:22},
+      {x:2040,y:400,w:145,h:22},
+      {x:2280,y:310,w:145,h:22},
+      // Zona 3: descida com plataformas móveis
+      {x:2560,y:430,w:170,h:22},
+      {x:2820,y:350,w:170,h:22},
+      {x:3100,y:440,w:170,h:22},
       {x:3430,y:520,w:960,h:28}
     ],
     movingPlatforms:[
-      {x:1270,y:400,w:130,h:22,rangeX:120,rangeY:0,speed:80},
-      {x:1790,y:380,w:130,h:22,rangeX:0,rangeY:80,speed:65},
-      {x:2310,y:400,w:130,h:22,rangeX:120,rangeY:0,speed:90},
-      {x:2830,y:380,w:130,h:22,rangeX:0,rangeY:80,speed:70}
+      {x:1440,y:320,w:130,h:22,rangeX:0,rangeY:90,speed:70},
+      {x:2160,y:350,w:120,h:22,rangeX:140,rangeY:0,speed:85},
+      {x:2960,y:390,w:130,h:22,rangeX:0,rangeY:80,speed:80}
     ],
+    trampolines:[{x:1700,y:462}],
     items:[
-      {x:880,y:390,kind:"balao"},{x:1140,y:310,kind:"estrela"},
-      {x:1660,y:300,kind:"duplosalto"},{x:2180,y:310,kind:"medalha"},
-      {x:2700,y:300,kind:"brinquedo"},{x:560,y:470,kind:"heart"}
+      {x:860,y:380,kind:"balao"},
+      {x:1300,y:210,kind:"estrela"},
+      {x:1800,y:240,kind:"duplosalto"},
+      {x:2280,y:260,kind:"medalha"},
+      {x:2820,y:300,kind:"brinquedo"},
+      {x:560,y:470,kind:"heart"}
     ],
     malwares:[
-      {x:980,y:480,vx:190,pattern:"patrol"},
-      {x:1520,y:480,vx:-194,pattern:"jumper"},
-      {x:2020,y:480,vx:192,pattern:"patrol"},
-      {x:2540,y:480,vx:-190,pattern:"jumper"},
-      {x:3050,y:480,vx:188,pattern:"patrol"}
+      {x:990,y:480,vx:192,pattern:"patrol"},
+      {x:1480,y:480,vx:-196,pattern:"jumper"},
+      {x:1920,y:480,vx:192,pattern:"jumper"},
+      {x:2400,y:480,vx:-190,pattern:"jumper"},
+      {x:2940,y:480,vx:188,pattern:"patrol"},
+      {x:3220,y:480,vx:-185,pattern:"jumper"}
     ],
-    secrets:[{x:2960,y:390,kind:"estrela",points:30}]
+    secrets:[{x:1300,y:210,kind:"coração"},{x:2560,y:385,kind:"estrela",points:35}]
   },
   {
     name: "Nível 15 — O Direito à Expressão",
