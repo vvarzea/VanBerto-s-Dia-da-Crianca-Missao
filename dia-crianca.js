@@ -229,32 +229,30 @@ window.addEventListener("DOMContentLoaded", () => {
     historyText.innerHTML = `<strong class="history-title">${entry.title}</strong>\n${entry.text}`;
     historyOverlay.classList.remove("hidden");
     if (sceneRef) sceneRef.physics.pause();
+    // Limpar listeners "pointerdown" pendentes do Phaser (ex: robotDance após boss)
+    // para evitar que um toque residual feche o overlay antes do jogador o ler
+    try { sceneRef?.input?.removeAllListeners("pointerdown"); } catch {}
     // Tap no fundo escuro (fora do cartão) também fecha — evita bloqueio em mobile
-    historyOverlay.onclick = null; // limpar handler anterior para evitar disparo duplo
-    // Delay de 400ms antes de registar o handler — evita que um toque residual
-    // da transição/robotDance feche o overlay imediatamente
+    historyOverlay.onclick = (e) => { if(e.target === historyOverlay) btnHistory.onclick?.(); };
     const _historyWatchdog = setTimeout(() => { if(!historyOverlay.classList.contains("hidden")) btnHistory.onclick?.(); }, 15000);
-    setTimeout(() => {
-      historyOverlay.onclick = (e) => { if(e.target === historyOverlay) btnHistory.onclick?.(); };
-      btnHistory.onclick = () => {
-        clearTimeout(_historyWatchdog);
-        historyOverlay.onclick = null;
-        historyOverlay.classList.add("hidden");
-        awaitingStory = false;
-        awaitingQuiz = false; // nível pronto a jogar — só agora desbloqueamos hits e porta
-        // Rastrear leitura de curiosidade para conquistas e estatísticas
-        onHistoryReadForAchievements();
-        if(typeof globalStats !== "undefined") {
-          globalStats.curiositiesRead += 1;
-          saveGlobalStats();
-        }
-        if (sceneRef && !pausedByTeacher
-            && startOverlay.classList.contains("hidden")
-            && quizOverlay.classList.contains("hidden"))
-          sceneRef.physics.resume();
-        onDone?.();
-      };
-    }, 400);
+    btnHistory.onclick = () => {
+      clearTimeout(_historyWatchdog);
+      historyOverlay.onclick = null;
+      historyOverlay.classList.add("hidden");
+      awaitingStory = false;
+      awaitingQuiz = false; // nível pronto a jogar — só agora desbloqueamos hits e porta
+      // Rastrear leitura de curiosidade para conquistas e estatísticas
+      onHistoryReadForAchievements();
+      if(typeof globalStats !== "undefined") {
+        globalStats.curiositiesRead += 1;
+        saveGlobalStats();
+      }
+      if (sceneRef && !pausedByTeacher
+          && startOverlay.classList.contains("hidden")
+          && quizOverlay.classList.contains("hidden"))
+        sceneRef.physics.resume();
+      onDone?.();
+    };
   }
 
   // ===== Dicas =====
@@ -1356,7 +1354,8 @@ window.addEventListener("DOMContentLoaded", () => {
          && document.getElementById("winOverlay").classList.contains("hidden")
          && (document.getElementById("levelTransitionOverlay")?.style.display || "none") === "none"
          && !document.getElementById("artefactRevealOverlay")?.classList.contains("show");
-      if (awaitingQuiz && !awaitingStory && !_overlayPaused && _noVisibleOverlay) {
+      // Watchdog cobre também awaitingStory preso (ex: historyOverlay fechado mas flag não limpa)
+      if ((awaitingQuiz || awaitingStory) && !_overlayPaused && _noVisibleOverlay) {
         if (!sceneRef._wdStart) sceneRef._wdStart = Date.now();
         if (Date.now() - sceneRef._wdStart > 3000) {
           sceneRef._wdStart = 0;
@@ -3449,10 +3448,10 @@ window.addEventListener("DOMContentLoaded", () => {
     }
 
     // Manter visível 3,2 s; clique/toque avança imediatamente.
-    // Imunidade de 500ms ao click — evita que o toque que fechou a robotDance
-    // ou o boss feche a transição antes do onMidpoint (loadLevel) correr.
+    // Imunidade de 600ms ao click — evita que o toque que fechou a robotDance
+    // propague e feche a transição antes do onMidpoint (loadLevel) correr.
     const hideTimer = setTimeout(hidePanel, 3200);
-    setTimeout(() => { ov.addEventListener("click", hidePanel); }, 500);
+    setTimeout(() => { ov.addEventListener("click", hidePanel); }, 600);
 
     ov._midTimer  = midTimer;
     ov._hideTimer = hideTimer;
@@ -3541,9 +3540,9 @@ window.addEventListener("DOMContentLoaded", () => {
     // Dança dura 3,5s — suficiente para celebrar sem frustrar em mobile
     const _danceTimer=scene.time.delayedCall(3500,finishDance);
     // Toque/clique em qualquer sítio avança imediatamente.
-    // Delay de 600ms para evitar que o mesmo toque que derrota o boss
-    // feche imediatamente a dança e propague para o overlay seguinte.
-    scene.time.delayedCall(600,()=>{ if(!_danceDone) scene.input.once("pointerdown",finishDance); });
+    // Delay de 600ms para evitar que o toque que derrotou o boss
+    // propague para a dança e a feche imediatamente.
+    setTimeout(()=>{ if(!_danceDone) scene.input.once("pointerdown",finishDance); },600);
   }
 
   function startConfetti(durationMs=5000){
