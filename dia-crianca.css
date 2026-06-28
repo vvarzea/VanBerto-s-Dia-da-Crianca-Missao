@@ -1998,33 +1998,36 @@ body.hc-mode .ar-speech { color: #fff !important; border-color: #fff !important;
    BÓNUS DE CONJUNTO
    ===================================================== */
 #setBonusOverlay {
-  position: fixed; inset: 0;
-  display: none; align-items: center; justify-content: center;
+  /* Canto inferior direito — não tapa o jogo */
+  position: fixed;
+  bottom: 90px; right: 14px;
+  display: none;
   z-index: 8900; pointer-events: none;
 }
-#setBonusOverlay.show { display: flex; }
+#setBonusOverlay.show { display: block; }
 #setBonusPanel {
   background: linear-gradient(145deg, #1a0535 0%, #0d0220 100%);
-  border: 3px solid #ffd700;
-  border-radius: 18px;
-  padding: 18px 30px;
+  border: 2px solid #ffd700;
+  border-radius: 14px;
+  padding: 10px 16px;
   text-align: center;
   font-family: 'Baloo 2', sans-serif;
+  min-width: 180px; max-width: 220px;
   box-shadow:
-    0 0 0 3px rgba(255,107,53,0.5),
-    0 0 60px rgba(255,215,0,0.45),
-    8px 8px 0 rgba(0,0,0,0.5);
-  animation: sbPop 0.4s cubic-bezier(.34,1.56,.64,1) both,
-             sbFade 0.45s ease-in 3.35s both;
+    0 0 0 2px rgba(255,107,53,0.4),
+    0 0 24px rgba(255,215,0,0.35),
+    4px 4px 0 rgba(0,0,0,0.5);
+  animation: sbPop 0.35s cubic-bezier(.34,1.56,.64,1) both,
+             sbFade 0.4s ease-in 3.35s both;
 }
-@keyframes sbPop  { from{transform:scale(0.7) translateY(30px);opacity:0} to{transform:scale(1) translateY(0);opacity:1} }
-@keyframes sbFade { from{opacity:1} to{opacity:0;transform:scale(0.88) translateY(-8px)} }
-.sb-icon  { font-size: 46px; margin: 0 0 4px; animation: sbIconPulse 0.8s ease-in-out infinite alternate; }
-@keyframes sbIconPulse { from{transform:scale(1) rotate(-5deg)} to{transform:scale(1.15) rotate(5deg)} }
-.sb-label { font-size: 11px; font-weight: 800; color: #ff6b35; letter-spacing: 2px; text-transform: uppercase; margin: 0 0 4px; }
-.sb-name  { font-size: 18px; font-weight: 900; color: #ffd700; margin: 0 0 6px; text-shadow: 0 0 14px rgba(255,215,0,0.6); }
-.sb-bonus { font-size: 22px; font-weight: 900; color: #a0ffb0; margin: 0 0 6px; text-shadow: 0 0 14px rgba(128,255,176,0.6); }
-.sb-msg   { font-size: 13px; font-style: italic; color: #ffe0d0; margin: 0; }
+@keyframes sbPop  { from{transform:scale(0.7) translateX(30px);opacity:0} to{transform:scale(1) translateX(0);opacity:1} }
+@keyframes sbFade { from{opacity:1} to{opacity:0;transform:scale(0.88) translateX(20px)} }
+.sb-icon  { font-size: 30px; margin: 0 0 2px; animation: sbIconPulse 0.8s ease-in-out infinite alternate; }
+@keyframes sbIconPulse { from{transform:scale(1) rotate(-5deg)} to{transform:scale(1.12) rotate(5deg)} }
+.sb-label { font-size: 9px; font-weight: 800; color: #ff6b35; letter-spacing: 2px; text-transform: uppercase; margin: 0 0 2px; }
+.sb-name  { font-size: 13px; font-weight: 900; color: #ffd700; margin: 0 0 3px; text-shadow: 0 0 10px rgba(255,215,0,0.5); }
+.sb-bonus { font-size: 16px; font-weight: 900; color: #a0ffb0; margin: 0 0 3px; text-shadow: 0 0 10px rgba(128,255,176,0.5); }
+.sb-msg   { font-size: 10px; font-style: italic; color: #ffe0d0; margin: 0; }
 body.hc-mode #setBonusPanel { background:#000 !important; border-color:#ffff00 !important; }
 body.hc-mode .sb-name, body.hc-mode .sb-bonus { color:#ffff00 !important; }
 
