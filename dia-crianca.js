@@ -7272,16 +7272,13 @@ window.addEventListener("DOMContentLoaded", () => {
     Object.keys(usedQuizByLevel).forEach(k=>usedQuizByLevel[k].clear());
     Object.keys(usedQuizByTheme).forEach(k=>usedQuizByTheme[k].clear());
     scoreText.setText(`🌟 Pontos: ${score}`);updateHearts();
-    // Recomeçar no nível actual (não forçar nível 0 — boss incluído)
-    const retryLevel = currentLevel || 0;
+    // Se o game over aconteceu no boss final, voltar ao nível 0.
+    // Recarregar o boss directamente bloqueia (estado da cena destruído pelo showGameOver).
+    // Para qualquer outro nível, recomeçar no nível actual.
+    const retryLevel = (LEVELS[currentLevel]?.isBoss) ? 0 : (currentLevel || 0);
+    if(LEVELS[currentLevel]?.isBoss) currentLevel = 0;
     loadLevel(sceneRef, retryLevel);
-    // Para boss: não chamar showHistory (bloqueia) — retomar directo
-    if(LEVELS[retryLevel]?.isBoss){
-      awaitingQuiz=false; awaitingStory=false;
-      if(!pausedByTeacher) sceneRef.physics.resume();
-    } else {
-      showHistory(retryLevel, () => { awaitingQuiz=false; if(!pausedByTeacher) sceneRef.physics.resume(); });
-    }
+    showHistory(retryLevel, () => { awaitingQuiz=false; if(!pausedByTeacher) sceneRef.physics.resume(); });
     saveGame();
   };
   if(btnExit) btnExit.onclick=()=>{

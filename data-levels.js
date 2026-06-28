@@ -531,31 +531,20 @@ export const LEVELS = [
     theme:19, quizTheme:"digital",
     worldW:960, spawn:{x:80,y:430}, doorX:-999,
     platforms:[
-      // ── Chão da arena (dividido em 3 secções — vão no meio obriga a usar trampolim)
-      {x:220,y:510,w:440,h:28},   // chão esquerdo
-      {x:740,y:510,w:440,h:28},   // chão direito
-      // ── Nível 2: plataformas médias laterais ──
-      {x:130,y:390,w:180,h:22},   // esquerda baixa
-      {x:830,y:390,w:180,h:22},   // direita baixa
-      {x:360,y:410,w:150,h:22},   // esquerda central
-      {x:600,y:410,w:150,h:22},   // direita central
-      // ── Nível 3: plataformas altas laterais ──
-      {x:180,y:270,w:160,h:22},   // esquerda alta
-      {x:780,y:270,w:160,h:22},   // direita alta
-      // ── Plataforma do topo ── (boss spawna aqui)
-      {x:480,y:190,w:240,h:22},   // topo central — o trono do Destruidor
+      // ── Chão contínuo — sem vão no meio, fácil de correr e esquivar ──
+      {x:480,y:510,w:960,h:28},   // chão completo
+      // ── Nível médio: apenas 2 plataformas laterais ──
+      {x:160,y:360,w:180,h:22},   // esquerda
+      {x:800,y:360,w:180,h:22},   // direita
+      // ── Topo: plataforma central onde o boss spawna ──
+      {x:480,y:210,w:220,h:22},   // trono do Destruidor
     ],
-    // Plataformas móveis — tornam a arena mais caótica na fase 2/3
+    // Uma plataforma móvel central — ajuda a chegar ao topo mas sem sobrelotação
     movingPlatforms:[
-      {x:480,y:340,w:160,h:22,rangeX:160,rangeY:0,speed:90},  // plataforma central oscilante
-      {x:300,y:310,w:120,h:22,rangeX:0,rangeY:70,speed:70},   // elevador esquerdo
-      {x:660,y:310,w:120,h:22,rangeX:0,rangeY:70,speed:75},   // elevador direito
+      {x:480,y:340,w:160,h:22,rangeX:140,rangeY:0,speed:80},  // ponte oscilante para o topo
     ],
-    // Trampolim no vão central — obriga a usar estratégia
-    trampolines:[{x:480,y:500}],
-    // Zona de perigo — lava no vão central (decorativa, sem dano na arena do boss
-    // pois o dano é gerido pelo bossPlayerHit; a "lava" é visual para criar tensão)
-    hazards:[{x:480,y:515,w:100,h:16,kind:"lava"}],
+    trampolines:[],
+    hazards:[],
     items:[], malwares:[],
   }
 ];
