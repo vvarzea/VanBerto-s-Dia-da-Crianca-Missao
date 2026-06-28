@@ -49,7 +49,7 @@ export const LEVELS = [
       {x:1200,y:480,vx:0,pattern:"mini"},
       {x:1920,y:480,vx:-140,pattern:"patrol"}
     ],
-    secrets:[{x:1680,y:270,kind:"estrela",points:15}]
+    secrets:[{x:870,y:440,kind:"estrela",points:15}]
   },
   {
     name: "Nível 2 — A Declaração de 1959",
@@ -185,7 +185,7 @@ export const LEVELS = [
       {x:2180,y:480,vx:168,pattern:"patrol"},
       {x:2600,y:480,vx:-165,pattern:"jumper"}
     ],
-    secrets:[{x:740,y:470,kind:"estrela",points:20},{x:1780,y:210,kind:"balao"}]
+    secrets:[{x:740,y:460,kind:"estrela",points:20}]
   },
   {
     name: "Nível 6 — O Direito à Saúde",
@@ -454,7 +454,7 @@ export const LEVELS = [
       {x:2940,y:480,vx:188,pattern:"patrol"},
       {x:3220,y:480,vx:-185,pattern:"jumper"}
     ],
-    secrets:[{x:1300,y:210,kind:"coração"},{x:2560,y:385,kind:"estrela",points:35}]
+    secrets:[{x:1300,y:210,kind:"heart"},{x:2560,y:385,kind:"estrela",points:35}]
   },
   {
     name: "Nível 15 — O Direito à Expressão",
