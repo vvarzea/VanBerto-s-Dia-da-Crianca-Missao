@@ -80,6 +80,7 @@ export const LEVELS = [
     ],
     secrets:[{x:1420,y:345,kind:"estrela",points:20}]
   },
+  { name:"Boss — Monstro da Ignorância",isBoss:true,bossKey:"ignorancia",bossStagger:true,theme:1,quizTheme:"educacao",worldW:960,spawn:{x:160,y:420},doorX:-999,platforms:[{x:480,y:510,w:960,h:28},{x:180,y:390,w:180,h:22},{x:780,y:390,w:180,h:22},{x:480,y:300,w:200,h:22}],items:[],malwares:[] },
   {
     name: "Nível 3 — A Convenção de 1989",
     artIdx:2, theme:2, quizTheme:"convencao", worldW:2900,
@@ -225,6 +226,19 @@ export const LEVELS = [
       {x:2700,y:480,vx:-168,pattern:"jumper"}
     ],
     secrets:[{x:2300,y:395,kind:"estrela",points:25}]
+  },
+  {
+    name: "Boss — Gigante da Violência",
+    isBoss:true, bossKey:"violencia", bossStaticItems:true,
+    theme:6, quizTheme:"protecao",
+    worldW:960, spawn:{x:160,y:420}, doorX:-999,
+    platforms:[
+      {x:480,y:510,w:960,h:28},
+      {x:160,y:380,w:200,h:22},
+      {x:480,y:290,w:220,h:22},
+      {x:800,y:380,w:200,h:22},
+    ],
+    items:[], malwares:[],
   },
   {
     name: "Nível 7 — O Direito à Proteção",

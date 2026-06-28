@@ -229,6 +229,8 @@ window.addEventListener("DOMContentLoaded", () => {
     historyText.innerHTML = `<strong class="history-title">${entry.title}</strong>\n${entry.text}`;
     historyOverlay.classList.remove("hidden");
     if (sceneRef) sceneRef.physics.pause();
+    // Limpar listeners pointerdown do Phaser (ex: toque residual da robotDance)
+    try { sceneRef?.input?.removeAllListeners("pointerdown"); } catch {}
     // Tap no fundo escuro (fora do cartão) também fecha — evita bloqueio em mobile
     historyOverlay.onclick = (e) => { if(e.target === historyOverlay) btnHistory.onclick?.(); };
     const _historyWatchdog = setTimeout(() => { if(!historyOverlay.classList.contains("hidden")) btnHistory.onclick?.(); }, 15000);
@@ -1351,7 +1353,8 @@ window.addEventListener("DOMContentLoaded", () => {
          && document.getElementById("winOverlay").classList.contains("hidden")
          && (document.getElementById("levelTransitionOverlay")?.style.display || "none") === "none"
          && !document.getElementById("artefactRevealOverlay")?.classList.contains("show");
-      if (awaitingQuiz && !awaitingStory && !_overlayPaused && _noVisibleOverlay) {
+      // Watchdog cobre awaitingQuiz E awaitingStory presos sem overlay visível
+      if ((awaitingQuiz || awaitingStory) && !_overlayPaused && _noVisibleOverlay) {
         if (!sceneRef._wdStart) sceneRef._wdStart = Date.now();
         if (Date.now() - sceneRef._wdStart > 3000) {
           sceneRef._wdStart = 0;
@@ -2657,6 +2660,22 @@ window.addEventListener("DOMContentLoaded", () => {
     else if(bossKey==="ciberbullying") _setupBossCiberbullying(scene,L);
 
     _showBossHUD(L);
+
+    // ── Arranque autónomo do boss ──────────────────────────────
+    // loadBossLevel é chamado no onMidpoint da transição (t≈350ms).
+    // O onComplete (t≈3200ms) chama showHistory que para um boss
+    // devolve onDone() imediatamente e faz physics.resume() —
+    // mas só se awaitingQuiz=false. Garantimos isso aqui com um
+    // pequeno delay que deixa a transição fechar antes de arrancar.
+    scene.time.delayedCall(3500, () => {
+      if (!_bossActive && LEVELS[currentLevel]?.isBoss) {
+        booksCollected=0; _bossActive=true; _bossStunned=false;
+        _bossActiveSince=scene.time?.now||0;
+      }
+      awaitingQuiz=false;
+      awaitingStory=false;
+      if (!pausedByTeacher) scene.physics.resume();
+    });
   }
 
   // ── Boss 1: Monstro da Ignorância ───────────────────────────
@@ -3443,9 +3462,11 @@ window.addEventListener("DOMContentLoaded", () => {
       setTimeout(()=>{ ov.style.display = "none"; onComplete?.(); }, 320);
     }
 
-    // Manter visível 3,2 s; clique/toque avança imediatamente
+    // Manter visível 3,2 s; clique/toque avança imediatamente.
+    // Imunidade 600ms — evita toque residual da robotDance fechar a transição
+    // antes do onMidpoint (loadLevel) correr.
     const hideTimer = setTimeout(hidePanel, 3200);
-    ov.addEventListener("click", hidePanel);
+    setTimeout(() => { ov.addEventListener("click", hidePanel); }, 600);
 
     ov._midTimer  = midTimer;
     ov._hideTimer = hideTimer;
@@ -3533,8 +3554,8 @@ window.addEventListener("DOMContentLoaded", () => {
     }
     // Dança dura 3,5s — suficiente para celebrar sem frustrar em mobile
     const _danceTimer=scene.time.delayedCall(3500,finishDance);
-    // Toque/clique em qualquer sítio avança imediatamente
-    scene.input.once("pointerdown",finishDance);
+    // Delay 600ms — evita que o toque que derrotou o boss feche imediatamente a dança
+    setTimeout(()=>{ if(!_danceDone) scene.input.once("pointerdown",finishDance); },600);
   }
 
   function startConfetti(durationMs=5000){
