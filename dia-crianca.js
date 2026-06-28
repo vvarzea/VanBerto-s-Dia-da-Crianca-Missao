@@ -876,18 +876,26 @@ window.addEventListener("DOMContentLoaded", () => {
   // a saltar; ativa-se via L.bossStagger (um item de cada vez, sem repetir o último).
   const BOSS_ITEM_POINTS={
     ignorancia:[
-      {x:180,y:345},  // sobre a plataforma esquerda
-      {x:480,y:255},  // sobre a plataforma central alta
-      {x:780,y:345},  // sobre a plataforma direita
-      {x:330,y:460},  // chão, perto do centro-esquerda
-      {x:630,y:460},  // chão, perto do centro-direita
+      {x:180,y:345},
+      {x:480,y:255},
+      {x:780,y:345},
+      {x:330,y:460},
+      {x:630,y:460},
     ],
     ciberbullying:[
-      {x:150,y:335},  // plataforma esquerda alta
-      {x:480,y:245},  // plataforma central, a mais alta da arena
-      {x:810,y:335},  // plataforma direita alta
-      {x:300,y:395},  // plataforma baixa esquerda
-      {x:660,y:395},  // plataforma baixa direita
+      {x:150,y:335},
+      {x:480,y:245},
+      {x:810,y:335},
+      {x:300,y:395},
+      {x:660,y:395},
+    ],
+    // Boss Final — 5 pontos em posições variadas pela arena
+    direitos:[
+      {x:480,y:215},  // topo da plataforma central
+      {x:140,y:330},  // zona esquerda (plataforma móvel)
+      {x:820,y:330},  // zona direita (plataforma móvel)
+      {x:300,y:460},  // chão esquerdo
+      {x:660,y:460},  // chão direito
     ],
   };
   let bossShields=[]; // sprites estáticos do boss da Violência (mecânica própria, ver _setupBossViolencia)
@@ -2629,8 +2637,10 @@ window.addEventListener("DOMContentLoaded", () => {
     scene.physics.pause();
     if(powerHaloGfx)powerHaloGfx.setVisible(true);
     if(shadowGfx)shadowGfx.setVisible(true);
-    itemsCollected=0;itemsTotal=BOSS_BOOKS_NEEDED;collectedItemIndices=new Set();
-    const BOSS_TIPS={ignorancia:"⚔️ Apanha os 3 livros! Salta em cima do boss para o atordoar!",violencia:"🛡️ Fica junto a cada escudo para o ativar! Cuidado com os saltos!",ciberbullying:"💻 Apanha os dispositivos! Salta em cima — atenção ao modo anónimo!"};
+    // Boss "direitos" tem 5 itens em vez de 3
+    const _bossItemCount=(L.bossKey==="direitos")?5:BOSS_BOOKS_NEEDED;
+    itemsCollected=0;itemsTotal=_bossItemCount;collectedItemIndices=new Set();
+    const BOSS_TIPS={ignorancia:"⚔️ Apanha os 3 livros! Salta em cima do boss para o atordoar!",violencia:"🛡️ Fica junto a cada escudo para o ativar! Cuidado com os saltos!",ciberbullying:"💻 Apanha os dispositivos! Salta em cima — atenção ao modo anónimo!",direitos:"🌟 Recupera os 5 DIREITOS! Salta em cima do Destruidor para o atordoar — fica mais furioso a cada direito!"};
     currentLevelTip=BOSS_TIPS[L.bossKey||"ignorancia"]||"⚔️ Derrota o boss!";
     if(tipText)tipText.setText(currentLevelTip);
     _hudDirty=true;updateHUD(L);
@@ -2885,9 +2895,151 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   // ── Funções partilhadas pelos 3 bosses ──────────────────────
+  // ══════════════════════════════════════════════════════════════
+  // BOSS FINAL — Destruidor dos Direitos
+  // 5 direitos para recuperar, 2 fases, projéteis em padrões,
+  // plataformas móveis na arena, mensagens ligadas aos direitos.
+  // ══════════════════════════════════════════════════════════════
+  function _setupBossDireitos(scene,L){
+    // Os direitos que o boss roubou — exibidos nas mensagens
+    const DIREITOS_ROUBADOS=[
+      "📚 Direito à Educação",
+      "🛡️ Direito à Proteção",
+      "🗣️ Direito a Ser Ouvido",
+      "🌱 Direito ao Futuro",
+      "🌍 Direito à Igualdade",
+    ];
+
+    // Boss maior e mais ameaçador — roxo escuro
+    bossSprite=scene.physics.add.sprite(L.worldW/2,300,"vilao_bug");
+    bossSprite.setDisplaySize(220,220).body.setSize(180,180,true);
+    bossSprite.setCollideWorldBounds(true).setDepth(3).setTint(0x1a0030);
+    scene.physics.add.collider(bossSprite,platforms);
+
+    // Animação de ameaça — pulsa e treme
+    scene.tweens.add({targets:bossSprite,scaleX:{from:1,to:1.08},scaleY:{from:1.08,to:1},duration:500,yoyo:true,repeat:-1,ease:"Sine.easeInOut"});
+    scene.tweens.add({targets:bossSprite,angle:{from:-3,to:3},duration:200,yoyo:true,repeat:-1});
+
+    // Movimento — fica mais rápido a cada direito recuperado (Fase 2 a partir do 3º)
+    let bossDir=1;
+    bossTimers.push(scene.time.addEvent({delay:50,loop:true,callback:()=>{
+      if(!bossSprite?.active||!_bossActive||_bossStunned||_bossAnon)return;
+      if(bossSprite.x>L.worldW-120)bossDir=-1;
+      if(bossSprite.x<120)bossDir=1;
+      const elapsedSec=(scene.time.now-_bossActiveSince)/1000;
+      const timeFactor=Math.min(elapsedSec/60,1)*0.6;
+      // Fase 2 (3+ direitos): muito mais rápido
+      const faseBonus=booksCollected>=3?1.6:1.0;
+      const speed=(65+booksCollected*35)*(1+timeFactor)*faseBonus;
+      bossSprite.setVelocityX(speed*bossDir);
+      bossSprite.setFlipX(bossDir<0);
+    }}));
+
+    // Stomp para atordoar
+    scene.physics.add.overlap(player,bossSprite,(p,b)=>{
+      if(!_bossActive||invuln||_overlayPaused||pausedByTeacher)return;
+      if(_bossStunned)return;
+      const bossTop=b.y-(b.displayHeight/2);
+      const isStomp=p.body.velocity.y>30&&p.y<bossTop+30;
+      if(isStomp){_bossStomp(scene,L);return;}
+      _bossPlayerHit(scene,L);
+    },null,scene);
+
+    // Projéteis — Fase 1: direcionados; Fase 2: leque de 3
+    let _lastShot=0;
+    bossTimers.push(scene.time.addEvent({delay:100,loop:true,callback:()=>{
+      if(!bossSprite?.active||!_bossActive||_bossStunned)return;
+      const now=scene.time.now,elapsedSec=(now-_bossActiveSince)/1000;
+      // Fase 2 cadência mais rápida
+      const cadenciaBase=booksCollected>=3?800:1400;
+      const cadencia=Math.max(500,cadenciaBase-booksCollected*100-elapsedSec*8);
+      if(now-_lastShot<cadencia)return;_lastShot=now;
+
+      if(booksCollected>=3){
+        // Fase 2: leque de 3 projéteis
+        const angles=[-30,0,30];
+        angles.forEach(ang=>{
+          const rad=ang*Math.PI/180;
+          const dx=(player.x-bossSprite.x);
+          const dy=180;
+          const len=Math.sqrt(dx*dx+dy*dy)||1;
+          const proj=bossProjectiles.create(bossSprite.x,bossSprite.y-50,"boss_book_closed");
+          proj.setDisplaySize(30,24).setDepth(4).setTint(0xff0066);
+          const spd=260;
+          proj.setVelocity(
+            Math.cos(rad)*(dx/len)*spd - Math.sin(rad)*(dy/len)*spd,
+            Math.sin(rad)*(dx/len)*spd + Math.cos(rad)*(dy/len)*spd
+          );
+          scene.tweens.add({targets:proj,angle:{from:0,to:360},duration:400,repeat:-1});
+          scene.time.delayedCall(2500,()=>{if(proj.active)proj.destroy();});
+        });
+      } else {
+        // Fase 1: projétil simples direcionado
+        const proj=bossProjectiles.create(bossSprite.x,bossSprite.y-50,"boss_book_closed");
+        proj.setDisplaySize(34,26).setDepth(4).setTint(0xaa00ff);
+        const dx=player.x-bossSprite.x,dy=player.y-bossSprite.y,len=Math.sqrt(dx*dx+dy*dy)||1;
+        proj.setVelocity((dx/len)*220,(dy/len)*220-60);
+        scene.tweens.add({targets:proj,angle:{from:0,to:360},duration:500,repeat:-1});
+        scene.time.delayedCall(3000,()=>{if(proj.active)proj.destroy();});
+      }
+    }}));
+
+    scene.physics.add.collider(bossProjectiles,platforms,(proj)=>{scene.time.delayedCall(400,()=>{if(proj.active)proj.destroy();});});
+    scene.physics.add.overlap(player,bossProjectiles,(p,proj)=>{if(!_bossActive||invuln||_overlayPaused||pausedByTeacher)return;proj.destroy();_bossPlayerHit(scene,L);},null,scene);
+
+    // Direitos como colectáveis — um de cada vez
+    _spawnBossItems(scene,"boss_book_open",L);
+    scene.physics.add.overlap(player,bossBooks,(p,book)=>{
+      if(!_bossActive||book.getData("collected"))return;
+      book.setData("collected",true);
+      scene.tweens.add({targets:book,y:book.y-60,alpha:0,scaleX:2,scaleY:2,duration:400,onComplete:()=>book.destroy()});
+      SFX.coin();
+      // Mensagem do VanBerto com o direito recuperado
+      const dirMsg=DIREITOS_ROUBADOS[booksCollected]||"⭐ Direito recuperado!";
+      vbSay("RECUPERASTE o "+dirMsg+"! 🌟 Faltam "+(4-booksCollected)+"!","good",3000);
+      _bossItemCollected(scene,L);
+      // Na Fase 2, o boss fica furioso visualmente
+      if(booksCollected===3){
+        scene.cameras.main.shake(400,0.018);
+        bossSprite.setTint(0xff0040);
+        showFloat(scene,480,200,"💀 FASE 2 — O Destruidor está FURIOSO!","#ff0040");
+        vbSay("Cuidado! Agora tem projéteis em LEQUE! Fica atento! 💀","hit",4000);
+      }
+    },null,scene);
+
+    // Modo Anónimo — desaparece e reaparece (Fase 2: mais frequente)
+    const ANON_SPOTS=[130,280,480,660,830];
+    bossTimers.push(scene.time.addEvent({delay:8000,startAt:4000,loop:true,callback:()=>{
+      if(!bossSprite?.active||!_bossActive||_bossStunned||_bossAnon)return;
+      // Fase 2: modo anónimo mais frequente
+      if(booksCollected>=3&&Math.random()<0.4)return; // às vezes salta na fase 2
+      _bossAnon=true;
+      scene.tweens.add({targets:bossSprite,alpha:0.08,duration:250});
+      bossSprite.body.enable=false;
+      showFloat(scene,bossSprite.x,bossSprite.y-100,"💀 Desapareceu!","#aa00ff");
+      const anonDur=booksCollected>=3?900:1400;
+      scene.time.delayedCall(anonDur,()=>{
+        if(!bossSprite?.active)return;
+        const nx=ANON_SPOTS[Math.floor(Math.random()*ANON_SPOTS.length)];
+        bossSprite.setPosition(nx,280);
+        bossSprite.body.enable=true;
+        scene.tweens.add({targets:bossSprite,alpha:1,duration:200});
+        scene.cameras.main.shake(120,0.007);
+        vbSay("Apareceu! Cuidado com os projéteis! ⚡","wrong",2000);
+        _bossAnon=false;
+      });
+    }}));
+
+    // Mensagem inicial
+    bossTimers.push(scene.time.delayedCall(800,()=>vbSay(
+      "O Destruidor roubou TODOS os direitos! 💀 Recupera os 5 direitos — salta-lhe em cima para o atordoar! Cuidado: fica FURIOSO a partir do 3.º!",
+      "wrong",7000
+    )));
+  }
+
   function _bossBaseTint(L){
     const k=L.bossKey||"ignorancia";
-    return k==="violencia"?0x2a0040:k==="ciberbullying"?0x001a40:0x660000;
+    return k==="violencia"?0x2a0040:k==="ciberbullying"?0x001a40:k==="direitos"?0x1a0030:0x660000;
   }
 
   function _spawnBossItems(scene,texKey,L){
@@ -2952,13 +3104,14 @@ window.addEventListener("DOMContentLoaded", () => {
     const flash=scene.add.rectangle(480,270,960,540,0xff0000,0.40).setDepth(20);
     scene.tweens.add({targets:flash,alpha:0,duration:450,onComplete:()=>flash.destroy()});
     showFloat(scene,480,240,"💀 Recomeças do zero!","#ff4444");
-    vbSay("Perdeste uma vida — recomeças do zero! Consegues apanhar os "+BOSS_BOOKS_NEEDED+" sem morrer? 💪","hit",3500);
+    vbSay("Perdeste uma vida — recomeças do zero! Consegues apanhar os "+itemsTotal+" sem morrer? 💪","hit",3500);
   }
 
   function _bossItemKey(L){
     const k=L.bossKey||"ignorancia";
     if(k==="violencia")return "boss_shield";
     if(k==="ciberbullying")return "boss_device";
+    if(k==="direitos")return "boss_book_open"; // reutiliza o livro aberto como "direito recuperado"
     return "boss_book_open";
   }
 
@@ -2976,13 +3129,13 @@ window.addEventListener("DOMContentLoaded", () => {
       });
     }
     SFX.hit();
-    const restam=BOSS_BOOKS_NEEDED-booksCollected;
-    const itemName=L.bossKey==="violencia"?"escudo":L.bossKey==="ciberbullying"?"dispositivo":"livro";
+    const restam=itemsTotal-booksCollected;
+    const itemName=L.bossKey==="violencia"?"escudo":L.bossKey==="ciberbullying"?"dispositivo":L.bossKey==="direitos"?"direito":"livro";
     const msg=restam>0
-      ?(booksCollected)+"/"+BOSS_BOOKS_NEEDED+" — Faltam "+restam+" "+itemName+(restam>1?"s":"")+"!"
-      :BOSS_BOOKS_NEEDED+"/"+BOSS_BOOKS_NEEDED+" — VENCESTE! 🏆";
+      ?(booksCollected)+"/"+itemsTotal+" — Faltam "+restam+" "+itemName+(restam>1?"s":"")+"!"
+      :itemsTotal+"/"+itemsTotal+" — VENCESTE! 🏆";
     showFloat(scene,bossSprite?.x||480,(bossSprite?.y||370)-90,"📖 "+msg,"#ffe000");
-    if(booksCollected>=BOSS_BOOKS_NEEDED){_bossDefeated(scene,L);}
+    if(booksCollected>=itemsTotal){_bossDefeated(scene,L);}
     else{
       vbSay(restam===2?"Boa! 1 apanhado — faltam "+restam+"! Não morras agora! 💪":"Incrível! Só falta 1! Cuidado com os projéteis! ⭐","good",2800);
       if(!L.bossStaticItems)scene.time.delayedCall(500,()=>_spawnBossItems(scene,_bossItemKey(L),L));
@@ -3002,7 +3155,7 @@ window.addEventListener("DOMContentLoaded", () => {
     });}
     scene.tweens.add({targets:bossSprite,alpha:0,scaleX:2.5,scaleY:2.5,duration:600,ease:"Quad.easeOut",onComplete:()=>{bossSprite?.destroy();bossSprite=null;}});
     _hideBossHUD();
-    const bossNames={ignorancia:"Monstro da Ignorância",violencia:"Gigante da Violência",ciberbullying:"Senhor do Ciberbullying"};
+    const bossNames={ignorancia:"Monstro da Ignorância",violencia:"Gigante da Violência",ciberbullying:"Senhor do Ciberbullying",direitos:"Destruidor dos Direitos"};
     const nome=bossNames[L.bossKey||"ignorancia"]||"Boss";
     vbSay("LENDÁRIO! Derrotaste o "+nome+"! 🏆","perfect",4000);
     SFX.starMelody?.();
@@ -3014,6 +3167,7 @@ window.addEventListener("DOMContentLoaded", () => {
       ignorancia:{emoji:"📚",label:"Direito à Educação"},
       violencia:{emoji:"🛡️",label:"Direito à Proteção"},
       ciberbullying:{emoji:"🌍",label:"Todos os Direitos da Criança"},
+      direitos:{emoji:"🌟",label:"TODOS os Direitos das Crianças"},
     }[L.bossKey||"ignorancia"];
     if(direitoDefendido)scene.time.delayedCall(700,()=>showFloat(scene,480,200,direitoDefendido.emoji+" Direito Defendido: "+direitoDefendido.label,"#7CFFB2"));
     scene.time.delayedCall(900,()=>robotDance(scene,()=>{
@@ -3066,8 +3220,8 @@ window.addEventListener("DOMContentLoaded", () => {
       hud.style.cssText="position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:9000;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:5px;font-family:'Baloo 2',sans-serif;";
       document.body.appendChild(hud);
     }
-    const bossNames={ignorancia:"👹 Monstro da Ignorância",violencia:"💪 Gigante da Violência",ciberbullying:"💻 Senhor do Ciberbullying"};
-    const itemLabels={ignorancia:"livros abertos",violencia:"escudos",ciberbullying:"dispositivos seguros"};
+    const bossNames={ignorancia:"👹 Monstro da Ignorância",violencia:"💪 Gigante da Violência",ciberbullying:"💻 Senhor do Ciberbullying",direitos:"💀 Destruidor dos Direitos"};
+    const itemLabels={ignorancia:"livros abertos",violencia:"escudos",ciberbullying:"dispositivos seguros",direitos:"direitos recuperados"};
     const nome=bossNames[L.bossKey||"ignorancia"];
     const label=itemLabels[L.bossKey||"ignorancia"];
     hud.innerHTML=`
@@ -3081,10 +3235,10 @@ window.addEventListener("DOMContentLoaded", () => {
     const cnt=document.getElementById("bossBookCount");
     if(!cnt)return;
     const L=LEVELS[currentLevel];
-    const icons={ignorancia:["📖","📕"],violencia:["🛡️","⬛"],ciberbullying:["💻","📵"]};
+    const icons={ignorancia:["📖","📕"],violencia:["🛡️","⬛"],ciberbullying:["💻","📵"],direitos:["⭐","☆"]};
     const k=L?.bossKey||"ignorancia";
     const [on,off]=icons[k]||["📖","📕"];
-    const label={ignorancia:"livros abertos",violencia:"escudos",ciberbullying:"dispositivos seguros"}[k]||"itens";
+    const label={ignorancia:"livros abertos",violencia:"escudos",ciberbullying:"dispositivos seguros",direitos:"direitos recuperados"}[k]||"itens";
     cnt.textContent=on.repeat(booksCollected)+off.repeat(BOSS_BOOKS_NEEDED-booksCollected)+" "+booksCollected+"/"+BOSS_BOOKS_NEEDED+" "+label;
   }
 
@@ -3452,6 +3606,7 @@ window.addEventListener("DOMContentLoaded", () => {
         ignorancia: "⚔️ O Monstro da Ignorância espera-te! Apanha os livros!",
         violencia:  "🛡️ O Gigante da Violência está aqui! Ativa os escudos!",
         ciberbullying: "💻 O Ciberbullying ataca! Protege os direitos digitais!",
+        direitos: "💀 O Destruidor dos Direitos roubou TUDO! Recupera os 5 direitos!",
       };
       elPhrase.textContent = BOSS_ENTRY_PHRASES[nextL.bossKey] || "⚔️ Prepara-te para o combate final!";
     } else {

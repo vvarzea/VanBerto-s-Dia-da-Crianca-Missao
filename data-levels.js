@@ -526,17 +526,19 @@ export const LEVELS = [
     ]
   },
   {
-    name:"Boss — Senhor do Ciberbullying",
-    isBoss:true, bossKey:"ciberbullying", bossStagger:true,
+    name:"Boss Final — Destruidor dos Direitos",
+    isBoss:true, bossKey:"direitos", bossStagger:true,
     theme:19, quizTheme:"digital",
-    worldW:960, spawn:{x:160,y:420}, doorX:-999,
+    worldW:960, spawn:{x:100,y:420}, doorX:-999,
+    // Arena com plataformas móveis — mais dinâmica e desafiante
     platforms:[
-      {x:480,y:510,w:960,h:28},
-      {x:150,y:370,w:180,h:22},
-      {x:480,y:280,w:240,h:22},
-      {x:810,y:370,w:180,h:22},
-      {x:300,y:430,w:140,h:22},
-      {x:660,y:430,w:140,h:22},
+      {x:480,y:510,w:960,h:28},      // chão
+      {x:480,y:260,w:220,h:22},      // plataforma central alta
+    ],
+    movingPlatforms:[
+      {x:160,y:380,w:170,h:22,rangeX:80,rangeY:0,speed:70},   // esquerda — move horizontal
+      {x:800,y:380,w:170,h:22,rangeX:80,rangeY:0,speed:70},   // direita — move horizontal
+      {x:480,y:430,w:140,h:22,rangeX:0,rangeY:60,speed:55},   // centro baixo — sobe/desce
     ],
     items:[], malwares:[],
   }
