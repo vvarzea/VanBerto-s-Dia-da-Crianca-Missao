@@ -525,4 +525,19 @@ export const LEVELS = [
       {x:3550,y:343,kind:"estrela",points:40}
     ]
   },
+  {
+    name:"Boss — Senhor do Ciberbullying",
+    isBoss:true, bossKey:"ciberbullying", bossStagger:true,
+    theme:19, quizTheme:"digital",
+    worldW:960, spawn:{x:160,y:420}, doorX:-999,
+    platforms:[
+      {x:480,y:510,w:960,h:28},
+      {x:150,y:370,w:180,h:22},
+      {x:480,y:280,w:240,h:22},
+      {x:810,y:370,w:180,h:22},
+      {x:300,y:430,w:140,h:22},
+      {x:660,y:430,w:140,h:22},
+    ],
+    items:[], malwares:[],
+  }
 ];
