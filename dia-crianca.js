@@ -2971,15 +2971,16 @@ window.addEventListener("DOMContentLoaded", () => {
       if(now-_lastShot<cadencia)return;_lastShot=now;
 
       if(booksCollected>=3){
-        // Fase 2: leque de 3 projéteis
+        // Fase 2: leque de 3 projéteis — cada um de uma cor de direito
+        const coresLeque=[0xff6b35,0xffd700,0x40d0ff];
         const angles=[-30,0,30];
-        angles.forEach(ang=>{
+        angles.forEach((ang,ai)=>{
           const rad=ang*Math.PI/180;
           const dx=(player.x-bossSprite.x);
           const dy=180;
           const len=Math.sqrt(dx*dx+dy*dy)||1;
           const proj=bossProjectiles.create(bossSprite.x,bossSprite.y-50,"boss_book_closed");
-          proj.setDisplaySize(30,24).setDepth(4).setTint(0xff0066);
+          proj.setDisplaySize(30,24).setDepth(4).setTint(coresLeque[ai]);
           const spd=260;
           proj.setVelocity(
             Math.cos(rad)*(dx/len)*spd - Math.sin(rad)*(dy/len)*spd,
@@ -2989,9 +2990,11 @@ window.addEventListener("DOMContentLoaded", () => {
           scene.time.delayedCall(2500,()=>{if(proj.active)proj.destroy();});
         });
       } else {
-        // Fase 1: projétil simples direcionado
+        // Fase 1: projétil simples direcionado — cor aleatória dos direitos
+        const corsDireitos=[0xff6b35,0xffd700,0x40d0ff,0xff80c0,0xa0ff80,0xff4444,0x80ffff];
+        const corProj=corsDireitos[Math.floor(Math.random()*corsDireitos.length)];
         const proj=bossProjectiles.create(bossSprite.x,bossSprite.y-50,"boss_book_closed");
-        proj.setDisplaySize(34,26).setDepth(4).setTint(0xaa00ff);
+        proj.setDisplaySize(34,26).setDepth(4).setTint(corProj);
         const dx=player.x-bossSprite.x,dy=player.y-bossSprite.y,len=Math.sqrt(dx*dx+dy*dy)||1;
         proj.setVelocity((dx/len)*220,(dy/len)*220-60);
         scene.tweens.add({targets:proj,angle:{from:0,to:360},duration:500,repeat:-1});
@@ -3076,7 +3079,9 @@ window.addEventListener("DOMContentLoaded", () => {
       const b=bossBooks.create(x,y,texKey);
       b.setDisplaySize(46,38).setDepth(2);
       b.setData("collected",false);b.refreshBody();
-      scene.tweens.add({targets:b,y:y-12,duration:850+Math.random()*300,yoyo:true,repeat:-1,ease:"Sine.easeInOut"});
+      // Tween de flutuação — refreshBody() a cada frame para manter hitbox correcta
+      scene.tweens.add({targets:b,y:y-12,duration:850+Math.random()*300,yoyo:true,repeat:-1,ease:"Sine.easeInOut",
+        onUpdate:()=>{ if(b&&b.active&&b.body)b.refreshBody(); }});
       scene.tweens.add({targets:b,alpha:{from:0.75,to:1},scaleX:{from:0.94,to:1.06},duration:550,yoyo:true,repeat:-1});
     });
   }
@@ -3108,18 +3113,25 @@ window.addEventListener("DOMContentLoaded", () => {
     if(_bossAnon){_bossAnon=false;if(bossSprite?.active){bossSprite.body.enable=true;bossSprite.setAlpha(1);}}
     setInvuln(scene,1800);
     player.setVelocity(0,0);player.setPosition(L.spawn.x,L.spawn.y);
-    booksCollected=0;itemsCollected=0;_updateBossHUD();
-    if(itemCountText) itemCountText.setText(`⭐ Itens: 0/${itemsTotal}`);
     if(bossProjectiles)bossProjectiles.clear(true,true);
     if(L.bossStaticItems){
+      // Boss Violência: repõe escudos
       bossShields.forEach(s=>{s.setData("charge",0);s.setData("active",false);s.setAlpha(0.55);s.setScale(1);s.clearTint();});
-    }else{
+    } else if(L.bossKey==="direitos"){
+      // Boss Final: mantém progresso — só spawn novo item se o actual foi apanhado
+      if(bossBooks.getLength()===0) _spawnBossItems(scene,_bossItemKey(L),L);
+      showFloat(scene,480,240,"💔 Perdeste uma vida — o progresso mantém-se!","#ff8844");
+      vbSay("Cuidado! Perdeste uma vida mas os direitos recuperados mantêm-se! Força! 💪","hit",3500);
+    } else {
+      // Outros bosses: recomeçam do zero
+      booksCollected=0;itemsCollected=0;_updateBossHUD();
+      if(itemCountText) itemCountText.setText(`⭐ Itens: 0/${itemsTotal}`);
       _spawnBossItems(scene,_bossItemKey(L),L);
+      showFloat(scene,480,240,"💀 Recomeças do zero!","#ff4444");
+      vbSay("Perdeste uma vida — recomeças do zero! Consegues apanhar os "+itemsTotal+" sem morrer? 💪","hit",3500);
     }
     const flash=scene.add.rectangle(480,270,960,540,0xff0000,0.40).setDepth(20);
     scene.tweens.add({targets:flash,alpha:0,duration:450,onComplete:()=>flash.destroy()});
-    showFloat(scene,480,240,"💀 Recomeças do zero!","#ff4444");
-    vbSay("Perdeste uma vida — recomeças do zero! Consegues apanhar os "+itemsTotal+" sem morrer? 💪","hit",3500);
   }
 
   function _bossItemKey(L){
