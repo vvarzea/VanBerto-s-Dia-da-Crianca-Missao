@@ -1061,7 +1061,13 @@ window.addEventListener("DOMContentLoaded", () => {
         _doorAnimRunning = false;
         touch.left=touch.right=touch.jump=false;
         loadLevel(sceneRef,currentLevel);
-        showHistory(currentLevel, () => { awaitingQuiz=false; if(!pausedByTeacher) sceneRef.physics.resume(); });
+        // Para boss: não chamar showHistory — retomar directo
+        if(LEVELS[currentLevel]?.isBoss){
+          awaitingQuiz=false; awaitingStory=false;
+          if(!pausedByTeacher) sceneRef.physics.resume();
+        } else {
+          showHistory(currentLevel, () => { awaitingQuiz=false; if(!pausedByTeacher) sceneRef.physics.resume(); });
+        }
         saveGame();
       };
     }
@@ -3132,6 +3138,10 @@ window.addEventListener("DOMContentLoaded", () => {
     }
     const flash=scene.add.rectangle(480,270,960,540,0xff0000,0.40).setDepth(20);
     scene.tweens.add({targets:flash,alpha:0,duration:450,onComplete:()=>flash.destroy()});
+    // Garantir que o jogo continua — a física pode ter ficado pausada
+    awaitingQuiz=false;
+    awaitingStory=false;
+    if(!pausedByTeacher) scene.physics.resume();
   }
 
   function _bossItemKey(L){
@@ -7119,8 +7129,16 @@ window.addEventListener("DOMContentLoaded", () => {
     Object.keys(usedQuizByLevel).forEach(k=>usedQuizByLevel[k].clear());
     Object.keys(usedQuizByTheme).forEach(k=>usedQuizByTheme[k].clear());
     scoreText.setText(`🌟 Pontos: ${score}`);updateHearts();
-    loadLevel(sceneRef,0);
-    showHistory(0, () => { if(!pausedByTeacher) sceneRef.physics.resume(); });
+    // Recomeçar no nível actual (não forçar nível 0 — boss incluído)
+    const retryLevel = currentLevel || 0;
+    loadLevel(sceneRef, retryLevel);
+    // Para boss: não chamar showHistory (bloqueia) — retomar directo
+    if(LEVELS[retryLevel]?.isBoss){
+      awaitingQuiz=false; awaitingStory=false;
+      if(!pausedByTeacher) sceneRef.physics.resume();
+    } else {
+      showHistory(retryLevel, () => { awaitingQuiz=false; if(!pausedByTeacher) sceneRef.physics.resume(); });
+    }
     saveGame();
   };
   if(btnExit) btnExit.onclick=()=>{
