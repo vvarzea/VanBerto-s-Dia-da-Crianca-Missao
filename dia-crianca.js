@@ -229,8 +229,6 @@ window.addEventListener("DOMContentLoaded", () => {
     historyText.innerHTML = `<strong class="history-title">${entry.title}</strong>\n${entry.text}`;
     historyOverlay.classList.remove("hidden");
     if (sceneRef) sceneRef.physics.pause();
-    // Limpar listeners pointerdown pendentes (ex: robotDance) — evita toque residual
-    try { sceneRef?.input?.removeAllListeners("pointerdown"); } catch {}
     // Tap no fundo escuro (fora do cartão) também fecha — evita bloqueio em mobile
     historyOverlay.onclick = (e) => { if(e.target === historyOverlay) btnHistory.onclick?.(); };
     const _historyWatchdog = setTimeout(() => { if(!historyOverlay.classList.contains("hidden")) btnHistory.onclick?.(); }, 15000);
@@ -1353,8 +1351,7 @@ window.addEventListener("DOMContentLoaded", () => {
          && document.getElementById("winOverlay").classList.contains("hidden")
          && (document.getElementById("levelTransitionOverlay")?.style.display || "none") === "none"
          && !document.getElementById("artefactRevealOverlay")?.classList.contains("show");
-      // Watchdog cobre também awaitingStory preso
-      if ((awaitingQuiz || awaitingStory) && !_overlayPaused && _noVisibleOverlay) {
+      if (awaitingQuiz && !awaitingStory && !_overlayPaused && _noVisibleOverlay) {
         if (!sceneRef._wdStart) sceneRef._wdStart = Date.now();
         if (Date.now() - sceneRef._wdStart > 3000) {
           sceneRef._wdStart = 0;
@@ -2046,7 +2043,7 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   function hitByHazard(scene, h) {
-    if (invuln || awaitingQuiz) return;
+    if (invuln || awaitingQuiz || _overlayPaused || pausedByTeacher) return;
     ensureAudio(); SFX.hit();
     hitFlash.classList.add("active"); setTimeout(() => hitFlash.classList.remove("active"), 200);
     scene.cameras.main.shake(180, 0.010);
@@ -2660,13 +2657,6 @@ window.addEventListener("DOMContentLoaded", () => {
     else if(bossKey==="ciberbullying") _setupBossCiberbullying(scene,L);
 
     _showBossHUD(L);
-
-    // Ativar boss e retomar física — o loadBossLevel é responsável por isto
-    // (não depende de _startBossIfNeeded nem do callback do showHistory)
-    booksCollected=0; _bossActive=true; _bossStunned=false;
-    _bossActiveSince=scene.time?.now||0;
-    awaitingQuiz=false;
-    scene.physics.resume();
   }
 
   // ── Boss 1: Monstro da Ignorância ───────────────────────────
@@ -2693,7 +2683,7 @@ window.addEventListener("DOMContentLoaded", () => {
     }}));
 
     scene.physics.add.overlap(player,bossSprite,(p,b)=>{
-      if(!_bossActive||invuln)return;
+      if(!_bossActive||invuln||_overlayPaused||pausedByTeacher)return;
       if(_bossStunned)return; // atordoado — zona segura, sem dano
       const bossTop=b.y-(b.displayHeight/2);
       const isStomp=p.body.velocity.y>30&&p.y<bossTop+30;
@@ -2715,7 +2705,7 @@ window.addEventListener("DOMContentLoaded", () => {
     }}));
 
     scene.physics.add.collider(bossProjectiles,platforms,(proj)=>{scene.time.delayedCall(1200,()=>{if(proj.active)proj.destroy();});});
-    scene.physics.add.overlap(player,bossProjectiles,(p,proj)=>{if(!_bossActive||invuln)return;proj.destroy();_bossPlayerHit(scene,L);},null,scene);
+    scene.physics.add.overlap(player,bossProjectiles,(p,proj)=>{if(!_bossActive||invuln||_overlayPaused||pausedByTeacher)return;proj.destroy();_bossPlayerHit(scene,L);},null,scene);
 
     _spawnBossItems(scene,"boss_book_open",L);
     scene.physics.add.overlap(player,bossBooks,(p,book)=>{if(!_bossActive||book.getData("collected"))return;book.setData("collected",true);scene.tweens.add({targets:book,y:book.y-50,alpha:0,scaleX:1.8,scaleY:1.8,duration:380,onComplete:()=>book.destroy()});SFX.coin();_bossItemCollected(scene,L);},null,scene);
@@ -2747,7 +2737,7 @@ window.addEventListener("DOMContentLoaded", () => {
       if(bossSprite.body.blocked.down)bossSprite.setVelocityY(-500);
     }}));
 
-    scene.physics.add.overlap(player,bossSprite,(p,b)=>{if(!_bossActive||invuln)return;const bossTop=b.y-(b.displayHeight/2);if(p.body.velocity.y>30&&p.y<bossTop+30){player.setVelocityY(-260);return;}_bossPlayerHit(scene,L);},null,scene);
+    scene.physics.add.overlap(player,bossSprite,(p,b)=>{if(!_bossActive||invuln||_overlayPaused||pausedByTeacher)return;const bossTop=b.y-(b.displayHeight/2);if(p.body.velocity.y>30&&p.y<bossTop+30){player.setVelocityY(-260);return;}_bossPlayerHit(scene,L);},null,scene);
 
     // Projéteis: ondas de choque
     let _lastShot=0;
@@ -2765,7 +2755,7 @@ window.addEventListener("DOMContentLoaded", () => {
     }}));
 
     scene.physics.add.collider(bossProjectiles,platforms,(proj)=>{scene.time.delayedCall(800,()=>{if(proj.active)proj.destroy();});});
-    scene.physics.add.overlap(player,bossProjectiles,(p,proj)=>{if(!_bossActive||invuln)return;proj.destroy();_bossPlayerHit(scene,L);},null,scene);
+    scene.physics.add.overlap(player,bossProjectiles,(p,proj)=>{if(!_bossActive||invuln||_overlayPaused||pausedByTeacher)return;proj.destroy();_bossPlayerHit(scene,L);},null,scene);
 
     // Escudos ESTÁTICOS — fica parado junto a cada um durante ~1,1s para o ativar.
     // Sair da zona antes de carregar perde o progresso desse escudo (tensão real,
@@ -2831,7 +2821,7 @@ window.addEventListener("DOMContentLoaded", () => {
     // Durante o "modo anónimo" o corpo físico está desligado, por isso este
     // overlap simplesmente não dispara — não há nada para tocar.
     scene.physics.add.overlap(player,bossSprite,(p,b)=>{
-      if(!_bossActive||invuln)return;
+      if(!_bossActive||invuln||_overlayPaused||pausedByTeacher)return;
       if(_bossStunned)return;
       const bossTop=b.y-(b.displayHeight/2);
       const isStomp=p.body.velocity.y>30&&p.y<bossTop+30;
@@ -2854,7 +2844,7 @@ window.addEventListener("DOMContentLoaded", () => {
     }}));
 
     scene.physics.add.collider(bossProjectiles,platforms,(proj)=>{scene.time.delayedCall(600,()=>{if(proj.active)proj.destroy();});});
-    scene.physics.add.overlap(player,bossProjectiles,(p,proj)=>{if(!_bossActive||invuln)return;proj.destroy();_bossPlayerHit(scene,L);},null,scene);
+    scene.physics.add.overlap(player,bossProjectiles,(p,proj)=>{if(!_bossActive||invuln||_overlayPaused||pausedByTeacher)return;proj.destroy();_bossPlayerHit(scene,L);},null,scene);
 
     // Dispositivos seguros como colectáveis — um de cada vez, em pontos elevados
     // (ver BOSS_ITEM_POINTS.ciberbullying + L.bossStagger no data-levels.js).
@@ -3453,10 +3443,9 @@ window.addEventListener("DOMContentLoaded", () => {
       setTimeout(()=>{ ov.style.display = "none"; onComplete?.(); }, 320);
     }
 
-    // Manter visível 3,2 s; clique/toque avança imediatamente.
-    // Imunidade 600ms — evita que toque residual feche a transição antes do loadLevel.
+    // Manter visível 3,2 s; clique/toque avança imediatamente
     const hideTimer = setTimeout(hidePanel, 3200);
-    setTimeout(() => { ov.addEventListener("click", hidePanel); }, 600);
+    ov.addEventListener("click", hidePanel);
 
     ov._midTimer  = midTimer;
     ov._hideTimer = hideTimer;
@@ -3544,8 +3533,8 @@ window.addEventListener("DOMContentLoaded", () => {
     }
     // Dança dura 3,5s — suficiente para celebrar sem frustrar em mobile
     const _danceTimer=scene.time.delayedCall(3500,finishDance);
-    // Delay 600ms — evita que o toque que derrotou o boss feche imediatamente a dança
-    setTimeout(()=>{ if(!_danceDone) scene.input.once("pointerdown",finishDance); },600);
+    // Toque/clique em qualquer sítio avança imediatamente
+    scene.input.once("pointerdown",finishDance);
   }
 
   function startConfetti(durationMs=5000){
@@ -3859,7 +3848,7 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   function onHitMalware(playerObj, malwareObj){
-    if(invuln||awaitingQuiz) return;
+    if(invuln||awaitingQuiz||_overlayPaused||pausedByTeacher) return;
 
     // ── STAR POWER: atropela o vilão ─────────────────────────────
     if(starPower && malwareObj && malwareObj.active){
