@@ -221,7 +221,8 @@ window.addEventListener("DOMContentLoaded", () => {
     // posição bruta na LEVELS (que inclui os bosses). Por isso resolvemos pelo
     // artIdx do nível — os bosses não têm artIdx, por isso simplesmente não mostram história.
     const Lh = LEVELS[levelIndex];
-    if (Lh?.isBoss) { awaitingQuiz=false; onDone?.(); return; }
+    // Boss não tem história — chamar onDone imediatamente sem tocar no estado
+    if (Lh?.isBoss) { onDone?.(); return; }
     const histIdx = (Lh && Lh.artIdx != null) ? Lh.artIdx : levelIndex;
     const entry = HISTORY[histIdx] || null;
     if (!entry) { awaitingQuiz=false; onDone?.(); return; }
@@ -229,8 +230,6 @@ window.addEventListener("DOMContentLoaded", () => {
     historyText.innerHTML = `<strong class="history-title">${entry.title}</strong>\n${entry.text}`;
     historyOverlay.classList.remove("hidden");
     if (sceneRef) sceneRef.physics.pause();
-    // Limpar listeners pointerdown do Phaser (ex: toque residual da robotDance)
-    try { sceneRef?.input?.removeAllListeners("pointerdown"); } catch {}
     // Tap no fundo escuro (fora do cartão) também fecha — evita bloqueio em mobile
     historyOverlay.onclick = (e) => { if(e.target === historyOverlay) btnHistory.onclick?.(); };
     const _historyWatchdog = setTimeout(() => { if(!historyOverlay.classList.contains("hidden")) btnHistory.onclick?.(); }, 15000);
@@ -2661,20 +2660,14 @@ window.addEventListener("DOMContentLoaded", () => {
 
     _showBossHUD(L);
 
-    // ── Arranque autónomo do boss ──────────────────────────────
-    // loadBossLevel é chamado no onMidpoint da transição (t≈350ms).
-    // O onComplete (t≈3200ms) chama showHistory que para um boss
-    // devolve onDone() imediatamente e faz physics.resume() —
-    // mas só se awaitingQuiz=false. Garantimos isso aqui com um
-    // pequeno delay que deixa a transição fechar antes de arrancar.
-    scene.time.delayedCall(3500, () => {
-      if (!_bossActive && LEVELS[currentLevel]?.isBoss) {
-        booksCollected=0; _bossActive=true; _bossStunned=false;
-        _bossActiveSince=scene.time?.now||0;
-      }
+    // Ativar boss — feito aqui para não depender de callbacks externos
+    booksCollected=0; _bossActive=true; _bossStunned=false;
+    _bossActiveSince=scene.time?.now||0;
+    // Aguardar 1 frame para garantir que o setup do Phaser está completo
+    scene.time.delayedCall(50, ()=>{
       awaitingQuiz=false;
       awaitingStory=false;
-      if (!pausedByTeacher) scene.physics.resume();
+      if(!pausedByTeacher) scene.physics.resume();
     });
   }
 
@@ -3030,8 +3023,56 @@ window.addEventListener("DOMContentLoaded", () => {
     scene.time.delayedCall(900,()=>robotDance(scene,()=>{
       finalizeLevelStars(currentLevel);
       markLevelCompleted(currentLevel);
-      nextLevel(scene);
+      _bossNextLevel(scene);
     }));
+  }
+
+  // Transição direta boss → nível seguinte, sem showHistory nem playLevelTransition.
+  // Evita todas as race conditions que bloqueavam o jogo após o boss.
+  function _bossNextLevel(scene){
+    const next=currentLevel+1;
+    // Limpar estado
+    awaitingQuiz=true;
+    awaitingStory=false;
+    scene.tweens.killTweensOf(player);
+    player.setAlpha(0);
+    player.setVelocity(0,0);
+    quizOverlay.classList.add("hidden");
+    btnCloseQuiz.classList.add("hidden");
+    document.getElementById("artefactRevealOverlay")?.classList.remove("show");
+    document.getElementById("setBonusOverlay")?.classList.remove("show");
+    scene.physics.pause();
+
+    // Bónus nível perfeito
+    if(livesLostThisLevel===0){
+      score+=50; bonusStars.textContent="⭐⭐⭐\n+50 Nível Perfeito!";
+      bonusStars.classList.add("show"); setTimeout(()=>bonusStars.classList.remove("show"),2000);
+    }
+    livesLostThisLevel=0;
+
+    setTimeout(()=>{
+      // Vitória final
+      if(next>=LEVELS.length){ scene.physics.resume(); showVictoryScreen(scene); return; }
+
+      score+=100; scoreText.setText("🌟 Pontos: "+score); _hudDirty=true;
+
+      // Carregar diretamente o nível seguinte
+      loadLevel(scene, next);
+
+      // Após o loadLevel (que pausa tudo), retomar e mostrar história num momento seguro
+      scene.time.delayedCall(200, ()=>{
+        awaitingQuiz=false;
+        awaitingStory=false;
+        if(!pausedByTeacher) scene.physics.resume();
+        // Mostrar história do nível como popup não-bloqueante (só informativo)
+        showHistory(next, ()=>{
+          awaitingQuiz=false;
+          awaitingStory=false;
+          if(!pausedByTeacher) scene.physics.resume();
+        });
+        saveGame();
+      });
+    }, 800);
   }
 
   function _showBossHUD(L){
@@ -3462,11 +3503,9 @@ window.addEventListener("DOMContentLoaded", () => {
       setTimeout(()=>{ ov.style.display = "none"; onComplete?.(); }, 320);
     }
 
-    // Manter visível 3,2 s; clique/toque avança imediatamente.
-    // Imunidade 600ms — evita toque residual da robotDance fechar a transição
-    // antes do onMidpoint (loadLevel) correr.
+    // Manter visível 3,2 s; clique/toque avança imediatamente
     const hideTimer = setTimeout(hidePanel, 3200);
-    setTimeout(() => { ov.addEventListener("click", hidePanel); }, 600);
+    ov.addEventListener("click", hidePanel);
 
     ov._midTimer  = midTimer;
     ov._hideTimer = hideTimer;
@@ -3554,8 +3593,8 @@ window.addEventListener("DOMContentLoaded", () => {
     }
     // Dança dura 3,5s — suficiente para celebrar sem frustrar em mobile
     const _danceTimer=scene.time.delayedCall(3500,finishDance);
-    // Delay 600ms — evita que o toque que derrotou o boss feche imediatamente a dança
-    setTimeout(()=>{ if(!_danceDone) scene.input.once("pointerdown",finishDance); },600);
+    // Toque/clique em qualquer sítio avança imediatamente
+    scene.input.once("pointerdown",finishDance);
   }
 
   function startConfetti(durationMs=5000){
