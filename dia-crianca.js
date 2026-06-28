@@ -229,8 +229,7 @@ window.addEventListener("DOMContentLoaded", () => {
     historyText.innerHTML = `<strong class="history-title">${entry.title}</strong>\n${entry.text}`;
     historyOverlay.classList.remove("hidden");
     if (sceneRef) sceneRef.physics.pause();
-    // Limpar listeners "pointerdown" pendentes do Phaser (ex: robotDance após boss)
-    // para evitar que um toque residual feche o overlay antes do jogador o ler
+    // Limpar listeners pointerdown pendentes (ex: robotDance) — evita toque residual
     try { sceneRef?.input?.removeAllListeners("pointerdown"); } catch {}
     // Tap no fundo escuro (fora do cartão) também fecha — evita bloqueio em mobile
     historyOverlay.onclick = (e) => { if(e.target === historyOverlay) btnHistory.onclick?.(); };
@@ -1354,7 +1353,7 @@ window.addEventListener("DOMContentLoaded", () => {
          && document.getElementById("winOverlay").classList.contains("hidden")
          && (document.getElementById("levelTransitionOverlay")?.style.display || "none") === "none"
          && !document.getElementById("artefactRevealOverlay")?.classList.contains("show");
-      // Watchdog cobre também awaitingStory preso (ex: historyOverlay fechado mas flag não limpa)
+      // Watchdog cobre também awaitingStory preso
       if ((awaitingQuiz || awaitingStory) && !_overlayPaused && _noVisibleOverlay) {
         if (!sceneRef._wdStart) sceneRef._wdStart = Date.now();
         if (Date.now() - sceneRef._wdStart > 3000) {
@@ -2661,6 +2660,13 @@ window.addEventListener("DOMContentLoaded", () => {
     else if(bossKey==="ciberbullying") _setupBossCiberbullying(scene,L);
 
     _showBossHUD(L);
+
+    // Ativar boss e retomar física — o loadBossLevel é responsável por isto
+    // (não depende de _startBossIfNeeded nem do callback do showHistory)
+    booksCollected=0; _bossActive=true; _bossStunned=false;
+    _bossActiveSince=scene.time?.now||0;
+    awaitingQuiz=false;
+    scene.physics.resume();
   }
 
   // ── Boss 1: Monstro da Ignorância ───────────────────────────
@@ -3448,8 +3454,7 @@ window.addEventListener("DOMContentLoaded", () => {
     }
 
     // Manter visível 3,2 s; clique/toque avança imediatamente.
-    // Imunidade de 600ms ao click — evita que o toque que fechou a robotDance
-    // propague e feche a transição antes do onMidpoint (loadLevel) correr.
+    // Imunidade 600ms — evita que toque residual feche a transição antes do loadLevel.
     const hideTimer = setTimeout(hidePanel, 3200);
     setTimeout(() => { ov.addEventListener("click", hidePanel); }, 600);
 
@@ -3539,9 +3544,7 @@ window.addEventListener("DOMContentLoaded", () => {
     }
     // Dança dura 3,5s — suficiente para celebrar sem frustrar em mobile
     const _danceTimer=scene.time.delayedCall(3500,finishDance);
-    // Toque/clique em qualquer sítio avança imediatamente.
-    // Delay de 600ms para evitar que o toque que derrotou o boss
-    // propague para a dança e a feche imediatamente.
+    // Delay 600ms — evita que o toque que derrotou o boss feche imediatamente a dança
     setTimeout(()=>{ if(!_danceDone) scene.input.once("pointerdown",finishDance); },600);
   }
 
