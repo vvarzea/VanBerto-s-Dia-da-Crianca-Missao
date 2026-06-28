@@ -2913,7 +2913,7 @@ window.addEventListener("DOMContentLoaded", () => {
     // Boss maior e mais ameaçador — roxo escuro
     bossSprite=scene.physics.add.sprite(L.worldW/2,300,"vilao_bug");
     bossSprite.setDisplaySize(220,220).body.setSize(180,180,true);
-    bossSprite.setCollideWorldBounds(true).setDepth(3).setTint(0x1a0030);
+    bossSprite.setCollideWorldBounds(true).setDepth(3).setTint(0x9900cc); // roxo vibrante — visível em qualquer fundo
     scene.physics.add.collider(bossSprite,platforms);
 
     // Animação de ameaça — pulsa e treme
@@ -3001,7 +3001,7 @@ window.addEventListener("DOMContentLoaded", () => {
       // Na Fase 2, o boss fica furioso visualmente
       if(booksCollected===3){
         scene.cameras.main.shake(400,0.018);
-        bossSprite.setTint(0xff0040);
+        bossSprite.setTint(0xff0066); // vermelho-rosa furioso
         showFloat(scene,480,200,"💀 FASE 2 — O Destruidor está FURIOSO!","#ff0040");
         vbSay("Cuidado! Agora tem projéteis em LEQUE! Fica atento! 💀","hit",4000);
       }
@@ -3039,7 +3039,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   function _bossBaseTint(L){
     const k=L.bossKey||"ignorancia";
-    return k==="violencia"?0x2a0040:k==="ciberbullying"?0x001a40:k==="direitos"?0x1a0030:0x660000;
+    return k==="violencia"?0x2a0040:k==="ciberbullying"?0x001a40:k==="direitos"?0x9900cc:0x660000;
   }
 
   function _spawnBossItems(scene,texKey,L){
@@ -3226,7 +3226,7 @@ window.addEventListener("DOMContentLoaded", () => {
     const label=itemLabels[L.bossKey||"ignorancia"];
     hud.innerHTML=`
       <div style="font-size:15px;font-weight:900;color:#ff2200;text-shadow:0 0 10px rgba(255,34,0,0.9),1px 1px 0 #000;letter-spacing:2px;">${nome}</div>
-      <div id="bossBookCount" style="font-size:14px;font-weight:800;color:#ffe060;text-shadow:1px 1px 0 #000;">📕📕📕 0/${BOSS_BOOKS_NEEDED} ${label}</div>`;
+      <div id="bossBookCount" style="font-size:14px;font-weight:800;color:#ffe060;text-shadow:1px 1px 0 #000;">📕📕📕 0/${itemsTotal} ${label}</div>`;
     hud.style.display="flex";
     _updateBossHUD();
   }
@@ -3239,7 +3239,7 @@ window.addEventListener("DOMContentLoaded", () => {
     const k=L?.bossKey||"ignorancia";
     const [on,off]=icons[k]||["📖","📕"];
     const label={ignorancia:"livros abertos",violencia:"escudos",ciberbullying:"dispositivos seguros",direitos:"direitos recuperados"}[k]||"itens";
-    cnt.textContent=on.repeat(booksCollected)+off.repeat(BOSS_BOOKS_NEEDED-booksCollected)+" "+booksCollected+"/"+BOSS_BOOKS_NEEDED+" "+label;
+    cnt.textContent=on.repeat(booksCollected)+off.repeat(itemsTotal-booksCollected)+" "+booksCollected+"/"+itemsTotal+" "+label;
   }
 
   function _hideBossHUD(){const hud=document.getElementById("bossHUD");if(hud)hud.style.display="none";}
