@@ -22,6 +22,8 @@ canvas { width: 100% !important; height: 100% !important; display: block; touch-
   /* min-height garante centramento correto em iOS Safari com overflow-y:auto */
   min-height: 100dvh;
   box-sizing: border-box;
+  /* Centrar na viewport em todos os ecrãs */
+  align-content: center;
   background:
     radial-gradient(ellipse 70% 60% at 50% 48%,
       rgba(255,107,53,0.18) 0%, rgba(26,10,46,0) 55%, rgba(10,4,20,1) 100%),
@@ -50,22 +52,26 @@ canvas { width: 100% !important; height: 100% !important; display: block; touch-
    CARD — estilo festa colorida com borda arco-íris
    ===================================================== */
 .card {
-  width: min(580px, 96vw);
+  width: min(560px, 94vw);
   background:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E"),
     linear-gradient(145deg, #2a0a4e 0%, #1a0835 60%, #0f0525 100%);
   border: 3px solid transparent;
   background-clip: padding-box;
-  border-radius: 12px;
+  border-radius: 14px;
   box-shadow:
     0 0 0 3px #ff6b35,
     0 0 0 5px #ffd700,
     8px 8px 0 #0a0520,
     0 0 50px rgba(255,107,53,0.20),
     inset 0 1px 0 rgba(255,200,100,0.12);
-  padding: 22px 22px 16px;
+  padding: 20px 24px 16px;
   position: relative;
   animation: cardPop 0.22s cubic-bezier(.34,1.56,.64,1) both;
+  /* Limitar altura e permitir scroll interno em ecrãs pequenos */
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  box-sizing: border-box;
 }
 
 /* Estrelinhas decorativas nos cantos */
@@ -105,8 +111,8 @@ canvas { width: 100% !important; height: 100% !important; display: block; touch-
 
 .card h1 {
   font-family: 'Baloo 2', sans-serif;
-  font-size: 21px; font-weight: 900;
-  color: #ffd700; margin: 0 0 10px;
+  font-size: 22px; font-weight: 900;
+  color: #ffd700; margin: 0 0 8px;
   text-align: center; letter-spacing: 0.3px;
   border-bottom: 2px solid #ff6b35;
   padding-bottom: 8px;
@@ -120,12 +126,12 @@ canvas { width: 100% !important; height: 100% !important; display: block; touch-
   text-shadow: 0 1px 6px rgba(255,215,0,0.25);
 }
 
-.sub  { margin: 0 0 10px; color: #ffb8a0; font-size: 14px; }
-.desc { margin: 8px 0 4px; color: #ffe0d0; font-size: 14px; line-height: 1.65; }
+.sub  { margin: 0 0 8px; color: #ffb8a0; font-size: 14px; }
+.desc { margin: 6px 0 2px; color: #ffe0d0; font-size: 13.5px; line-height: 1.6; }
 
 .row {
-  display: flex; gap: 10px; justify-content: center;
-  margin-top: 14px; flex-wrap: wrap;
+  display: flex; gap: 8px; justify-content: center;
+  margin-top: 10px; flex-wrap: wrap;
 }
 
 /* =====================================================
@@ -172,7 +178,7 @@ canvas { width: 100% !important; height: 100% !important; display: block; touch-
 }
 
 .tiny {
-  margin-top: 12px; font-size: 11px;
+  margin-top: 8px; font-size: 11px;
   color: #ffb890; opacity: 0.85; font-style: italic;
 }
 .list { margin: 10px 0 0 20px; color: #ffe0d0; font-size: 13px; line-height: 1.9; }
@@ -613,7 +619,19 @@ canvas { width: 100% !important; height: 100% !important; display: block; touch-
 
 @media (max-width: 768px) {
   .name-row input { font-size: 16px; }
-  .card { padding: 14px 14px 12px; }
+  .card { padding: 14px 16px 12px; }
+  .card h1 { font-size: 19px; }
+}
+/* Ecrãs muito pequenos em altura (ex: iPhone SE landscape) */
+@media (max-height: 580px) {
+  .card { padding: 10px 14px 8px; max-height: calc(100dvh - 16px); }
+  .card h1 { font-size: 17px; margin-bottom: 4px; }
+  .desc { font-size: 12px; line-height: 1.5; }
+  .main-menu-grid { gap: 6px; margin: 8px 0 2px; }
+  .menu-tile { min-height: 58px; padding: 10px 4px; font-size: 20px; }
+  .menu-tile.primary { min-height: 46px; }
+  .row { margin-top: 6px; gap: 6px; }
+  .tiny { margin-top: 4px; font-size: 10px; }
 }
 
 /* =====================================================
@@ -745,7 +763,7 @@ body.hc-mode .tmenu-section { color: #ff8800 !important; border-color: #444 !imp
 /* =====================================================
    NOME DO JOGADOR
    ===================================================== */
-.name-row { display:flex; align-items:center; gap:10px; margin:10px 0 4px; flex-wrap:wrap; }
+.name-row { display:flex; align-items:center; gap:10px; margin:8px 0 2px; flex-wrap:wrap; }
 .name-row label { font-family:'Baloo 2',sans-serif; font-weight:800; font-size:13px; white-space:nowrap; color:#ffd700; }
 .name-row input {
   flex:1; min-width:140px; border:2px solid #ff6b35; border-radius:8px;
@@ -1109,30 +1127,53 @@ body.hc-mode .review-explanation { color: #ffff00 !important; border-color: #555
 .main-menu-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin: 14px 0 4px;
+  gap: 9px;
+  margin: 12px 0 4px;
 }
 .menu-tile {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 4px;
-  padding: 12px 6px;
-  font-size: 22px;
-  min-height: 64px;
+  gap: 5px;
+  padding: 14px 6px;
+  font-size: 24px;
+  min-height: 70px;
+  border-radius: 10px;
+  transition: transform 0.12s, box-shadow 0.12s;
 }
+.menu-tile:active { transform: scale(0.95) translate(2px,2px); }
 .menu-tile span {
   font-family: 'Baloo 2', sans-serif;
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 800;
   line-height: 1.2;
   text-align: center;
   letter-spacing: 0.1px;
 }
-.menu-tile.primary { grid-column: span 4; flex-direction: row; font-size: 17px; min-height: 50px; }
-.menu-tile.primary span { font-size: 14px; }
+/* Nova Aventura — ocupa toda a largura, destacada */
+.menu-tile.primary {
+  grid-column: span 4;
+  flex-direction: row;
+  font-size: 20px;
+  min-height: 56px;
+  gap: 10px;
+  background: linear-gradient(180deg, #ff7a45 0%, #d43b0e 100%) !important;
+  box-shadow: 4px 4px 0 #0a0520, 0 0 18px rgba(255,107,53,0.35) !important;
+}
+.menu-tile.primary span { font-size: 15px; font-weight: 900; }
 
-@media (max-width: 460px) {
-  .main-menu-grid { grid-template-columns: repeat(3, 1fr); }
+/* Tablet: 2 colunas secundárias — mais espaço por tile */
+@media (min-width: 461px) and (max-width: 700px) {
+  .main-menu-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
   .menu-tile.primary { grid-column: span 3; }
+  .menu-tile { min-height: 75px; font-size: 26px; }
+  .menu-tile span { font-size: 12px; }
+}
+
+/* Mobile pequeno: 2 colunas, tiles maiores */
+@media (max-width: 460px) {
+  .main-menu-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .menu-tile.primary { grid-column: span 2; min-height: 58px; }
+  .menu-tile { min-height: 78px; font-size: 28px; padding: 16px 8px; }
+  .menu-tile span { font-size: 12.5px; }
 }
 
 body.hc-mode .menu-tile { border-color: #fff !important; }
