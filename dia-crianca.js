@@ -3944,9 +3944,7 @@ window.addEventListener("DOMContentLoaded", () => {
     awaitingQuiz=true;
     touch.left=touch.right=touch.jump=false;
     ensureAudio(); SFX.finalWin(); startConfetti(28000);
-    // Mostrar galeria de artefactos primeiro, depois o ecrã de vitória normal.
-    // Nota: não chamar robotDance aqui — o boss final já dançou em _bossDefeated
-    // e o player está invisível; um segundo robotDance nunca chamaria o callback.
+    // Galeria de artefactos → depois ecrã de vitória
     showArtefactGallery(() => {
       const pct=quizStats.total?Math.round((quizStats.correct/quizStats.total)*100):0;
       let medal="🥉 Bronze — missão concluída!";
@@ -3958,8 +3956,8 @@ window.addEventListener("DOMContentLoaded", () => {
       document.getElementById("winPct").textContent=`${quizStats.correct}/${quizStats.total} (${pct}%)`;
       document.getElementById("winMedal").textContent=medal+master;
 
-      // ── Tabela de erros por tema ──────────────────────────────────
-      const THEME_LABELS = {
+      // ── Tabela de temas com erros — aparece logo se existirem ───────
+      const THEME_LABELS={
         historia:"O Dia da Criança",declaracao:"Declaração de 1959",
         convencao:"Convenção de 1989",brincar:"Direito ao Brincar",
         educacao:"Direito à Educação",saude:"Direito à Saúde",
@@ -3971,95 +3969,71 @@ window.addEventListener("DOMContentLoaded", () => {
         cultura:"Cultura",deficiencia:"Inclusão",
         ambiente:"Ambiente",digital:"Mundo Digital"
       };
-      const winThemeErrors = document.getElementById("winThemeErrors");
-      const winThemeTable  = document.getElementById("winThemeTable");
-      const hasThemeErrors = Object.keys(quizStats.errorsByTheme).length > 0;
-      if(winThemeErrors && winThemeTable) {
+      const winThemeErrors=document.getElementById("winThemeErrors");
+      const winThemeTable=document.getElementById("winThemeTable");
+      const hasThemeErrors=Object.keys(quizStats.errorsByTheme||{}).length>0;
+      if(winThemeErrors&&winThemeTable){
         if(hasThemeErrors){
-          winThemeErrors.style.display = "block";
-          winThemeTable.innerHTML = "";
-          // Cabeçalho
-          const hdr = document.createElement("tr");
-          hdr.innerHTML = `
-            <th style="text-align:left;padding:3px 6px;border-bottom:1px solid rgba(255,215,0,0.3);color:#ffd700;font-size:11px;">Tema</th>
-            <th style="text-align:center;padding:3px 6px;border-bottom:1px solid rgba(255,215,0,0.3);color:#ffd700;font-size:11px;">Erros</th>
-            <th style="text-align:center;padding:3px 6px;border-bottom:1px solid rgba(255,215,0,0.3);color:#ffd700;font-size:11px;width:80px;">Resultado</th>`;
+          winThemeErrors.style.display="block";
+          winThemeTable.innerHTML="";
+          const hdr=document.createElement("tr");
+          hdr.innerHTML=`<th style="text-align:left;padding:3px 6px;border-bottom:1px solid rgba(255,215,0,0.3);color:#ffd700;font-size:11px;">Tema</th><th style="text-align:center;padding:3px 6px;border-bottom:1px solid rgba(255,215,0,0.3);color:#ffd700;font-size:11px;">Erros</th>`;
           winThemeTable.appendChild(hdr);
-          // Ordenar por nº de erros (mais erros primeiro)
-          const sorted = Object.entries(quizStats.errorsByTheme).sort((a,b)=>b[1]-a[1]);
-          sorted.forEach(([theme, count]) => {
-            const tr = document.createElement("tr");
-            const bar = "🟥".repeat(Math.min(count,5)) + (count>5?` +${count-5}`:"");
-            const label = THEME_LABELS[theme] || theme;
-            const bg = count >= 3 ? "rgba(255,80,50,0.10)" : count === 2 ? "rgba(255,160,50,0.08)" : "transparent";
-            tr.innerHTML = `
-              <td style="padding:4px 6px;background:${bg};border-radius:4px 0 0 4px;">${label}</td>
-              <td style="text-align:center;padding:4px 6px;background:${bg};font-weight:700;color:${count>=3?"#ff6050":count===2?"#ffaa40":"#a0ffb0"};">${count}</td>
-              <td style="text-align:left;padding:4px 6px;background:${bg};border-radius:0 4px 4px 0;letter-spacing:1px;">${bar}</td>`;
+          Object.entries(quizStats.errorsByTheme).sort((a,b)=>b[1]-a[1]).forEach(([theme,count])=>{
+            const tr=document.createElement("tr");
+            const label=THEME_LABELS[theme]||theme;
+            const bg=count>=3?"rgba(255,80,50,0.12)":count===2?"rgba(255,160,50,0.08)":"transparent";
+            const col=count>=3?"#ff6050":count===2?"#ffaa40":"#a0ffb0";
+            tr.innerHTML=`<td style="padding:5px 6px;background:${bg};border-radius:4px 0 0 4px;">${label}</td><td style="text-align:center;padding:5px 6px;background:${bg};font-weight:700;color:${col};border-radius:0 4px 4px 0;">${count}</td>`;
             winThemeTable.appendChild(tr);
           });
         } else {
-          winThemeErrors.style.display = "none";
+          winThemeErrors.style.display="none";
         }
       }
 
-      // ── Lista detalhada das perguntas erradas ─────────────────────
-      const winErrors=document.getElementById("winErrors");
-      const winErrorList=document.getElementById("winErrorList");
-      if(winErrors&&winErrorList){
+      // ── Botão "Ver erros" — visível apenas se houver erros ──────────
+      const btnReview=document.getElementById("btnReviewMode");
+      if(btnReview){
         if(quizStats.errors&&quizStats.errors.length>0){
-          winErrors.style.display="block"; winErrorList.innerHTML="";
-          quizStats.errors.forEach(e=>{
-            const li=document.createElement("li");
-            li.innerHTML=`<strong>${e.level}:</strong> ${e.q} <span style="color:#ff8050">→ "${e.wrong}"</span>`;
-            winErrorList.appendChild(li);
-          });
-        } else { winErrors.style.display="none"; }
-      }
-      document.getElementById("winOverlay").classList.remove("hidden");
-
-      // ── Botão Modo Revisão ────────────────────────────────────────
-      const btnReview = document.getElementById("btnReviewMode");
-      if (btnReview) {
-        if (quizStats.errors && quizStats.errors.length > 0) {
-          btnReview.style.display = "block";
-          btnReview.textContent = `📋 Rever ${quizStats.errors.length} pergunta${quizStats.errors.length>1?"s":""} errada${quizStats.errors.length>1?"s":""}`;
-          btnReview.onclick = () => {
-            const reviewList = document.getElementById("reviewList");
-            if (reviewList) {
-              reviewList.innerHTML = "";
-              quizStats.errors.forEach((e, i) => {
-                const pool = QUIZ_BY_THEME[e.theme] || [];
-                const orig = pool.find(q => q.q === e.q);
-                const exp = orig?.exp || "";
-                const art = QUIZ_ARTICLE[e.theme];
-                const div = document.createElement("div");
-                div.className = "review-question";
-                div.innerHTML = `
-                  ${art ? `<div style="margin-bottom:5px;"><span class="quiz-article-badge">📜 ${art}</span></div>` : ""}
+          btnReview.style.display="block";
+          btnReview.textContent=`📋 Ver ${quizStats.errors.length} erro${quizStats.errors.length>1?"s":""}`;
+          btnReview.onclick=()=>{
+            const reviewList=document.getElementById("reviewList");
+            if(reviewList){
+              reviewList.innerHTML="";
+              quizStats.errors.forEach((e,i)=>{
+                const pool=QUIZ_BY_THEME[e.theme]||[];
+                const orig=pool.find(q=>q.q===e.q);
+                const exp=orig?.exp||"";
+                const art=QUIZ_ARTICLE[e.theme];
+                const div=document.createElement("div");
+                div.className="review-question";
+                div.innerHTML=`
+                  ${art?`<div style="margin-bottom:5px;"><span class="quiz-article-badge">📜 ${art}</span></div>`:""}
                   <div class="review-question-text">${i+1}. ${e.level} — ${e.q}</div>
                   <div class="review-wrong">❌ A tua resposta: <strong>${e.wrong}</strong></div>
                   <div class="review-correct">✅ Resposta certa: <strong>${e.correct}</strong></div>
-                  ${exp ? `<div class="review-explanation">💡 ${exp}</div>` : ""}
+                  ${exp?`<div class="review-explanation">💡 ${exp}</div>`:""}
                 `;
                 reviewList.appendChild(div);
               });
             }
             document.getElementById("reviewOverlay").classList.remove("hidden");
-            // Esconder o winOverlay enquanto revisão está aberta para não ficarem sobrepostos
             document.getElementById("winOverlay")?.classList.add("hidden");
           };
         } else {
-          btnReview.style.display = "none";
+          btnReview.style.display="none";
         }
       }
-      const btnCloseReview = document.getElementById("btnCloseReview");
-      if (btnCloseReview) {
-        btnCloseReview.onclick = () => {
+      const btnCloseReview=document.getElementById("btnCloseReview");
+      if(btnCloseReview){
+        btnCloseReview.onclick=()=>{
           document.getElementById("reviewOverlay").classList.add("hidden");
           document.getElementById("winOverlay")?.classList.remove("hidden");
         };
       }
+      document.getElementById("winOverlay").classList.remove("hidden");
     }); // fim showArtefactGallery
   }
 
@@ -7295,9 +7269,11 @@ window.addEventListener("DOMContentLoaded", () => {
     Object.keys(usedQuizByLevel).forEach(k=>usedQuizByLevel[k].clear());
     Object.keys(usedQuizByTheme).forEach(k=>usedQuizByTheme[k].clear());
     awaitingQuiz=false;
-    try{sceneRef.physics.pause();}catch{}
-    startOverlay.classList.remove("hidden");
-    document.body.classList.remove("game-started");
+    // Recomeçar directamente do nível 1 sem passar pelo menu
+    scoreText?.setText(`🌟 Pontos: 0`); updateHearts?.();
+    document.body.classList.add("game-started");
+    loadLevel(sceneRef, 0);
+    showHistory(0, () => { awaitingQuiz=false; if(!pausedByTeacher) sceneRef?.physics.resume(); });
     saveGame();
   };
 
