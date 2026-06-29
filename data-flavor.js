@@ -55,25 +55,3 @@ export const VB_QUIZ_CORRECT=["INCRÍVEL! Sabias mesmo a resposta! 🏆","Que cr
 export const VB_QUIZ_WRONG=["Quase! Aprende e vai mais forte na próxima! 📖","Não faz mal! Errar também é aprender! 💡","Boa tentativa! Desta vez não foi, mas chegas lá! 💪","Até os heróis erram — o importante é tentar! ❤️","Relê a dica e tenta outra vez! 🔄"];
 export const VB_STAR_POWER=["STAR POWER! Agora és IMPARÁVEL! ⭐","Uau, a estrela! Vai atropelar tudo! 💥","SUPER VANBERTO'S ATIVADO! 🌟","Estrela apanhada! 8 segundos de glória! ✨"];
 export const VB_PERFECT_LEVEL=["PERFEITO! Nenhuma vida perdida! Lendário! 🏆","Wow! Passaste o nível sem um arranhão! ⭐","Impecável! Guardião dos direitos nível máximo! 🌟","Incrível! Isso merecia um bónus extra! 🎉"];
-
-// ── Mensagens específicas do Boss Final ────────────────────────────────
-export const VB_BOSS_FINAL_INTRO=[
-  "💀 ATENÇÃO! O Destruidor dos Direitos guardou TUDO para o fim! 3 FASES — fica atento às mudanças! Salta na cabeça dele para atordoar!",
-  "Este é o maior inimigo dos direitos das crianças! 3 fases cada vez mais duras — mas eu acredito em ti! 💪 Vai a tudo!",
-  "💀 O Destruidor roubou os 5 direitos mais importantes! Há 3 FASES — cada vez fica mais rápido e dispara mais! Força! 🌟"
-];
-export const VB_BOSS_FINAL_PHASE2=[
-  "CUIDADO! Entrámos na FASE 2! Agora dispara em LEQUE — esquiva-te e salta-lhe na cabeça quando puderes! 🔥",
-  "⚠️ FASE 2 ATIVADA! Os projéteis são em leque — vai para as plataformas altas para evitá-los! 💪",
-  "O Destruidor está furioso! Projéteis em LEQUE agora — mas tu és mais esperto! Usa as plataformas! 🧠"
-];
-export const VB_BOSS_FINAL_PHASE3=[
-  "💥 FASE FINAL! O Destruidor enlouqueceu — 5 projéteis E bombas do topo! Um último direito — DÁ TUDO! 🏆",
-  "⚡ FASE FINAL! Cuidado com as BOMBAS que caem do topo! Mantém-te em movimento — só falta 1 direito! 💀",
-  "ÚLTIMO DIREITO! A FASE FINAL é caótica — ele salta e dispara de tudo! Salta na cabeça dele e acaba com isto! 🌟"
-];
-export const VB_BOSS_FINAL_LAST_RIGHT=[
-  "SÓ FALTA 1! Este é o último direito — vai buscar aquela estrela! 🌟 Tens isto!",
-  "⭐ O último direito está ali! Esquiva-te, salta-lhe na cabeça e vai buscá-lo! FORÇA! 💪",
-  "Quase lá! Um direito — UMA ESTRELA! O Destruidor não pode ganhar! Vai! 🏆"
-];
