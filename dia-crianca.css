@@ -1492,11 +1492,6 @@ body.hc-mode .achv-card-desc { color:#fff !important; }
 .album-card-desc {
   font-size: 10px; color: #ffe0d0;
   line-height: 1.5; margin: 0 0 6px;
-  /* Truncate para cards pequenos */
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 .album-card--locked .album-card-desc { color: #555; }
 .album-card-stars {
